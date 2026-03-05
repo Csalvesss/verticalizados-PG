@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, query, orderBy, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
 
@@ -136,7 +136,6 @@ function MainApp({ user }: { user: User }) {
   const confirmacoesEvento = confirmacoes.filter(c => c.eventoId === proximoEvento?.id);
 
   // ── Oração state ──
-  const membros = songs.length > 0 ? [] : []; // membros vêm do Firestore abaixo
   const [membrosLista, setMembrosLista] = useState<string[]>(['Ana','Pedro','Maria','João','Carla','Lucas','Fernanda','Tiago','Juliana']);
   const [sorteando, setSorteando] = useState(false);
   const sorteadoAtual = sorteioSemana?.sorteado || null;
