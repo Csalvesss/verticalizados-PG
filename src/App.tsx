@@ -1,11 +1,34 @@
 import { useState, useRef, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, query, orderBy, serverTimestamp, getDocs, setDoc } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
 
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = 'ads.cesaralves@gmail.com';
+
+const DEFAULT_SONGS = [
+  { title:'Não Mais Eu', spotify:'https://open.spotify.com/intl-pt/track/55hYoGlIgSyI5TMTNOsSjL', youtube:'https://youtu.be/wcTCKJUEy2Y', ordem:0, sections:[
+    {label:'Verso 1',type:'verse',lines:['Foi na cruz, foi na cruz, em que ao fim percebi','Meu pecado recaiu em Jesus','Foi então, pela fé, que meus olhos abri','Que prazer sinto agora em sua luz']},
+    {label:'Refrão',type:'chorus',lines:['Eu irei para a cruz, onde pude perceber','Esse amor que por mim foi pago','Sua mão me curou, sua morte me salvou','Eu irei, eu irei para a cruz']},
+    {label:'Verso 2',type:'verse',lines:['Quão perdido estou, quão vazio o coração','Não sou digno de tanto amor','Foi então, pela fé, que meus olhos abri','Que prazer sinto agora em sua luz']},
+    {label:'Bridge',type:'bridge',lines:['Não mais eu, não mais eu','É Jesus que vive em mim','Cristo vive em mim','Cristo vive em mim']},
+    {label:'Final',type:'chorus',lines:['Eu irei para a cruz, onde pude perceber','Este amor que por mim foi pago','Sua mão me curou, sua morte me salvou','Eu irei, eu irei para a cruz','Eu irei, eu irei para a cruz...']}
+  ], letra:'' },
+  { title:'Digno', spotify:'https://open.spotify.com/intl-pt/track/2XtXerzRGuuHXbxOIbo44e', youtube:'https://youtu.be/ax-25gXlmBk', ordem:1, sections:[
+    {label:'Verso 1',type:'verse',lines:['Logo estaremos num lindo lugar','Com jardins e um rio de cristal','Onde andaremos na presença do Senhor']},
+    {label:'Verso 2',type:'verse',lines:['Logo da terra se levantarão','Os que dormem o sono dos justos','A eternidade ali começou']},
+    {label:'Pré-Refrão',type:'verse',lines:['E ao entrar pelas portas do céu','O verei','Correrei pra abraçá-Lo e então cantarei']},
+    {label:'Refrão',type:'chorus',lines:['Digno! É o Cordeiro bendito','Digno! Toda honra e glória a Ti','Tanto esperei por este momento','','Digno! O conflito encerrado está','Digno! Em Teus braços achei meu lugar','Pra sempre irei Te adorar, Digno!']},
+    {label:'Bridge',type:'bridge',lines:['Cantaremos aleluia','Cantaremos aleluia','Cantaremos aleluia','(aleluia, aleluia, aleluia...)']},
+    {label:'Final',type:'chorus',lines:['Aleluia, Aleluia, Aleluia, Digno','Aleluia, Aleluia, Aleluia, Digno']}
+  ], letra:'' },
+];
+
+const DEFAULT_CIFRAS = [
+  { title:'Não Mais Eu', tom:'G', ordem:0, cifra:`[Intro] G  D  Em  C (2x)\n\n[Verso 1]\nG              D\nFoi na cruz, foi na cruz,\nEm                C\nem que ao fim percebi\nG              D\nMeu pecado recaiu em Jesus\nEm              C\nFoi então, pela fé, que meus olhos abri\n\n[Refrão]\nG        D\nEu irei para a cruz\nEm           C\nonde pude perceber\nG          D\nEsse amor que por mim foi pago\nEm              C\nSua mão me curou, sua morte me salvou\nG    D    Em  C\nEu irei, eu irei para a cruz\n\n[Bridge]\nEm        D\nNão mais eu, não mais eu\nC              G\nÉ Jesus que vive em mim` },
+  { title:'Digno', tom:'A', ordem:1, cifra:`[Intro] A  E  F#m  D (2x)\n\n[Verso]\nA                 E\nLogo estaremos num lindo lugar\nF#m              D\nCom jardins e um rio de cristal\n\n[Refrão]\nA        E\nDigno! É o Cordeiro bendito\nF#m         D\nDigno! Toda honra e glória a Ti\nA              E\nTanto esperei por este momento\nF#m     D       A\nPra sempre irei Te adorar, Digno!\n\n[Bridge]\nF#m   E    D    A\nCantaremos aleluia (4x)` },
+];
 
 // ── ICONS ──────────────────────────────────────────────────────────────────
 const Ico = {
@@ -109,8 +132,14 @@ function MainApp({ user }: { user: User }) {
   const [sorteioSemana, setSorteioSemana] = useState<any>(null);
 
   useEffect(() => {
-    const uns1 = onSnapshot(query(collection(db,'songs'), orderBy('ordem')), s => setSongs(s.docs.map(d=>({id:d.id,...d.data()}))));
-    const uns2 = onSnapshot(query(collection(db,'cifras'), orderBy('ordem')), s => setCifras(s.docs.map(d=>({id:d.id,...d.data()}))));
+    const uns1 = onSnapshot(query(collection(db,'songs'), orderBy('ordem')), async s => {
+      if (s.empty) { for (const song of DEFAULT_SONGS) await addDoc(collection(db,'songs'), song); }
+      else setSongs(s.docs.map(d=>({id:d.id,...d.data()})));
+    });
+    const uns2 = onSnapshot(query(collection(db,'cifras'), orderBy('ordem')), async s => {
+      if (s.empty) { for (const cifra of DEFAULT_CIFRAS) await addDoc(collection(db,'cifras'), cifra); }
+      else setCifras(s.docs.map(d=>({id:d.id,...d.data()})));
+    });
     const uns3 = onSnapshot(query(collection(db,'eventos'), orderBy('data','desc')), s => setEventos(s.docs.map(d=>({id:d.id,...d.data()}))));
     const uns4 = onSnapshot(query(collection(db,'posts'), orderBy('createdAt','desc')), s => { setPosts(s.docs.map(d=>({id:d.id,...d.data()}))); setFeedLoading(false); });
     const uns5 = onSnapshot(collection(db,'confirmacoes'), s => setConfirmacoes(s.docs.map(d=>({id:d.id,...d.data()}))));
@@ -163,12 +192,6 @@ function MainApp({ user }: { user: User }) {
         clearInterval(interval);
         const escolhido = pool[Math.floor(Math.random() * pool.length)];
         const semana = getWeekKey();
-        await updateDoc(doc(db,'sorteios',semana), { sorteado: escolhido, historico: arrayUnion(escolhido), semana }).catch(async () => {
-          await addDoc(collection(db,'sorteios'), { sorteado: escolhido, historico: [escolhido], semana });
-          // Use setDoc instead
-        });
-        // Use setDoc
-        const { setDoc } = await import('firebase/firestore');
         await setDoc(doc(db,'sorteios',semana), { sorteado: escolhido, historico: arrayUnion(escolhido), semana }, {merge:true});
         setSorteando(false);
       }
@@ -409,21 +432,26 @@ function MainApp({ user }: { user: User }) {
               <div style={{width:32}}/>
             </div>
 
-            {/* Post box estilo Instagram */}
-            <div style={{background:'#FFF8F0',borderBottom:'1px solid #f0ebe3',padding:'12px 14px',marginBottom:4}}>
+            {/* Post box */}
+            <div style={{background:'#FFF8F0',borderBottom:'1px solid #ede8e0',padding:'12px 14px'}}>
               <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
                 <img src={currentUser.photo} style={s.avatarFeed}/>
-                <div style={{flex:1}}>
-                  <textarea value={feedText} onChange={e=>setFeedText(e.target.value)} placeholder="Compartilhe algo com o PG..." style={{...s.textarea,border:'none',background:'transparent',padding:'4px 0',fontSize:14,color:'#1A1A1A',textAlign:'left'}} rows={2}/>
-                  {feedImage && <img src={feedImage} style={{width:'100%',borderRadius:12,marginTop:8,maxHeight:200,objectFit:'cover'}}/>}
+                <div style={{flex:1,minWidth:0}}>
+                  <textarea value={feedText} onChange={e=>setFeedText(e.target.value)} placeholder="Compartilhe algo com o PG..." style={{...s.textarea,border:'none',background:'transparent',padding:'4px 0',fontSize:14,color:'#1A1A1A',textAlign:'left',resize:'none',minHeight:40}} rows={2}/>
+                  {feedImage && (
+                    <div style={{position:'relative' as const,marginTop:8}}>
+                      <img src={feedImage} style={{width:'100%',borderRadius:12,maxHeight:180,objectFit:'cover' as const}}/>
+                      <button onClick={()=>setFeedImage(null)} style={{position:'absolute' as const,top:6,right:6,background:'rgba(0,0,0,0.5)',border:'none',borderRadius:'50%',width:24,height:24,color:'#fff',cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8,paddingTop:8,borderTop:'1px solid #f0ebe3'}}>
-                <button onClick={()=>feedImgRef.current?.click()} style={{...s.iconBtn,gap:6,display:'flex',alignItems:'center',fontFamily:'Barlow',fontSize:12,color:'#888'}}>
-                  {Ico.image()} Foto
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8,paddingTop:8,borderTop:'1px solid #ede8e0'}}>
+                <button onClick={()=>feedImgRef.current?.click()} style={{...s.iconBtn,gap:6,display:'flex',alignItems:'center',fontFamily:'Barlow',fontSize:12,color:'#aaa'}}>
+                  {Ico.image()} <span>Foto</span>
                 </button>
                 <input ref={feedImgRef} type="file" accept="image/*" onChange={handleFeedImage} style={{display:'none'}}/>
-                <button onClick={postar} style={{...s.btnOrange,padding:'8px 20px',fontSize:13}}>Publicar</button>
+                <button onClick={postar} disabled={!feedText.trim()&&!feedImage} style={{...s.btnOrange,padding:'8px 22px',fontSize:13,opacity:(!feedText.trim()&&!feedImage)?0.5:1}}>Publicar</button>
               </div>
             </div>
 
@@ -434,58 +462,64 @@ function MainApp({ user }: { user: User }) {
               const jaGostou = post.likes?.includes(user.uid);
               const podeApagar = post.userId === user.uid || isAdmin;
               return (
-                <div key={post.id} style={{background:'#FFF8F0',borderBottom:'1px solid #f0ebe3',paddingBottom:4,marginBottom:4}}>
+                <div key={post.id} style={{background:'#FFF8F0',borderBottom:'1px solid #ede8e0'}}>
                   {post.repostOf && <div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px 0',color:'#aaa',fontFamily:'Barlow',fontSize:11}}>{Ico.repost('#ccc')} <span>{post.user} repostou</span></div>}
-                  <div style={{display:'flex',gap:10,padding:'12px 14px 8px',alignItems:'flex-start'}}>
+                  <div style={{display:'flex',gap:10,padding:'12px 14px 0',alignItems:'flex-start'}}>
                     <img src={post.photo} style={{...s.avatarFeed,flexShrink:0}}/>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:15,color:'#1A1A1A'}}>{post.user} <span style={{fontFamily:'Barlow',fontSize:12,color:'#bbb',fontWeight:400}}>· {tempo(post.createdAt)}</span></span>
-                        {podeApagar && <button onClick={()=>deletarPost(post.id)} style={{...s.iconBtn,color:'#ddd'}}>{Ico.trash()}</button>}
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                        <div>
+                          <span style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:15,color:'#1A1A1A'}}>{post.user}</span>
+                          <span style={{fontFamily:'Barlow',fontSize:12,color:'#bbb',marginLeft:5}}>· {tempo(post.createdAt)}</span>
+                        </div>
+                        {podeApagar && <button onClick={()=>deletarPost(post.id)} style={{...s.iconBtn,color:'#ddd',marginLeft:8}}>{Ico.trash()}</button>}
                       </div>
                       {post.repostOf && (
-                        <div style={{border:'1.5px solid #e8e8e8',borderRadius:10,padding:'8px 12px',marginTop:6,background:'#fafafa'}}>
-                          <div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:12,color:'#777'}}>{post.repostOf.user}</div>
-                          <div style={{fontFamily:'Barlow',fontSize:13,color:'#444',lineHeight:1.6,textAlign:'left'}}>{post.repostOf.text}</div>
+                        <div style={{border:'1.5px solid #ede8e0',borderRadius:10,padding:'8px 12px',marginTop:6,background:'#faf7f3'}}>
+                          <div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:12,color:'#888'}}>{post.repostOf.user}</div>
+                          <div style={{fontFamily:'Barlow',fontSize:13,color:'#555',lineHeight:1.6,textAlign:'left'}}>{post.repostOf.text}</div>
                         </div>
                       )}
-                      {post.text && <div style={{fontFamily:'Barlow',fontSize:14,color:'#1A1A1A',lineHeight:1.7,marginTop:4,textAlign:'left'}}>{post.text}</div>}
+                      {post.text && <div style={{fontFamily:'Barlow',fontSize:14,color:'#1A1A1A',lineHeight:1.7,marginTop:4,textAlign:'left',wordBreak:'break-word' as const}}>{post.text}</div>}
                     </div>
                   </div>
-                  {post.imageUrl && <img src={post.imageUrl} style={{width:'100%',maxHeight:360,objectFit:'cover'}}/>}
-                  <div style={{display:'flex',gap:20,padding:'8px 14px',borderTop:'1px solid #f5f0ea'}}>
-                    <button className="post-action" onClick={()=>curtir(post)} style={{...s.actionBtn,color:jaGostou?'#F07830':'#888'}}>
-                      {Ico.heart(jaGostou)} <span style={{fontSize:13}}>{post.likes?.length||0}</span>
+                  {post.imageUrl && <img src={post.imageUrl} style={{width:'100%',maxHeight:320,objectFit:'cover' as const,marginTop:8,display:'block'}}/>}
+                  {/* Ações */}
+                  <div style={{display:'flex',gap:0,padding:'4px 14px 4px 60px',borderTop:'1px solid #f5f0ea',marginTop:8}}>
+                    <button className="post-action" onClick={()=>curtir(post)} style={{...s.actionBtn,color:jaGostou?'#F07830':'#999',flex:1,justifyContent:'center',padding:'8px 0'}}>
+                      {Ico.heart(jaGostou)} <span style={{fontSize:13,marginLeft:4}}>{post.likes?.length||0}</span>
                     </button>
-                    <button className="post-action" onClick={()=>setCommentingOn(commentingOn===post.id?null:post.id)} style={s.actionBtn}>
-                      {Ico.comment()} <span style={{fontSize:13,color:'#888'}}>{post.comments?.length||0}</span>
+                    <button className="post-action" onClick={()=>setCommentingOn(commentingOn===post.id?null:post.id)} style={{...s.actionBtn,color:'#999',flex:1,justifyContent:'center',padding:'8px 0'}}>
+                      {Ico.comment()} <span style={{fontSize:13,marginLeft:4}}>{post.comments?.length||0}</span>
                     </button>
-                    <button className="post-action" onClick={()=>setRepostingOn(repostingOn===post.id?null:post.id)} style={s.actionBtn}>
-                      {Ico.repost()} <span style={{fontSize:13,color:'#888'}}>Repostar</span>
+                    <button className="post-action" onClick={()=>setRepostingOn(repostingOn===post.id?null:post.id)} style={{...s.actionBtn,color:'#999',flex:1,justifyContent:'center',padding:'8px 0'}}>
+                      {Ico.repost()} <span style={{fontSize:13,marginLeft:4}}>Repostar</span>
                     </button>
                   </div>
+                  {/* Comentários */}
                   {post.comments?.length > 0 && (
-                    <div style={{padding:'0 14px 8px',display:'flex',flexDirection:'column' as const,gap:6}}>
+                    <div style={{padding:'0 14px 8px 60px',display:'flex',flexDirection:'column' as const,gap:6}}>
                       {post.comments.map((c: any,i: number) => (
                         <div key={i} style={{display:'flex',gap:8,alignItems:'flex-start'}}>
-                          <img src={c.photo} style={{width:26,height:26,borderRadius:'50%',flexShrink:0}}/>
-                          <div style={{background:'#f5f0ea',borderRadius:10,padding:'6px 10px',flex:1}}>
+                          <img src={c.photo} style={{width:24,height:24,borderRadius:'50%',flexShrink:0}}/>
+                          <div style={{background:'#f5f0ea',borderRadius:12,padding:'6px 10px',flex:1,minWidth:0}}>
                             <span style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:12,color:'#555'}}>{c.user} </span>
-                            <span style={{fontFamily:'Barlow',fontSize:13,color:'#444'}}>{c.text}</span>
+                            <span style={{fontFamily:'Barlow',fontSize:13,color:'#444',wordBreak:'break-word' as const}}>{c.text}</span>
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
+                  {/* Caixa comentar */}
                   {commentingOn === post.id && (
-                    <div style={{display:'flex',gap:8,padding:'0 14px 10px',alignItems:'center'}}>
-                      <img src={currentUser.photo} style={{width:28,height:28,borderRadius:'50%',flexShrink:0}}/>
-                      <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&comentar(post.id)} placeholder="Comentar..." style={{flex:1,border:'1px solid #e0d8d0',borderRadius:20,padding:'8px 14px',fontFamily:'Barlow',fontSize:13,color:'#1A1A1A',background:'#fff',outline:'none'}}/>
-                      <button onClick={()=>comentar(post.id)} style={{...s.btnOrange,padding:'8px 14px',fontSize:12}}>Enviar</button>
+                    <div style={{display:'flex',gap:8,padding:'0 14px 10px 60px',alignItems:'center'}}>
+                      <input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&comentar(post.id)} placeholder="Comentar..." style={{flex:1,border:'1px solid #ede8e0',borderRadius:20,padding:'8px 14px',fontFamily:'Barlow',fontSize:13,color:'#1A1A1A',background:'#fff',outline:'none'}}/>
+                      <button onClick={()=>comentar(post.id)} style={{...s.btnOrange,padding:'7px 14px',fontSize:12}}>↑</button>
                     </div>
                   )}
+                  {/* Caixa repostar */}
                   {repostingOn === post.id && (
-                    <div style={{margin:'0 14px 10px',background:'#f9f5f0',borderRadius:10,padding:12,border:'1px solid #ede8e0'}}>
+                    <div style={{margin:'0 14px 10px',background:'#faf7f3',borderRadius:10,padding:12,border:'1px solid #ede8e0'}}>
                       <div style={{fontFamily:'Barlow Condensed',fontSize:10,fontWeight:700,letterSpacing:2,color:'#D4621A',marginBottom:8}}>REPOSTAR COM COMENTÁRIO (opcional)</div>
                       <textarea value={repostText} onChange={e=>setRepostText(e.target.value)} placeholder="Adicione seu comentário..." style={{...s.textarea,marginBottom:10,minHeight:50,color:'#1A1A1A',textAlign:'left'}} rows={2}/>
                       <div style={{display:'flex',gap:8}}>
@@ -711,6 +745,11 @@ function AdminPanel({ goHome, songs, cifras, eventos, membros }: any) {
         {tab==='membros' && membros.map((nome: string, i: number)=>(
           <div key={i} style={s.adminRow}>
             <div style={{fontFamily:'Barlow',fontSize:14,color:'#1A1A1A',flex:1}}>{nome}</div>
+            <button onClick={async()=>{
+              const snap = await getDocs(query(collection(db,'membros')));
+              const found = snap.docs.find(d=>d.data().nome===nome);
+              if(found) await deleteDoc(doc(db,'membros',found.id));
+            }} style={{...s.adminActionBtn,color:'#e53935'}}>{Ico.trash()}</button>
           </div>
         ))}
       </div>
@@ -746,8 +785,8 @@ const s: Record<string, React.CSSProperties> = {
   content:{flex:1,overflowY:'auto',paddingBottom:65},
   page:{padding:'16px 14px 0'},
   instaHeader:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 14px 10px',borderBottom:'1px solid #2a2a2a',background:'#1A1A1A',position:'sticky' as const,top:0,zIndex:50},
-  bottomNav:{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:480,background:'#111',borderTop:'1px solid #222',display:'flex',justifyContent:'space-around',padding:'6px 0 8px',zIndex:100},
-  navBtn:{border:'none',display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'5px 10px',borderRadius:10,cursor:'pointer',transition:'background 0.2s'},
+  bottomNav:{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:480,background:'rgba(17,17,17,0.97)',backdropFilter:'blur(12px)',borderTop:'1px solid #2a2a2a',display:'flex',justifyContent:'space-around',padding:'8px 0 10px',zIndex:100},
+  navBtn:{border:'none',display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'4px 12px',borderRadius:12,cursor:'pointer',transition:'all 0.2s'},
   logoBox:{width:36,height:36,background:'#F07830',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0},
   homeTitle:{fontFamily:'Bebas Neue',fontSize:22,letterSpacing:2,color:'#fff',lineHeight:1},
   avatarSmall:{width:36,height:36,borderRadius:'50%',border:'2px solid #F07830',cursor:'pointer',objectFit:'cover' as const},
