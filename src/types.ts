@@ -13,8 +13,8 @@ export type Screen =
 export interface CurrentUser {
   uid: string;
   name: string;
-  fullName?: string;
-  photo?: string | null;
+  fullName: string;
+  photo: string;
   email: string;
 }
 
@@ -61,7 +61,7 @@ export interface Comment {
 export interface RepostOf {
   user: string;
   text: string;
-  imageUrl?: string | null;
+  imageUrl?: string;
 }
 
 export interface Post {
@@ -70,10 +70,10 @@ export interface Post {
   userId: string;
   photo: string;
   text: string;
-  imageUrl?: string | null;
+  imageUrl?: string;
   likes: string[];
   comments: Comment[];
-  createdAt?: Timestamp | null;
+  createdAt: Timestamp | null;
   repostOf?: RepostOf;
 }
 
@@ -83,7 +83,7 @@ export interface Confirmacao {
   userName: string;
   userPhoto: string;
   eventoId: string;
-  lanche?: string | null;
+  lanche: string | null;
   hora: string;
 }
 
