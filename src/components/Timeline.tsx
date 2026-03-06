@@ -70,7 +70,7 @@ export function Timeline({
                 placeholder="Poste sua resposta"
                 submitLabel="Responder"
                 autoFocus
-                onPost={(t) => onSubmitComment(post.id, t)}
+                onPost={(t) => Promise.resolve(onSubmitComment(post.id, t))}
               />
             </div>
           )}
