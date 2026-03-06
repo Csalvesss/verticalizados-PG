@@ -1,10 +1,20 @@
-export type Screen = 'home' | 'musicas' | 'cifras' | 'oracao' | 'feed' | 'eventos' | 'perfil' | 'admin';
+import type { Timestamp } from 'firebase/firestore';
+
+export type Screen =
+  | 'home'
+  | 'musicas'
+  | 'cifras'
+  | 'oracao'
+  | 'feed'
+  | 'eventos'
+  | 'perfil'
+  | 'admin';
 
 export interface CurrentUser {
   uid: string;
   name: string;
-  fullName: string;
-  photo: string;
+  fullName?: string;
+  photo?: string | null;
   email: string;
 }
 
@@ -40,6 +50,20 @@ export interface Evento {
   local: string;
 }
 
+export interface Comment {
+  user: string;
+  userId: string;
+  photo: string;
+  text: string;
+  time: string;
+}
+
+export interface RepostOf {
+  user: string;
+  text: string;
+  imageUrl?: string | null;
+}
+
 export interface Post {
   id: string;
   user: string;
@@ -49,16 +73,8 @@ export interface Post {
   imageUrl?: string | null;
   likes: string[];
   comments: Comment[];
-  createdAt: any;
-  repostOf?: { user: string; text: string; imageUrl?: string | null };
-}
-
-export interface Comment {
-  user: string;
-  userId: string;
-  photo: string;
-  text: string;
-  time: string;
+  createdAt?: Timestamp | null;
+  repostOf?: RepostOf;
 }
 
 export interface Confirmacao {
@@ -67,7 +83,7 @@ export interface Confirmacao {
   userName: string;
   userPhoto: string;
   eventoId: string;
-  lanche: string | null;
+  lanche?: string | null;
   hora: string;
 }
 
