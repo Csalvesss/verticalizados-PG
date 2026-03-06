@@ -4,6 +4,7 @@ interface Props {
   liked: boolean;
   likesCount: number;
   commentsCount: number;
+  repostsCount: number;
   onLike: () => void;
   onComment: () => void;
   onRepost: () => void;
@@ -13,6 +14,7 @@ export function PostActions({
   liked,
   likesCount,
   commentsCount,
+  repostsCount,
   onLike,
   onComment,
   onRepost,
@@ -24,7 +26,7 @@ export function PostActions({
       justifyContent: 'space-between',
       maxWidth: 320,
       marginTop: 4,
-      marginLeft: -8, // Align icons with text start
+      marginLeft: -8,
     }}>
       <button onClick={onComment} className="action-btn comment">
         <div className="icon-wrap">{Ico.comment()}</div>
@@ -33,7 +35,7 @@ export function PostActions({
 
       <button onClick={onRepost} className="action-btn repost">
         <div className="icon-wrap">{Ico.repost('#71767b')}</div>
-        <span>0</span>
+        <span>{repostsCount}</span>
       </button>
 
       <button onClick={onLike} className="action-btn heart" style={{ color: liked ? '#f91880' : '#71767b' }}>
@@ -46,7 +48,7 @@ export function PostActions({
       <style>{`
         .action-btn {
           display: flex;
-          alignItems: center;
+          align-items: center;
           gap: 4px;
           color: #71767b;
           font-size: 13px;

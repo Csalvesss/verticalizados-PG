@@ -8,6 +8,7 @@ interface Props {
   onPost: (text: string, img: string | null) => Promise<void>;
   submitLabel?: string;
   autoFocus?: boolean;
+  allowEmpty?: boolean; // Allow posting with empty text (e.g. repost with no commentary)
 }
 
 export function Composer({
@@ -16,6 +17,7 @@ export function Composer({
   onPost,
   submitLabel = "Postar",
   autoFocus = false,
+  allowEmpty = false,
 }: Props) {
   const [text, setText] = useState('');
   const [img, setImg] = useState<string | null>(null);
@@ -30,8 +32,10 @@ export function Composer({
     }
   }, [text]);
 
+  const canPost = allowEmpty ? !loading : (!loading && (!!text.trim() || !!img));
+
   const handlePost = async () => {
-    if ((!text.trim() && !img) || loading) return;
+    if (!canPost) return;
     setLoading(true);
     try {
       await onPost(text.trim(), img);
@@ -52,8 +56,10 @@ export function Composer({
       if (ev.target?.result) setImg(ev.target.result as string);
     };
     reader.readAsDataURL(file);
-    e.target.value = ''; // Reset input
+    e.target.value = '';
   };
+
+  const isActive = allowEmpty ? true : !!(text.trim() || img);
 
   return (
     <div style={{ display: 'flex', gap: 12, padding: '16px', borderBottom: '1px solid #2f3336' }}>
@@ -81,11 +87,17 @@ export function Composer({
         />
 
         {img && (
-          <div style={{ position: 'relative', marginTop: 12, borderRadius: 16, overflow: 'hidden', border: '1px solid #2f3336' }}>
+          <div style={{
+            position: 'relative',
+            marginTop: 12,
+            borderRadius: 16,
+            overflow: 'hidden',
+            border: '1px solid #2f3336',
+          }}>
             <img
               src={img}
               alt="Preview"
-              style={{ width: '100%', maxHeight: 400, objectFit: 'cover', display: 'block' }}
+              style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }}
             />
             <button
               onClick={() => setImg(null)}
@@ -117,7 +129,7 @@ export function Composer({
           justifyContent: 'space-between',
           marginTop: 12,
           paddingTop: 12,
-          borderTop: '1px solid #2f3336'
+          borderTop: '1px solid #2f3336',
         }}>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -132,7 +144,7 @@ export function Composer({
               borderRadius: '50%',
               background: 'transparent',
               border: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             {Ico.image()}
@@ -153,16 +165,16 @@ export function Composer({
             )}
             <button
               onClick={handlePost}
-              disabled={(!text.trim() && !img) || loading}
+              disabled={!canPost}
               style={{
-                background: (text.trim() || img) ? '#F07830' : '#1a1a1a',
-                color: (text.trim() || img) ? '#fff' : '#71767b',
+                background: isActive ? '#F07830' : '#1a1a1a',
+                color: isActive ? '#fff' : '#71767b',
                 padding: '8px 16px',
                 borderRadius: 999,
                 fontWeight: 700,
                 fontSize: 14,
                 border: 'none',
-                cursor: (text.trim() || img) && !loading ? 'pointer' : 'default',
+                cursor: canPost ? 'pointer' : 'default',
                 opacity: loading ? 0.6 : 1,
                 transition: '0.2s',
               }}
