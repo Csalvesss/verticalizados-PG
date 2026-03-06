@@ -62,6 +62,7 @@ export interface RepostOf {
   user: string;
   text: string;
   imageUrl?: string;
+  userEmail?: string;
 }
 
 export interface Post {
@@ -75,6 +76,7 @@ export interface Post {
   comments: Comment[];
   createdAt: Timestamp | null;
   repostOf?: RepostOf;
+  userEmail?: string;
 }
 
 export interface Confirmacao {

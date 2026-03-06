@@ -27,7 +27,7 @@ export function getWeekKey(): string {
   return `${now.getFullYear()}-W${week}`;
 }
 
-export function tempoRelativo(ts: any): string {
+export function tempoRelativo(ts: { toDate: () => Date } | null | undefined): string {
   if (!ts?.toDate) return 'agora';
   const diff = Math.floor((Date.now() - ts.toDate().getTime()) / 60000);
   if (diff < 1) return 'agora';

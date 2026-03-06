@@ -24,7 +24,7 @@ const auth = getAuth();
 // ── SPLASH ───────────────────────────────────────────────────────────────────
 function Splash() {
   return (
-    <div style={{ background: '#1A1A1A', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ background: '#000', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <style>{GLOBAL_CSS}</style>
       <div style={{ fontFamily: 'Bebas Neue', fontSize: 28, color: '#F07830', letterSpacing: 4 }}>VERTICALIZADOS</div>
     </div>
