@@ -1,49 +1,321 @@
 import type { CSSProperties } from 'react';
 
 export const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@600;700;900&family=Barlow:wght@400;500;600&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html,body,#root{height:100%;background:#1A1A1A;}
-  ::-webkit-scrollbar{width:2px;} ::-webkit-scrollbar-thumb{background:#F07830;border-radius:4px;}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-  .fade{animation:fadeUp 0.25s ease both;}
-  textarea,input{font-family:'Barlow',sans-serif;}
-  textarea:focus,input:focus{outline:none;border-color:#F07830!important;}
-  .post-action:hover{opacity:0.7;}
-  .post-action{background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;}
-  button:active{opacity:0.8;}
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@600;700;900&family=Barlow:wght@400;500;600;700&display=swap');
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body, #root {
+    height: 100%;
+    background: #000;
+    color: #e7e9ea;
+    font-family: 'Barlow', sans-serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade {
+    animation: fadeUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  textarea, input {
+    font-family: 'Barlow', sans-serif;
+    transition: all 0.2s ease;
+  }
+
+  textarea:focus, input:focus {
+    outline: none;
+    border-color: #F07830 !important;
+  }
+
+  button {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+  }
+
+  button:active {
+    transform: scale(0.96);
+    opacity: 0.8;
+  }
+
+  .glass {
+    background: rgba(22, 24, 28, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 `;
 
 export const s: Record<string, CSSProperties> = {
-  root: { background: '#1A1A1A', minHeight: '100%', display: 'flex', flexDirection: 'column', maxWidth: 480, margin: '0 auto', position: 'relative' },
-  content: { flex: 1, overflowY: 'auto', paddingBottom: 65 },
-  page: { padding: '16px 14px 0' },
-  instaHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 14px 10px', borderBottom: '1px solid #2a2a2a', background: '#1A1A1A', position: 'sticky', top: 0, zIndex: 50 },
-  pageHeader: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 },
-  pageTitle: { fontFamily: 'Bebas Neue', fontSize: 22, letterSpacing: 2, color: '#fff' },
-  backBtn: { background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 6px 4px 0', display: 'flex', alignItems: 'center' },
-  iconBtn: { background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' },
-  bottomNav: { position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: 'rgba(17,17,17,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-around', padding: '8px 0 10px', zIndex: 100 },
-  navBtn: { border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '4px 12px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s' },
-  logoBox: { width: 36, height: 36, background: '#F07830', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  avatarSmall: { width: 36, height: 36, borderRadius: '50%', border: '2px solid #F07830', cursor: 'pointer', objectFit: 'cover' },
-  welcomeBox: { background: 'rgba(240,120,48,0.08)', borderLeft: '3px solid #F07830', padding: '12px 16px' },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: '14px 14px 0' },
-  gridCard: { background: '#FFF8F0', borderRadius: 18, padding: '20px 16px', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.2)', transition: 'transform 0.15s', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' },
-  nextEvent: { background: 'rgba(240,120,48,0.08)', border: '1px solid rgba(240,120,48,0.15)', borderRadius: 16, padding: '16px', margin: '14px 14px 16px' },
-  card: { background: '#FFF8F0', borderRadius: 18, overflow: 'hidden', marginBottom: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.18)' },
-  cardTop: { display: 'flex', alignItems: 'center', cursor: 'pointer' },
-  cardNum: { background: '#F07830', width: 56, minHeight: 76, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  cardTag: { fontFamily: 'Barlow Condensed', fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#D4621A', textTransform: 'uppercase' },
-  cardTitle: { fontFamily: 'Bebas Neue', fontSize: 21, color: '#1A1A1A', letterSpacing: 1 },
-  cardHint: { fontFamily: 'Barlow', fontSize: 11, color: '#999', fontStyle: 'italic', marginTop: 2 },
-  btnOrange: { display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 50, background: '#F07830', color: '#fff', border: 'none', fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 13, letterSpacing: 1, cursor: 'pointer' },
-  btnSpotify: { display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 50, background: '#1DB954', color: '#fff', textDecoration: 'none', fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12, letterSpacing: 1 },
-  btnYoutube: { display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 50, background: '#FF0000', color: '#fff', textDecoration: 'none', fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12, letterSpacing: 1 },
-  avatarFeed: { width: 38, height: 38, borderRadius: '50%', border: '2px solid #F07830', objectFit: 'cover' },
-  textarea: { border: '1.5px solid #e0e0e0', borderRadius: 12, padding: '10px 12px', resize: 'none', width: '100%', transition: 'border 0.2s', background: '#fff' },
-  actionBtn: { display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'Barlow', fontSize: 13, padding: '4px 0' },
-  adminRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', borderBottom: '1px solid #f0ebe3' },
-  adminActionBtn: { background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', color: '#888', display: 'flex', alignItems: 'center' },
-  empty: { fontFamily: 'Barlow', fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: 32 },
+  root: {
+    background: '#000',
+    minHeight: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    maxWidth: 500,
+    margin: '0 auto',
+    position: 'relative',
+    borderLeft: '1px solid #2f3336',
+    borderRight: '1px solid #2f3336',
+  },
+  content: {
+    flex: 1,
+    overflowY: 'auto',
+    paddingBottom: 70,
+  },
+  page: {
+    padding: '0 16px',
+  },
+  instaHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px 16px',
+    background: 'rgba(0,0,0,0.85)',
+    backdropFilter: 'blur(12px)',
+    borderBottom: '1px solid #2f3336',
+    position: 'sticky',
+    top: 0,
+    zIndex: 50,
+  },
+  pageHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '12px 16px',
+    background: 'rgba(0,0,0,0.85)',
+    backdropFilter: 'blur(12px)',
+    position: 'sticky',
+    top: 0,
+    zIndex: 50,
+    borderBottom: '1px solid #2f3336',
+    marginBottom: 16,
+  },
+  pageTitle: {
+    fontFamily: 'Barlow Condensed',
+    fontWeight: 700,
+    fontSize: 19,
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  backBtn: {
+    padding: '6px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+  },
+  iconBtn: {
+    padding: '8px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomNav: {
+    position: 'fixed',
+    bottom: 0,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '100%',
+    maxWidth: 500,
+    background: 'rgba(0,0,0,0.85)',
+    backdropFilter: 'blur(14px)',
+    borderTop: '1px solid #2f3336',
+    display: 'flex',
+    justifyContent: 'space-around',
+    padding: '6px 0 12px',
+    zIndex: 100,
+  },
+  navBtn: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 3,
+    padding: '8px 4px',
+    borderRadius: 12,
+    flex: 1,
+  },
+  logoBox: {
+    width: 32,
+    height: 32,
+    background: '#F07830',
+    borderRadius: 8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarSmall: {
+    width: 34,
+    height: 34,
+    borderRadius: '50%',
+    border: '1.5px solid #F07830',
+    objectFit: 'cover',
+  },
+  welcomeBox: {
+    padding: '20px 16px',
+    borderBottom: '1px solid #2f3336',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 12,
+    padding: '16px',
+  },
+  gridCard: {
+    background: '#16181c',
+    borderRadius: 16,
+    padding: '20px 16px',
+    border: '1px solid #2f3336',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  nextEvent: {
+    background: 'rgba(240,120,48,0.1)',
+    border: '1px solid rgba(240,120,48,0.2)',
+    borderRadius: 16,
+    padding: '16px',
+    margin: '0 16px 16px',
+  },
+  card: {
+    background: '#16181c',
+    borderRadius: 16,
+    border: '1px solid #2f3336',
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  cardTop: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  cardNum: {
+    background: 'rgba(240,120,48,0.15)',
+    width: 50,
+    minHeight: 70,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  cardTag: {
+    fontFamily: 'Barlow Condensed',
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: 2,
+    color: '#F07830',
+    textTransform: 'uppercase',
+  },
+  cardTitle: {
+    fontFamily: 'Barlow Condensed',
+    fontWeight: 700,
+    fontSize: 20,
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  cardHint: {
+    fontFamily: 'Barlow',
+    fontSize: 12,
+    color: '#71767b',
+    marginTop: 2,
+  },
+  btnOrange: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '12px 24px',
+    borderRadius: 999,
+    background: '#F07830',
+    color: '#fff',
+    fontFamily: 'Barlow',
+    fontWeight: 700,
+    fontSize: 14,
+  },
+  btnSpotify: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '8px 16px',
+    borderRadius: 999,
+    background: '#1DB954',
+    color: '#fff',
+    textDecoration: 'none',
+    fontFamily: 'Barlow Condensed',
+    fontWeight: 700,
+    fontSize: 12,
+  },
+  btnYoutube: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '8px 16px',
+    borderRadius: 999,
+    background: '#FF0000',
+    color: '#fff',
+    textDecoration: 'none',
+    fontFamily: 'Barlow Condensed',
+    fontWeight: 700,
+    fontSize: 12,
+  },
+  avatarFeed: {
+    width: 40,
+    height: 40,
+    borderRadius: '50%',
+    objectFit: 'cover',
+  },
+  textarea: {
+    background: 'transparent',
+    border: '1px solid #2f3336',
+    borderRadius: 12,
+    padding: '12px',
+    color: '#fff',
+    fontSize: 15,
+    width: '100%',
+  },
+  actionBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    color: '#71767b',
+    fontFamily: 'Barlow',
+    fontSize: 13,
+  },
+  adminRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '12px 0',
+    borderBottom: '1px solid #2f3336',
+  },
+  adminActionBtn: {
+    padding: '6px',
+    color: '#71767b',
+  },
+  empty: {
+    fontFamily: 'Barlow',
+    fontSize: 14,
+    color: '#71767b',
+    textAlign: 'center',
+    padding: 40,
+  },
 };
