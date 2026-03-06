@@ -1,52 +1,114 @@
 import { useState } from 'react';
+import { doc, setDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
+import { db } from '../firebase';
 import { Ico } from '../icons';
 import { s } from '../styles';
-import type { Cifra, Screen } from '../types';
+import { getWeekKey } from '../constants';
+import type { Screen, Sorteio } from '../types';
 
 interface Props {
-  cifras: Cifra[];
   goTo: (sc: Screen) => void;
+  currentUserName: string;
+  membrosLista: string[];
+  sorteioSemana: Sorteio | null;
+  isAdmin: boolean;
 }
 
-export function CifrasScreen({ cifras, goTo }: Props) {
-  const [openCifra, setOpenCifra] = useState<string | null>(null);
+export function OracaoScreen({ goTo, currentUserName, membrosLista, sorteioSemana, isAdmin }: Props) {
+  const [sorteando, setSorteando] = useState(false);
+
+  const sorteadoAtual = sorteioSemana?.sorteado || null;
+  const jaOrou = sorteioSemana?.historico || [];
+  const membrosDisponiveis = membrosLista.filter(m => m !== currentUserName && !jaOrou.includes(m));
+
+  const sortear = async () => {
+    if (membrosDisponiveis.length === 0) return;
+    setSorteando(true);
+    let count = 0;
+    const pool = [...membrosDisponiveis];
+    const interval = setInterval(async () => {
+      count++;
+      if (count > 18) {
+        clearInterval(interval);
+        const escolhido = pool[Math.floor(Math.random() * pool.length)];
+        const semana = getWeekKey();
+        await setDoc(doc(db, 'sorteios', semana), { sorteado: escolhido, historico: arrayUnion(escolhido), semana }, { merge: true });
+        setSorteando(false);
+      }
+    }, 90);
+  };
+
+  const resetarSorteio = async () => {
+    if (!window.confirm('Resetar o sorteio desta semana? Todo o histórico será apagado.')) return;
+    const semana = getWeekKey();
+    await deleteDoc(doc(db, 'sorteios', semana));
+  };
 
   return (
     <div className="fade" style={s.page}>
-      <div style={s.pageHeader}>
-        <button style={s.backBtn} onClick={() => goTo('home')}>{Ico.back()}</button>
-        <div style={s.pageTitle}>CIFRAS</div>
+      <div style={{ ...s.pageHeader, justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button style={s.backBtn} onClick={() => goTo('home')}>{Ico.back()}</button>
+          <div style={s.pageTitle}>ORAÇÃO DA SEMANA</div>
+        </div>
+        {isAdmin && (
+          <button onClick={resetarSorteio} style={{ background: 'rgba(229,57,53,0.1)', border: '1px solid rgba(229,57,53,0.3)', borderRadius: 50, padding: '6px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 11, letterSpacing: 1, color: '#e53935' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+            RESETAR
+          </button>
+        )}
       </div>
 
-      {cifras.length === 0 && <div style={s.empty}>Nenhuma cifra cadastrada ainda.</div>}
-
-      {cifras.map((c, idx) => {
-        const open = openCifra === c.id;
-        return (
-          <div key={c.id} style={{ ...s.card, overflow: open ? 'visible' : 'hidden' }}>
-            <div style={s.cardTop} onClick={() => setOpenCifra(open ? null : c.id)}>
-              <div style={s.cardNum}>
-                <span style={{ fontFamily: 'Bebas Neue', fontSize: 34, color: '#fff', opacity: 0.5 }}>{idx + 1}</span>
-              </div>
-              <div style={{ flex: 1, padding: '14px 12px' }}>
-                <div style={s.cardTag}>TOM: {c.tom}</div>
-                <div style={s.cardTitle}>{c.title}</div>
-                <div style={s.cardHint}>{open ? 'Toque para fechar' : 'Toque para ver a cifra'}</div>
-              </div>
-              {Ico.chevron(open)}
-              <div style={{ width: 14 }} />
+      <div style={{ ...s.card, padding: 22, marginBottom: 14 }}>
+        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#D4621A', marginBottom: 12, textAlign: 'center' }}>
+          ESTA SEMANA VOCÊ ORA POR
+        </div>
+        <div style={{ background: '#1A1A1A', borderRadius: 16, padding: '24px 16px', marginBottom: 18, minHeight: 90, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          {sorteadoAtual ? (
+            <>
+              <div style={{ fontFamily: 'Bebas Neue', fontSize: 48, color: '#F07830', letterSpacing: 3 }}>{sorteadoAtual}</div>
+              <div style={{ fontFamily: 'Barlow', fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>Interceda por {sorteadoAtual} esta semana 🙏</div>
+            </>
+          ) : (
+            <div style={{ fontFamily: 'Barlow', fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
+              {sorteando ? 'Sorteando...' : 'Nenhum sorteio ainda'}
             </div>
+          )}
+        </div>
 
-            {open && (
-              <div style={{ borderTop: '1px dashed rgba(240,120,48,0.25)', padding: '16px', overflowX: 'auto' }}>
-                <pre style={{ fontFamily: '"Courier New", monospace', fontSize: 12.5, color: '#1A1A1A', lineHeight: 1.9, whiteSpace: 'pre', display: 'block' }}>
-                  {c.cifra}
-                </pre>
-              </div>
-            )}
+        {!sorteadoAtual && membrosDisponiveis.length > 0 && (
+          <button onClick={sortear} disabled={sorteando} style={{ ...s.btnOrange, width: '100%', justifyContent: 'center', gap: 8 }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="3" /><circle cx="8" cy="8" r="1.5" fill="#fff" /><circle cx="16" cy="8" r="1.5" fill="#fff" /><circle cx="8" cy="16" r="1.5" fill="#fff" /><circle cx="16" cy="16" r="1.5" fill="#fff" /><circle cx="12" cy="12" r="1.5" fill="#fff" /></svg>
+            {sorteando ? 'Sorteando...' : 'Sortear membro para orar'}
+          </button>
+        )}
+
+        {sorteadoAtual && (
+          <div style={{ background: 'rgba(240,120,48,0.1)', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#1A1A1A', lineHeight: 1.6 }}>
+              Ore por <strong style={{ color: '#D4621A' }}>{sorteadoAtual}</strong> durante a semana!
+            </div>
           </div>
-        );
-      })}
+        )}
+
+        {membrosDisponiveis.length === 0 && !sorteadoAtual && (
+          <div style={{ background: 'rgba(29,185,84,0.1)', borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'Barlow', fontSize: 13, color: '#1DB954', fontWeight: 600 }}>🎉 Você já orou por todos!</div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ ...s.card, padding: 16 }}>
+        <div style={s.cardTag}>MEMBROS DO PG</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+          {membrosLista.filter(m => m !== currentUserName).map(m => (
+            <div key={m} style={{ fontFamily: 'Barlow', fontSize: 12, padding: '5px 14px', borderRadius: 50, fontWeight: 600, background: m === sorteadoAtual ? '#F07830' : jaOrou.includes(m) ? '#e8e8e8' : '#f5f5f5', color: m === sorteadoAtual ? '#fff' : jaOrou.includes(m) ? '#bbb' : '#555', textDecoration: jaOrou.includes(m) && m !== sorteadoAtual ? 'line-through' : 'none' }}>
+              {m}
+            </div>
+          ))}
+        </div>
+        {jaOrou.length > 0 && <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#bbb', marginTop: 10 }}>Riscados = já foram sorteados anteriormente</div>}
+      </div>
     </div>
   );
 }

@@ -150,6 +150,7 @@ function MainApp({ user }: { user: User }) {
             currentUserName={currentUser.name}
             membrosLista={membrosLista}
             sorteioSemana={sorteioSemana}
+            isAdmin={isAdmin}
           />
         )}
 
