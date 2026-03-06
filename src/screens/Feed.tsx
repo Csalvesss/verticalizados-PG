@@ -97,47 +97,97 @@ export function FeedScreen({
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#000' }}>
-      {/* Header */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #2f3336', display: 'flex', alignItems: 'center' }}>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      background: '#000',
+      width: '100%',
+    }}>
+      {/* Sticky Header with Back Button and Tabs */}
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: 'rgba(0,0,0,0.85)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #2f3336',
+        display: 'flex',
+        alignItems: 'center'
+      }}>
         <button
           onClick={() => goTo('home')}
-          style={{ padding: '12px 16px', color: '#F07830' }}
-          className="back-icon-hover"
+          className="header-back-btn"
+          style={{
+            padding: '12px 16px',
+            color: '#F07830',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: '0.2s',
+            marginLeft: 4
+          }}
         >
           {Ico.back()}
         </button>
 
-        <div
-          onClick={() => setTab('para-voce')}
-          style={{ flex: 1, padding: '16px', textAlign: 'center', cursor: 'pointer', position: 'relative', fontWeight: tab === 'para-voce' ? 700 : 500, color: tab === 'para-voce' ? '#fff' : '#71767b' }}
-        >
-          Para você
-          {tab === 'para-voce' && (
-            <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 56, height: 4, background: '#F07830', borderRadius: 99 }} />
-          )}
+        <div style={{ flex: 1, display: 'flex' }}>
+          <div
+            onClick={() => setTab('para-voce')}
+            style={{
+              flex: 1,
+              padding: '16px 0',
+              textAlign: 'center',
+              cursor: 'pointer',
+              position: 'relative',
+              fontWeight: tab === 'para-voce' ? 700 : 500,
+              color: tab === 'para-voce' ? '#fff' : '#71767b',
+              fontSize: 15,
+              fontFamily: 'Barlow, sans-serif'
+            }}
+          >
+            Para você
+            {tab === 'para-voce' && (
+              <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 56, height: 4, background: '#F07830', borderRadius: 99 }} />
+            )}
+          </div>
+          <div
+            onClick={() => setTab('seguindo')}
+            style={{
+              flex: 1,
+              padding: '16px 0',
+              textAlign: 'center',
+              cursor: 'pointer',
+              position: 'relative',
+              fontWeight: tab === 'seguindo' ? 700 : 500,
+              color: tab === 'seguindo' ? '#fff' : '#71767b',
+              fontSize: 15,
+              fontFamily: 'Barlow, sans-serif'
+            }}
+          >
+            Seguindo
+            {tab === 'seguindo' && (
+              <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 56, height: 4, background: '#F07830', borderRadius: 99 }} />
+            )}
+          </div>
         </div>
-        <div
-          onClick={() => setTab('seguindo')}
-          style={{ flex: 1, padding: '16px', textAlign: 'center', cursor: 'pointer', position: 'relative', fontWeight: tab === 'seguindo' ? 700 : 500, color: tab === 'seguindo' ? '#fff' : '#71767b' }}
-        >
-          Seguindo
-          {tab === 'seguindo' && (
-            <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 56, height: 4, background: '#F07830', borderRadius: 99 }} />
-          )}
-        </div>
+        <div style={{ width: 44 }} /> {/* Spacer for balance */}
       </div>
 
-      {/* Timeline */}
+      {/* Main Content Area */}
       <div style={{ flex: 1 }}>
         <Composer userPhoto={currentUser.photo} onPost={postar} />
 
-        {loading && <div style={s.empty}>Carregando...</div>}
+        {loading && <div style={{ ...s.empty, padding: 40 }}>Carregando...</div>}
         {!loading && posts.length === 0 && (
-          <div style={s.empty}>Nenhum post ainda. Seja o primeiro 🙌</div>
+          <div style={{ ...s.empty, padding: 40 }}>Nenhum post ainda. Seja o primeiro 🙌</div>
         )}
 
-        <div className="timeline-content">
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {posts.map((post) => (
             <div key={post.id}>
               <PostCard
@@ -151,7 +201,7 @@ export function FeedScreen({
               />
 
               {commentingOn === post.id && (
-                <div style={{ padding: '0 16px 16px 68px', borderBottom: '1px solid #2f3336' }}>
+                <div style={{ borderBottom: '1px solid #2f3336', background: 'rgba(255,255,255,0.02)' }}>
                   <Composer
                     userPhoto={currentUser.photo}
                     placeholder="Poste sua resposta"
@@ -169,31 +219,94 @@ export function FeedScreen({
       {/* Repost Modal */}
       {repostingOn && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(91, 112, 131, 0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(91, 112, 131, 0.4)',
+            zIndex: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16
+          }}
           onClick={() => setRepostingOn(null)}
         >
           <div
-            style={{ background: '#000', borderRadius: 16, width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto' }}
+            style={{
+              background: '#000',
+              borderRadius: 16,
+              width: '100%',
+              maxWidth: 600,
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 0 15px rgba(255,255,255,0.1)'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Modal Header */}
             <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2f3336' }}>
-              <button onClick={() => setRepostingOn(null)} style={{ color: '#fff', fontSize: 24, padding: '0 8px' }}>×</button>
-              <div style={{ flex: 1, textAlign: 'center', fontWeight: 700, color: '#fff', fontSize: 16 }}>Repostar</div>
+              <button
+                onClick={() => setRepostingOn(null)}
+                style={{
+                  color: '#fff',
+                  fontSize: 24,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0 8px'
+                }}
+              >
+                ×
+              </button>
+              <div style={{ flex: 1, textAlign: 'center', fontWeight: 700, color: '#fff', fontSize: 16, fontFamily: 'Barlow, sans-serif' }}>
+                Repostar
+              </div>
               <div style={{ width: 40 }} />
             </div>
 
-            <Composer
-              userPhoto={currentUser.photo}
-              placeholder="Adicione um comentário..."
-              submitLabel="Repostar"
-              autoFocus
-              onPost={(t) => repostar(repostingOn, t)}
-            />
+            {/* Modal Body (Scrollable) */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <Composer
+                userPhoto={currentUser.photo}
+                placeholder="Adicione um comentário..."
+                submitLabel="Repostar"
+                autoFocus
+                onPost={(t) => repostar(repostingOn, t)}
+              />
 
-            <div style={{ padding: 16 }}>
-              <div style={{ border: '1px solid #2f3336', borderRadius: 16, padding: 12 }}>
-                <div style={{ fontWeight: 700, color: '#fff', marginBottom: 4 }}>{repostingOn.user}</div>
-                <div style={{ color: '#e7e9ea', fontSize: 14 }}>{repostingOn.text}</div>
+              {/* Original Post Preview inside Modal */}
+              <div style={{ padding: 16 }}>
+                <div style={{
+                  border: '1px solid #2f3336',
+                  borderRadius: 16,
+                  padding: 12,
+                  background: 'rgba(255,255,255,0.02)'
+                }}>
+                  <div style={{
+                    fontWeight: 700,
+                    color: '#fff',
+                    marginBottom: 4,
+                    fontSize: 14,
+                    fontFamily: 'Barlow, sans-serif'
+                  }}>
+                    {repostingOn.user}
+                  </div>
+                  <div style={{
+                    color: '#e7e9ea',
+                    fontSize: 14,
+                    lineHeight: 1.4,
+                    fontFamily: 'Barlow, sans-serif'
+                  }}>
+                    {repostingOn.text}
+                  </div>
+                  {repostingOn.imageUrl && (
+                    <div style={{ marginTop: 8, borderRadius: 12, overflow: 'hidden', border: '1px solid #2f3336' }}>
+                      <img src={repostingOn.imageUrl} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -201,9 +314,8 @@ export function FeedScreen({
       )}
 
       <style>{`
-        .back-icon-hover:hover {
-          background: rgba(240, 120, 48, 0.1);
-          border-radius: 50%;
+        .header-back-btn:hover {
+          background: rgba(240, 120, 48, 0.1) !important;
         }
       `}</style>
     </div>
