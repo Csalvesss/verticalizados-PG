@@ -107,79 +107,82 @@ export function FeedScreen({
       background: '#000',
       width: '100%',
     }}>
-      {/* Sticky header */}
+      {/* ── Sticky header ───────────────────────────────────── */}
       <div style={{
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        background: 'rgba(0,0,0,0.85)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #2f3336',
-        display: 'flex',
-        alignItems: 'center',
+        background: 'rgba(0,0,0,0.9)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid #1e1e1e',
       }}>
-        <button
-          onClick={() => goTo('home')}
-          className="header-back-btn"
-          style={{
-            padding: '12px 16px',
-            color: '#F07830',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: '0.2s',
-            marginLeft: 4,
-          }}
-        >
-          {Ico.back()}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <button
+            onClick={() => goTo('home')}
+            className="feed-back-btn"
+            style={{
+              padding: '10px 14px',
+              color: '#F07830',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginLeft: 4,
+            }}
+          >
+            {Ico.back()}
+          </button>
 
-        <div style={{ flex: 1, display: 'flex' }}>
-          {(['para-voce', 'seguindo'] as const).map((t) => (
-            <div
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                flex: 1,
-                padding: '16px 0',
-                textAlign: 'center',
-                cursor: 'pointer',
-                position: 'relative',
-                fontWeight: tab === t ? 700 : 500,
-                color: tab === t ? '#fff' : '#71767b',
-                fontSize: 15,
-                fontFamily: 'Barlow, sans-serif',
-              }}
-            >
-              {t === 'para-voce' ? 'Para você' : 'Seguindo'}
-              {tab === t && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: 56,
-                  height: 4,
-                  background: '#F07830',
-                  borderRadius: 99,
-                }} />
-              )}
-            </div>
-          ))}
+          <div style={{ flex: 1, display: 'flex' }}>
+            {(['para-voce', 'seguindo'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                style={{
+                  flex: 1,
+                  padding: '14px 0',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  fontWeight: tab === t ? 700 : 400,
+                  color: tab === t ? '#e7e9ea' : '#555',
+                  fontSize: 15,
+                  fontFamily: 'Barlow, sans-serif',
+                  background: 'transparent',
+                  border: 'none',
+                  transition: 'color 0.15s',
+                }}
+              >
+                {t === 'para-voce' ? 'Para você' : 'Seguindo'}
+                {tab === t && (
+                  <span style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 52,
+                    height: 3,
+                    background: '#F07830',
+                    borderRadius: 99,
+                    display: 'block',
+                  }} />
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ width: 44 }} />
         </div>
-
-        <div style={{ width: 44 }} />
       </div>
 
-      {/* Composer */}
+      {/* ── Composer ──────────────────────────────────────── */}
       <Composer userPhoto={currentUser.photo} onPost={postar} />
 
-      {/* Timeline */}
+      {/* ── Timeline ──────────────────────────────────────── */}
       <Timeline
         posts={posts}
         loading={loading}
@@ -194,71 +197,71 @@ export function FeedScreen({
         onSubmitComment={comentar}
       />
 
-      {/* Repost modal */}
+      {/* ── Repost modal ──────────────────────────────────── */}
       {repostingOn && (
         <div
+          onClick={() => setRepostingOn(null)}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(91, 112, 131, 0.4)',
+            background: 'rgba(0,0,0,0.65)',
             zIndex: 200,
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-end',
             justifyContent: 'center',
-            padding: 16,
           }}
-          onClick={() => setRepostingOn(null)}
         >
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#000',
-              borderRadius: 16,
+              background: '#0d0d0d',
+              borderRadius: '20px 20px 0 0',
               width: '100%',
               maxWidth: 600,
-              maxHeight: '90vh',
+              maxHeight: '88vh',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 0 24px rgba(255,255,255,0.08)',
               border: '1px solid #2f3336',
+              borderBottom: 'none',
             }}
-            onClick={(e) => e.stopPropagation()}
           >
             {/* Modal header */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              padding: '12px 16px',
-              borderBottom: '1px solid #2f3336',
+              padding: '14px 16px 12px',
+              borderBottom: '1px solid #1e1e1e',
             }}>
               <button
                 onClick={() => setRepostingOn(null)}
                 style={{
-                  color: '#fff',
-                  fontSize: 24,
+                  color: '#888',
+                  fontSize: 22,
                   background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '0 8px',
                   lineHeight: 1,
+                  padding: '0 4px',
                 }}
               >
                 ×
               </button>
-              <div style={{
+              <span style={{
                 flex: 1,
                 textAlign: 'center',
                 fontWeight: 700,
-                color: '#fff',
+                color: '#e7e9ea',
                 fontSize: 16,
                 fontFamily: 'Barlow, sans-serif',
+                letterSpacing: 0.2,
               }}>
                 Repostar
-              </div>
-              <div style={{ width: 40 }} />
+              </span>
+              <div style={{ width: 28 }} />
             </div>
 
-            {/* Modal body */}
+            {/* Scrollable body */}
             <div style={{ overflowY: 'auto', flex: 1 }}>
               <Composer
                 userPhoto={currentUser.photo}
@@ -270,16 +273,16 @@ export function FeedScreen({
               />
 
               {/* Original post preview */}
-              <div style={{ padding: '0 16px 16px' }}>
+              <div style={{ padding: '0 16px 20px' }}>
                 <div style={{
                   border: '1px solid #2f3336',
                   borderRadius: 16,
-                  padding: 12,
+                  padding: '12px 14px',
                   background: 'rgba(255,255,255,0.02)',
                 }}>
                   <div style={{
                     fontWeight: 700,
-                    color: '#fff',
+                    color: '#e7e9ea',
                     marginBottom: 6,
                     fontSize: 14,
                     fontFamily: 'Barlow, sans-serif',
@@ -288,7 +291,7 @@ export function FeedScreen({
                   </div>
                   {repostingOn.text && (
                     <div style={{
-                      color: '#e7e9ea',
+                      color: '#ccc',
                       fontSize: 14,
                       lineHeight: 1.5,
                       fontFamily: 'Barlow, sans-serif',
@@ -300,15 +303,11 @@ export function FeedScreen({
                     </div>
                   )}
                   {repostingOn.imageUrl && (
-                    <div style={{
-                      borderRadius: 12,
-                      overflow: 'hidden',
-                      border: '1px solid #2f3336',
-                    }}>
+                    <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #2f3336' }}>
                       <img
                         src={repostingOn.imageUrl}
                         alt=""
-                        style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }}
+                        style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block' }}
                       />
                     </div>
                   )}
@@ -320,7 +319,7 @@ export function FeedScreen({
       )}
 
       <style>{`
-        .header-back-btn:hover {
+        .feed-back-btn:hover {
           background: rgba(240, 120, 48, 0.1) !important;
         }
       `}</style>

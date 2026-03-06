@@ -8,7 +8,7 @@ interface Props {
   onPost: (text: string, img: string | null) => Promise<void>;
   submitLabel?: string;
   autoFocus?: boolean;
-  allowEmpty?: boolean; // Allow posting with empty text (e.g. repost with no commentary)
+  allowEmpty?: boolean;
 }
 
 export function Composer({
@@ -32,7 +32,9 @@ export function Composer({
     }
   }, [text]);
 
-  const canPost = allowEmpty ? !loading : (!loading && (!!text.trim() || !!img));
+  const hasContent = !!(text.trim() || img);
+  const canPost = allowEmpty ? !loading : (!loading && hasContent);
+  const isActive = allowEmpty ? true : hasContent;
 
   const handlePost = async () => {
     if (!canPost) return;
@@ -59,11 +61,19 @@ export function Composer({
     e.target.value = '';
   };
 
-  const isActive = allowEmpty ? true : !!(text.trim() || img);
+  const over280 = text.length > 280;
+  const near280 = text.length > 240 && !over280;
 
   return (
-    <div style={{ display: 'flex', gap: 12, padding: '16px', borderBottom: '1px solid #2f3336' }}>
+    <div style={{
+      display: 'flex',
+      gap: 12,
+      padding: '14px 16px',
+      borderBottom: '1px solid #2f3336',
+      background: '#000',
+    }}>
       <Avatar src={userPhoto} size={40} />
+
       <div style={{ flex: 1, minWidth: 0 }}>
         <textarea
           ref={textareaRef}
@@ -77,19 +87,20 @@ export function Composer({
             background: 'transparent',
             border: 'none',
             outline: 'none',
-            color: '#fff',
-            fontSize: 18,
+            color: '#e7e9ea',
+            fontSize: 17,
             fontFamily: 'Barlow, sans-serif',
             resize: 'none',
-            padding: '4px 0',
-            lineHeight: 1.4,
+            padding: '6px 0',
+            lineHeight: 1.45,
+            minHeight: 42,
           }}
         />
 
         {img && (
           <div style={{
             position: 'relative',
-            marginTop: 12,
+            marginTop: 10,
             borderRadius: 16,
             overflow: 'hidden',
             border: '1px solid #2f3336',
@@ -105,17 +116,18 @@ export function Composer({
                 position: 'absolute',
                 top: 8,
                 right: 8,
-                width: 32,
-                height: 32,
+                width: 30,
+                height: 30,
                 borderRadius: '50%',
-                background: 'rgba(15, 20, 25, 0.75)',
+                background: 'rgba(15,20,25,0.8)',
                 color: '#fff',
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 20,
+                fontSize: 18,
+                fontWeight: 700,
               }}
             >
               ×
@@ -127,9 +139,9 @@ export function Composer({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginTop: 12,
-          paddingTop: 12,
-          borderTop: '1px solid #2f3336',
+          marginTop: 10,
+          paddingTop: 10,
+          borderTop: '1px solid #1e1e1e',
         }}>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -145,6 +157,7 @@ export function Composer({
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
+              transition: 'background 0.15s',
             }}
           >
             {Ico.image()}
@@ -159,7 +172,12 @@ export function Composer({
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {text.length > 0 && (
-              <span style={{ fontSize: 12, color: text.length > 280 ? '#f4212e' : '#71767b' }}>
+              <span style={{
+                fontSize: 12,
+                color: over280 ? '#f4212e' : near280 ? '#FFD700' : '#555',
+                fontFamily: 'Barlow, sans-serif',
+                transition: 'color 0.2s',
+              }}>
                 {text.length}/280
               </span>
             )}
@@ -168,15 +186,17 @@ export function Composer({
               disabled={!canPost}
               style={{
                 background: isActive ? '#F07830' : '#1a1a1a',
-                color: isActive ? '#fff' : '#71767b',
-                padding: '8px 16px',
+                color: isActive ? '#fff' : '#444',
+                padding: '7px 18px',
                 borderRadius: 999,
                 fontWeight: 700,
                 fontSize: 14,
+                fontFamily: 'Barlow, sans-serif',
                 border: 'none',
                 cursor: canPost ? 'pointer' : 'default',
-                opacity: loading ? 0.6 : 1,
-                transition: '0.2s',
+                opacity: loading ? 0.5 : 1,
+                transition: 'all 0.2s',
+                letterSpacing: 0.2,
               }}
             >
               {loading ? '...' : submitLabel}
@@ -184,9 +204,13 @@ export function Composer({
           </div>
         </div>
       </div>
+
       <style>{`
         .composer-icon-btn:hover {
-          background: rgba(240, 120, 48, 0.1);
+          background: rgba(240, 120, 48, 0.12) !important;
+        }
+        textarea::placeholder {
+          color: #444;
         }
       `}</style>
     </div>
