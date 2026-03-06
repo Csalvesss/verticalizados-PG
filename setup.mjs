@@ -1,9 +1,385 @@
 import { writeFileSync, mkdirSync } from 'fs';
-
 mkdirSync('src/screens', { recursive: true });
 mkdirSync('src/components', { recursive: true });
 
 const files = {};
+
+files['src/icons.tsx'] = `export const Ico = {
+  home: (c='#888') => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  music: (c='#888') => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+  guitar: (c='#888') => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 8L3.5 15.5A2.5 2.5 0 0 0 7 19l7.5-7.5"/><path d="M14 6l1.5-1.5a2 2 0 0 1 2.83 0l.17.17a2 2 0 0 1 0 2.83L17 9"/><line x1="9" y1="15" x2="12" y2="12"/></svg>,
+  pray: (c='#888') => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  feed: (c='#888') => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  event: (c='#888') => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  heart: (f) => <svg width="18" height="18" viewBox="0 0 24 24" fill={f?'#F07830':'none'} stroke={f?'#F07830':'#888'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+  comment: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  repost: (c='#888') => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>,
+  check: (c='#fff') => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  chevron: (open) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F07830" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{transform:open?'rotate(90deg)':'none',transition:'transform 0.3s'}}><polyline points="9 18 15 12 9 6"/></svg>,
+  back: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F07830" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
+  image: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
+  edit: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  admin: (c='#888') => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  logout: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  plus: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+};
+`;
+
+files['src/components/BottomNav.tsx'] = `import { Ico } from '../icons';
+import { s } from '../styles';
+import type { Screen } from '../types';
+const NAV = [{id:'home' as Screen,label:'Início',icon:Ico.home},{id:'musicas' as Screen,label:'Músicas',icon:Ico.music},{id:'cifras' as Screen,label:'Cifras',icon:Ico.guitar},{id:'oracao' as Screen,label:'Oração',icon:Ico.pray},{id:'feed' as Screen,label:'Feed',icon:Ico.feed},{id:'eventos' as Screen,label:'Eventos',icon:Ico.event}];
+export function BottomNav({screen,goTo}:{screen:Screen;goTo:(sc:Screen)=>void}) {
+  return <div style={s.bottomNav}>{NAV.map(item=>{const active=screen===item.id;return <button key={item.id} onClick={()=>goTo(item.id)} style={{...s.navBtn,background:active?'rgba(240,120,48,0.12)':'transparent'}}>{item.icon(active?'#F07830':'#555')}<span style={{fontFamily:'Barlow Condensed',fontSize:9,fontWeight:700,letterSpacing:0.5,color:active?'#F07830':'#555'}}>{item.label}</span></button>;})}</div>;
+}
+`;
+
+files['src/components/LoginScreen.tsx'] = `import { useState } from 'react';
+import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+const auth = getAuth(); const provider = new GoogleAuthProvider();
+export function LoginScreen() {
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState('');
+  const entrar = async () => { setLoading(true); setErro(''); try { await signInWithPopup(auth,provider); } catch { setErro('Não foi possível entrar.'); setLoading(false); } };
+  return <div style={{background:'#1A1A1A',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24}}>
+    <style>{\`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@700&family=Barlow:wght@400;600&display=swap');*{box-sizing:border-box;margin:0;padding:0;}\`}</style>
+    <div style={{marginBottom:32,textAlign:'center'}}><div style={{width:80,height:80,background:'#F07830',borderRadius:20,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',boxShadow:'0 8px 32px rgba(240,120,48,0.4)'}}><svg width="44" height="48" viewBox="0 0 48 52" fill="none"><rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5"/><rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5"/><rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff"/><rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff"/></svg></div>
+    <div style={{fontFamily:'Bebas Neue',fontSize:36,color:'#fff',letterSpacing:4}}>VERTICALIZADOS</div>
+    <div style={{fontFamily:'Barlow Condensed',fontSize:11,fontWeight:700,letterSpacing:4,color:'rgba(255,255,255,0.3)',marginTop:4}}>MJA ESPLANADA</div></div>
+    <div style={{background:'#FFF8F0',borderRadius:24,padding:28,width:'100%',maxWidth:360}}>
+      <div style={{fontFamily:'Bebas Neue',fontSize:22,color:'#1A1A1A',letterSpacing:2,marginBottom:6}}>BEM-VINDO(A)!</div>
+      <div style={{fontFamily:'Barlow',fontSize:13,color:'#888',marginBottom:24}}>Entre com sua conta Google para acessar o PG.</div>
+      <button onClick={entrar} disabled={loading} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'14px 20px',borderRadius:50,background:loading?'#ccc':'#1A1A1A',color:'#fff',border:'none',cursor:'pointer',fontFamily:'Barlow Condensed',fontWeight:700,fontSize:15,letterSpacing:1}}>
+        {!loading&&<svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>}
+        {loading?'Entrando...':'Entrar com Google'}
+      </button>
+      {erro&&<div style={{fontFamily:'Barlow',fontSize:12,color:'#e53935',textAlign:'center',marginTop:12}}>{erro}</div>}
+    </div></div>;
+}
+`;
+
+files['src/screens/Home.tsx'] = `import { Ico } from '../icons';
+import { s } from '../styles';
+import type { Screen, CurrentUser, Evento } from '../types';
+interface Props { currentUser:CurrentUser; isAdmin:boolean; goTo:(sc:Screen)=>void; songsCount:number; postsCount:number; confirmacoesCount:number; proximoEvento:Evento|null; }
+export function HomeScreen({currentUser,isAdmin,goTo,songsCount,postsCount,confirmacoesCount,proximoEvento}:Props) {
+  return <div className="fade">
+    <div style={s.instaHeader}>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={s.logoBox}><svg width="26" height="30" viewBox="0 0 48 52" fill="none"><rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5"/><rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5"/><rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff"/><rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff"/><path d="M26 42 L30 42 L30 50 L28 47 L26 50 Z" fill="#fff"/></svg></div>
+        <span style={{fontFamily:'Bebas Neue',fontSize:22,color:'#fff',letterSpacing:2}}>VERTICALIZADOS</span>
+      </div>
+      <div style={{display:'flex',gap:10,alignItems:'center'}}>
+        {isAdmin&&<button onClick={()=>goTo('admin')} style={s.iconBtn}>{Ico.admin('#F07830')}</button>}
+        <img src={currentUser.photo} style={s.avatarSmall} onClick={()=>goTo('perfil')} alt=""/>
+      </div>
+    </div>
+    <div style={s.welcomeBox}>
+      <span style={{fontSize:11,color:'#F07830',fontFamily:'Barlow Condensed',fontWeight:700,letterSpacing:2}}>BOA VINDA, {currentUser.name.toUpperCase()}! 👋</span>
+      <span style={{fontSize:13,color:'rgba(255,255,255,0.5)',fontFamily:'Barlow',marginTop:2,display:'block'}}>O que vamos explorar hoje?</span>
+    </div>
+    <div style={s.grid}>
+      {[{icon:Ico.music,label:'Músicas',sub:songsCount+' músicas',sc:'musicas',color:'#F07830'},{icon:Ico.guitar,label:'Cifras',sub:'Para violonistas',sc:'cifras',color:'#D4621A'},{icon:Ico.pray,label:'Oração',sub:'Sorteio semanal',sc:'oracao',color:'#F07830'},{icon:Ico.feed,label:'Feed',sub:postsCount+' posts',sc:'feed',color:'#D4621A'},{icon:Ico.event,label:'Eventos',sub:confirmacoesCount+' confirmados',sc:'eventos',color:'#F07830'}].map(item=>(
+        <div key={item.sc} style={s.gridCard} onClick={()=>goTo(item.sc as Screen)}>
+          <div style={{width:40,height:40,background:item.color+'18',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:10}}>{item.icon(item.color)}</div>
+          <div style={{fontFamily:'Bebas Neue',fontSize:18,color:'#1A1A1A',letterSpacing:1}}>{item.label}</div>
+          <div style={{fontFamily:'Barlow',fontSize:11,color:'#aaa',marginTop:2}}>{item.sub}</div>
+        </div>
+      ))}
+    </div>
+    {proximoEvento&&<div style={s.nextEvent}><div style={{fontFamily:'Barlow Condensed',fontSize:10,fontWeight:700,letterSpacing:3,color:'#F07830',marginBottom:4}}>PRÓXIMO ENCONTRO</div><div style={{fontFamily:'Bebas Neue',fontSize:22,color:'#fff',letterSpacing:1}}>{proximoEvento.tema}</div><div style={{fontFamily:'Barlow',fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>{proximoEvento.data} · {proximoEvento.hora}</div></div>}
+  </div>;
+}
+`;
+
+files['src/screens/Musicas.tsx'] = `import { useState } from 'react';
+import { Ico } from '../icons';
+import { s } from '../styles';
+import type { Song, Screen } from '../types';
+export function MusicasScreen({songs,goTo}:{songs:Song[];goTo:(sc:Screen)=>void}) {
+  const [open,setOpen] = useState<string|null>(null);
+  return <div className="fade" style={s.page}>
+    <div style={s.pageHeader}><button style={s.backBtn} onClick={()=>goTo('home')}>{Ico.back()}</button><div style={s.pageTitle}>MÚSICAS DA SEMANA</div></div>
+    {songs.length===0&&<div style={s.empty}>Nenhuma música cadastrada ainda.</div>}
+    {songs.map((song,idx)=>{const isOpen=open===song.id;return <div key={song.id} style={s.card}>
+      <div style={s.cardTop} onClick={()=>setOpen(isOpen?null:song.id)}>
+        <div style={s.cardNum}><span style={{fontFamily:'Bebas Neue',fontSize:34,color:'#fff',opacity:0.5}}>{idx+1}</span></div>
+        <div style={{flex:1,padding:'14px 12px'}}><div style={s.cardTag}>MÚSICA</div><div style={s.cardTitle}>{song.title}</div><div style={s.cardHint}>{isOpen?'Toque para fechar':'Toque para ver a letra'}</div></div>
+        {Ico.chevron(isOpen)}<div style={{width:14}}/>
+      </div>
+      {isOpen&&<div style={{borderTop:'1px dashed rgba(240,120,48,0.25)',padding:'16px 16px 4px'}}>
+        {(song.sections||[]).map((sec,i)=><div key={i} style={{marginBottom:16,...(sec.type==='chorus'?{background:'#F07830',borderRadius:12,padding:'12px 14px'}:{}),...(sec.type==='bridge'?{borderLeft:'4px solid #F07830',paddingLeft:12}:{})}}>
+          <div style={{fontFamily:'Barlow Condensed',fontSize:9,fontWeight:700,letterSpacing:3,textTransform:'uppercase' as const,marginBottom:5,color:sec.type==='chorus'?'rgba(0,0,0,0.4)':'#D4621A'}}>{sec.label}</div>
+          {sec.lines.map((line,j)=><div key={j} style={{fontFamily:'Barlow',fontSize:13.5,lineHeight:1.85,fontWeight:sec.type==='chorus'?700:500,color:sec.type==='chorus'?'#1A1A1A':'#333'}}>{line||'\\u00A0'}</div>)}
+        </div>)}
+      </div>}
+      <div style={{background:'#1A1A1A',padding:'10px 14px',display:'flex',gap:10}}>
+        {song.spotify&&<a href={song.spotify} target="_blank" rel="noreferrer" style={s.btnSpotify}><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>Spotify</a>}
+        {song.youtube&&<a href={song.youtube} target="_blank" rel="noreferrer" style={s.btnYoutube}><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>YouTube</a>}
+      </div>
+    </div>;})}
+  </div>;
+}
+`;
+
+files['src/screens/Cifras.tsx'] = `import { useState } from 'react';
+import { Ico } from '../icons';
+import { s } from '../styles';
+import type { Cifra, Screen } from '../types';
+export function CifrasScreen({cifras,goTo}:{cifras:Cifra[];goTo:(sc:Screen)=>void}) {
+  const [open,setOpen] = useState<string|null>(null);
+  return <div className="fade" style={s.page}>
+    <div style={s.pageHeader}><button style={s.backBtn} onClick={()=>goTo('home')}>{Ico.back()}</button><div style={s.pageTitle}>CIFRAS</div></div>
+    {cifras.length===0&&<div style={s.empty}>Nenhuma cifra cadastrada ainda.</div>}
+    {cifras.map((c,idx)=>{const isOpen=open===c.id;return <div key={c.id} style={{...s.card,overflow:isOpen?'visible':'hidden'}}>
+      <div style={s.cardTop} onClick={()=>setOpen(isOpen?null:c.id)}>
+        <div style={s.cardNum}><span style={{fontFamily:'Bebas Neue',fontSize:34,color:'#fff',opacity:0.5}}>{idx+1}</span></div>
+        <div style={{flex:1,padding:'14px 12px'}}><div style={s.cardTag}>TOM: {c.tom}</div><div style={s.cardTitle}>{c.title}</div><div style={s.cardHint}>{isOpen?'Toque para fechar':'Toque para ver a cifra'}</div></div>
+        {Ico.chevron(isOpen)}<div style={{width:14}}/>
+      </div>
+      {isOpen&&<div style={{borderTop:'1px dashed rgba(240,120,48,0.25)',padding:'16px',overflowX:'auto'}}><pre style={{fontFamily:'"Courier New",monospace',fontSize:12.5,color:'#1A1A1A',lineHeight:1.9,whiteSpace:'pre',display:'block'}}>{c.cifra}</pre></div>}
+    </div>;})}
+  </div>;
+}
+`;
+
+files['src/screens/Oracao.tsx'] = `import { useState } from 'react';
+import { doc, setDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
+import { db } from '../firebase';
+import { Ico } from '../icons';
+import { s } from '../styles';
+import { getWeekKey } from '../constants';
+import type { Screen, Sorteio } from '../types';
+interface Props { goTo:(sc:Screen)=>void; currentUserName:string; membrosLista:string[]; sorteioSemana:Sorteio|null; isAdmin:boolean; }
+export function OracaoScreen({goTo,currentUserName,membrosLista,sorteioSemana,isAdmin}:Props) {
+  const [sorteando,setSorteando] = useState(false);
+  const sorteadoAtual = sorteioSemana?.sorteado||null;
+  const jaOrou = sorteioSemana?.historico||[];
+  const disponiveis = membrosLista.filter(m=>m!==currentUserName&&!jaOrou.includes(m));
+  const sortear = async () => {
+    if(!disponiveis.length) return; setSorteando(true); let count=0; const pool=[...disponiveis];
+    const iv = setInterval(async()=>{ count++; if(count>18){ clearInterval(iv); const escolhido=pool[Math.floor(Math.random()*pool.length)]; await setDoc(doc(db,'sorteios',getWeekKey()),{sorteado:escolhido,historico:arrayUnion(escolhido),semana:getWeekKey()},{merge:true}); setSorteando(false); }},90);
+  };
+  const resetar = async () => { if(!window.confirm('Resetar o sorteio desta semana?')) return; await deleteDoc(doc(db,'sorteios',getWeekKey())); };
+  return <div className="fade" style={s.page}>
+    <div style={{...s.pageHeader,justifyContent:'space-between'}}>
+      <div style={{display:'flex',alignItems:'center',gap:10}}><button style={s.backBtn} onClick={()=>goTo('home')}>{Ico.back()}</button><div style={s.pageTitle}>ORAÇÃO DA SEMANA</div></div>
+      {isAdmin&&<button onClick={resetar} style={{background:'rgba(229,57,53,0.1)',border:'1px solid rgba(229,57,53,0.3)',borderRadius:50,padding:'6px 14px',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontFamily:'Barlow Condensed',fontWeight:700,fontSize:11,letterSpacing:1,color:'#e53935'}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>RESETAR</button>}
+    </div>
+    <div style={{...s.card,padding:22,marginBottom:14}}>
+      <div style={{fontFamily:'Barlow Condensed',fontSize:10,fontWeight:700,letterSpacing:3,color:'#D4621A',marginBottom:12,textAlign:'center' as const}}>ESTA SEMANA VOCÊ ORA POR</div>
+      <div style={{background:'#1A1A1A',borderRadius:16,padding:'24px 16px',marginBottom:18,minHeight:90,display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center'}}>
+        {sorteadoAtual?<><div style={{fontFamily:'Bebas Neue',fontSize:48,color:'#F07830',letterSpacing:3}}>{sorteadoAtual}</div><div style={{fontFamily:'Barlow',fontSize:12,color:'rgba(255,255,255,0.5)',marginTop:6}}>Interceda por {sorteadoAtual} esta semana 🙏</div></>:<div style={{fontFamily:'Barlow',fontSize:13,color:'rgba(255,255,255,0.3)'}}>{sorteando?'Sorteando...':'Nenhum sorteio ainda'}</div>}
+      </div>
+      {!sorteadoAtual&&disponiveis.length>0&&<button onClick={sortear} disabled={sorteando} style={{...s.btnOrange,width:'100%',justifyContent:'center',gap:8}}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="8" cy="8" r="1.5" fill="#fff"/><circle cx="16" cy="8" r="1.5" fill="#fff"/><circle cx="8" cy="16" r="1.5" fill="#fff"/><circle cx="16" cy="16" r="1.5" fill="#fff"/><circle cx="12" cy="12" r="1.5" fill="#fff"/></svg>{sorteando?'Sorteando...':'Sortear membro para orar'}</button>}
+      {sorteadoAtual&&<div style={{background:'rgba(240,120,48,0.1)',borderRadius:10,padding:'10px 14px',textAlign:'center' as const}}><div style={{fontFamily:'Barlow',fontSize:12,color:'#1A1A1A',lineHeight:1.6}}>Ore por <strong style={{color:'#D4621A'}}>{sorteadoAtual}</strong> durante a semana!</div></div>}
+    </div>
+    <div style={{...s.card,padding:16}}>
+      <div style={s.cardTag}>MEMBROS DO PG</div>
+      <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,marginTop:10}}>
+        {membrosLista.filter(m=>m!==currentUserName).map(m=><div key={m} style={{fontFamily:'Barlow',fontSize:12,padding:'5px 14px',borderRadius:50,fontWeight:600,background:m===sorteadoAtual?'#F07830':jaOrou.includes(m)?'#e8e8e8':'#f5f5f5',color:m===sorteadoAtual?'#fff':jaOrou.includes(m)?'#bbb':'#555',textDecoration:jaOrou.includes(m)&&m!==sorteadoAtual?'line-through':'none'}}>{m}</div>)}
+      </div>
+      {jaOrou.length>0&&<div style={{fontFamily:'Barlow',fontSize:11,color:'#bbb',marginTop:10}}>Riscados = já foram sorteados anteriormente</div>}
+    </div>
+  </div>;
+}
+`;
+
+files['src/screens/Eventos.tsx'] = `import { useState } from 'react';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { Ico } from '../icons';
+import { s } from '../styles';
+import { LANCHES } from '../constants';
+import type { Evento, Confirmacao, CurrentUser, Screen } from '../types';
+interface Props { eventos:Evento[]; confirmacoes:Confirmacao[]; currentUser:CurrentUser; uid:string; goTo:(sc:Screen)=>void; }
+export function EventosScreen({eventos,confirmacoes,currentUser,uid,goTo}:Props) {
+  const [lanche,setLanche] = useState<string|null>(null);
+  const prox = eventos[0]||null;
+  const euConfirmei = confirmacoes.find(c=>c.userId===uid&&c.eventoId===prox?.id);
+  const lista = confirmacoes.filter(c=>c.eventoId===prox?.id);
+  const confirmar = async () => { if(!prox) return; await addDoc(collection(db,'confirmacoes'),{userId:uid,userName:currentUser.name,userPhoto:currentUser.photo,eventoId:prox.id,lanche,hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}); setLanche(null); };
+  return <div className="fade" style={s.page}>
+    <div style={s.pageHeader}><button style={s.backBtn} onClick={()=>goTo('home')}>{Ico.back()}</button><div style={s.pageTitle}>EVENTOS</div></div>
+    {!prox&&<div style={s.empty}>Nenhum evento cadastrado ainda.</div>}
+    {prox&&<>
+      <div style={{background:'#F07830',borderRadius:20,padding:22,marginBottom:14}}>
+        <div style={{fontFamily:'Barlow Condensed',fontSize:10,fontWeight:700,letterSpacing:3,color:'rgba(0,0,0,0.4)',marginBottom:6}}>PRÓXIMO ENCONTRO</div>
+        <div style={{fontFamily:'Bebas Neue',fontSize:26,color:'#1A1A1A',letterSpacing:1,lineHeight:1.1,marginBottom:10}}>{prox.tema}</div>
+        {[['📅',prox.data],['🕖',prox.hora],['📍',prox.local]].map(([icon,val])=>val?<div key={String(val)} style={{fontFamily:'Barlow',fontSize:13,color:'rgba(0,0,0,0.65)',display:'flex',gap:8,marginBottom:4}}><span>{icon}</span><span>{val}</span></div>:null)}
+      </div>
+      {!euConfirmei?<div style={{...s.card,padding:20,marginBottom:14}}>
+        <div style={s.cardTag}>CONFIRMAR PRESENÇA</div>
+        <div style={{fontFamily:'Barlow',fontSize:13,color:'#666',margin:'8px 0 16px',lineHeight:1.5}}>Você vai comparecer? Selecione o que pode levar. <span style={{color:'#bbb'}}>(opcional)</span></div>
+        <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,marginBottom:20}}>{LANCHES.map((l:string)=><button key={l} onClick={()=>setLanche(lanche===l?null:l)} style={{fontFamily:'Barlow',fontSize:13,padding:'7px 14px',borderRadius:50,cursor:'pointer',border:\`1.5px solid \${lanche===l?'#F07830':'#e0e0e0'}\`,background:lanche===l?'rgba(240,120,48,0.1)':'#fff',color:lanche===l?'#F07830':'#555',fontWeight:lanche===l?700:400}}>{l}</button>)}</div>
+        <button onClick={confirmar} style={{...s.btnOrange,width:'100%',justifyContent:'center',gap:8}}>{Ico.check()} Confirmar Presença</button>
+      </div>:<div style={{...s.card,padding:18,marginBottom:14,border:'2px solid #1DB954'}}>
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <div style={{width:40,height:40,background:'#1DB954',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{Ico.check()}</div>
+          <div><div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:15,color:'#1DB954'}}>PRESENÇA CONFIRMADA!</div><div style={{fontFamily:'Barlow',fontSize:12,color:'#888',marginTop:2}}>{euConfirmei.lanche?\`Você vai levar \${euConfirmei.lanche}\`:'Sem lanche selecionado'}</div></div>
+        </div>
+      </div>}
+      <div style={{...s.card,padding:16}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <div style={s.cardTag}>CONFIRMADOS</div>
+          <div style={{background:'#F07830',borderRadius:50,width:24,height:24,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Bebas Neue',fontSize:14,color:'#fff'}}>{lista.length}</div>
+        </div>
+        {lista.map((c,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:i<lista.length-1?'1px solid #f0f0f0':'none'}}><img src={c.userPhoto} style={{width:32,height:32,borderRadius:'50%'}} alt=""/><div><div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:14,color:'#1A1A1A'}}>{c.userName}{c.lanche?\` · \${c.lanche}\`:''}</div><div style={{fontFamily:'Barlow',fontSize:11,color:'#bbb'}}>Confirmado às {c.hora}</div></div></div>)}
+        {lista.length===0&&<div style={{fontFamily:'Barlow',fontSize:13,color:'#bbb'}}>Ninguém confirmou ainda.</div>}
+      </div>
+    </>}
+  </div>;
+}
+`;
+
+files['src/screens/Feed.tsx'] = `import { useState, useRef } from 'react';
+import { collection, addDoc, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
+import { Ico } from '../icons';
+import { s } from '../styles';
+import { tempoRelativo } from '../constants';
+import type { Post, CurrentUser, Screen } from '../types';
+interface Props { posts:Post[]; loading:boolean; currentUser:CurrentUser; isAdmin:boolean; uid:string; goTo:(sc:Screen)=>void; }
+export function FeedScreen({posts,loading,currentUser,isAdmin,uid,goTo}:Props) {
+  const [text,setText] = useState(''); const [img,setImg] = useState<string|null>(null);
+  const [commentingOn,setCommentingOn] = useState<string|null>(null); const [commentText,setCommentText] = useState('');
+  const [repostingOn,setRepostingOn] = useState<string|null>(null); const [repostText,setRepostText] = useState('');
+  const imgRef = useRef<HTMLInputElement>(null);
+  const postar = async () => { if(!text.trim()&&!img) return; const t=text,i=img; setText(''); setImg(null); await addDoc(collection(db,'posts'),{user:currentUser.name,userId:uid,photo:currentUser.photo,text:t,imageUrl:i||null,likes:[],comments:[],createdAt:serverTimestamp()}); };
+  const curtir = async (p:Post) => { await updateDoc(doc(db,'posts',p.id),{likes:p.likes?.includes(uid)?arrayRemove(uid):arrayUnion(uid)}); };
+  const comentar = async (id:string) => { if(!commentText.trim()) return; await updateDoc(doc(db,'posts',id),{comments:arrayUnion({user:currentUser.name,userId:uid,photo:currentUser.photo,text:commentText,time:new Date().toISOString()})}); setCommentText(''); setCommentingOn(null); };
+  const repostar = async (p:Post) => { await addDoc(collection(db,'posts'),{user:currentUser.name,userId:uid,photo:currentUser.photo,text:repostText,imageUrl:null,likes:[],comments:[],createdAt:serverTimestamp(),repostOf:{user:p.user,text:p.text}}); setRepostText(''); setRepostingOn(null); };
+  const deletar = async (id:string) => { await deleteDoc(doc(db,'posts',id)); };
+  const handleImg = (e:React.ChangeEvent<HTMLInputElement>) => { const f=e.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{if(ev.target?.result) setImg(ev.target.result as string);}; r.readAsDataURL(f); };
+  return <div className="fade">
+    <div style={s.instaHeader}><button style={s.backBtn} onClick={()=>goTo('home')}>{Ico.back()}</button><div style={s.pageTitle}>FEED DO PG</div><div style={{width:32}}/></div>
+    <div style={{background:'#FFF8F0',borderBottom:'1px solid #ede8e0',padding:'12px 14px'}}>
+      <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+        <img src={currentUser.photo} style={s.avatarFeed} alt=""/>
+        <div style={{flex:1,minWidth:0}}>
+          <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Compartilhe algo com o PG..." style={{...s.textarea,border:'none',background:'transparent',padding:'4px 0',fontSize:14,color:'#1A1A1A',textAlign:'left' as const,resize:'none',minHeight:40}} rows={2}/>
+          {img&&<div style={{position:'relative' as const,marginTop:8}}><img src={img} style={{width:'100%',borderRadius:12,maxHeight:180,objectFit:'cover' as const}} alt=""/><button onClick={()=>setImg(null)} style={{position:'absolute' as const,top:6,right:6,background:'rgba(0,0,0,0.5)',border:'none',borderRadius:'50%',width:24,height:24,color:'#fff',cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>×</button></div>}
+        </div>
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8,paddingTop:8,borderTop:'1px solid #ede8e0'}}>
+        <button onClick={()=>imgRef.current?.click()} style={{...s.iconBtn,gap:6,fontFamily:'Barlow',fontSize:12,color:'#aaa'}}>{Ico.image()} <span>Foto</span></button>
+        <input ref={imgRef} type="file" accept="image/*" onChange={handleImg} style={{display:'none'}}/>
+        <button onClick={postar} disabled={!text.trim()&&!img} style={{...s.btnOrange,padding:'8px 22px',fontSize:13,opacity:(!text.trim()&&!img)?0.5:1}}>Publicar</button>
+      </div>
+    </div>
+    {loading&&<div style={s.empty}>Carregando...</div>}
+    {!loading&&posts.length===0&&<div style={s.empty}>Nenhum post ainda. Seja o primeiro! 🙌</div>}
+    {posts.map(post=>{const liked=post.likes?.includes(uid); const podeApagar=post.userId===uid||isAdmin; return <div key={post.id} style={{background:'#FFF8F0',borderBottom:'1px solid #ede8e0'}}>
+      {post.repostOf&&<div style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px 0',color:'#aaa',fontFamily:'Barlow',fontSize:11}}>{Ico.repost('#ccc')} <span>{post.user} repostou</span></div>}
+      <div style={{display:'flex',gap:10,padding:'12px 14px 0',alignItems:'flex-start'}}>
+        <img src={post.photo} style={{...s.avatarFeed,flexShrink:0}} alt=""/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+            <div><span style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:15,color:'#1A1A1A'}}>{post.user}</span><span style={{fontFamily:'Barlow',fontSize:12,color:'#bbb',marginLeft:5}}>· {tempoRelativo(post.createdAt)}</span></div>
+            {podeApagar&&<button onClick={()=>deletar(post.id)} style={{...s.iconBtn,color:'#ddd'}}>{Ico.trash()}</button>}
+          </div>
+          {post.repostOf&&<div style={{border:'1.5px solid #ede8e0',borderRadius:10,padding:'8px 12px',marginTop:6,background:'#faf7f3'}}><div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:12,color:'#888'}}>{post.repostOf.user}</div><div style={{fontFamily:'Barlow',fontSize:13,color:'#555',lineHeight:1.6,textAlign:'left' as const}}>{post.repostOf.text}</div></div>}
+          {post.text&&<div style={{fontFamily:'Barlow',fontSize:14,color:'#1A1A1A',lineHeight:1.7,marginTop:4,textAlign:'left' as const,wordBreak:'break-word' as const}}>{post.text}</div>}
+        </div>
+      </div>
+      {post.imageUrl&&<img src={post.imageUrl} style={{width:'100%',maxHeight:320,objectFit:'cover' as const,marginTop:8,display:'block'}} alt=""/>}
+      <div style={{display:'flex',padding:'4px 14px 4px 60px',borderTop:'1px solid #f5f0ea',marginTop:8}}>
+        <button className="post-action" onClick={()=>curtir(post)} style={{...s.actionBtn,color:liked?'#F07830':'#999',flex:1,justifyContent:'center',padding:'8px 0'}}>{Ico.heart(liked||false)} <span style={{fontSize:13,marginLeft:4}}>{post.likes?.length||0}</span></button>
+        <button className="post-action" onClick={()=>setCommentingOn(commentingOn===post.id?null:post.id)} style={{...s.actionBtn,color:'#999',flex:1,justifyContent:'center',padding:'8px 0'}}>{Ico.comment()} <span style={{fontSize:13,marginLeft:4}}>{post.comments?.length||0}</span></button>
+        <button className="post-action" onClick={()=>setRepostingOn(repostingOn===post.id?null:post.id)} style={{...s.actionBtn,color:'#999',flex:1,justifyContent:'center',padding:'8px 0'}}>{Ico.repost()} <span style={{fontSize:13,marginLeft:4}}>Repostar</span></button>
+      </div>
+      {post.comments?.length>0&&<div style={{padding:'0 14px 8px 60px',display:'flex',flexDirection:'column' as const,gap:6}}>{post.comments.map((c,i)=><div key={i} style={{display:'flex',gap:8,alignItems:'flex-start'}}><img src={c.photo} style={{width:24,height:24,borderRadius:'50%',flexShrink:0}} alt=""/><div style={{background:'#f5f0ea',borderRadius:12,padding:'6px 10px',flex:1,minWidth:0}}><span style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:12,color:'#555'}}>{c.user} </span><span style={{fontFamily:'Barlow',fontSize:13,color:'#444',wordBreak:'break-word' as const}}>{c.text}</span></div></div>)}</div>}
+      {commentingOn===post.id&&<div style={{display:'flex',gap:8,padding:'0 14px 10px 60px',alignItems:'center'}}><input value={commentText} onChange={e=>setCommentText(e.target.value)} onKeyDown={e=>e.key==='Enter'&&comentar(post.id)} placeholder="Comentar..." style={{flex:1,border:'1px solid #ede8e0',borderRadius:20,padding:'8px 14px',fontFamily:'Barlow',fontSize:13,color:'#1A1A1A',background:'#fff',outline:'none'}}/><button onClick={()=>comentar(post.id)} style={{...s.btnOrange,padding:'7px 14px',fontSize:13}}>↑</button></div>}
+      {repostingOn===post.id&&<div style={{margin:'0 14px 10px',background:'#faf7f3',borderRadius:10,padding:12,border:'1px solid #ede8e0'}}><div style={{fontFamily:'Barlow Condensed',fontSize:10,fontWeight:700,letterSpacing:2,color:'#D4621A',marginBottom:8}}>REPOSTAR COM COMENTÁRIO (opcional)</div><textarea value={repostText} onChange={e=>setRepostText(e.target.value)} placeholder="Adicione seu comentário..." style={{...s.textarea,marginBottom:10,minHeight:50,color:'#1A1A1A',textAlign:'left' as const}} rows={2}/><div style={{display:'flex',gap:8}}><button onClick={()=>repostar(post)} style={s.btnOrange}>Repostar</button><button onClick={()=>setRepostingOn(null)} style={{...s.btnOrange,background:'#e0e0e0',color:'#666'}}>Cancelar</button></div></div>}
+    </div>;})}
+  </div>;
+}
+`;
+
+files['src/screens/Perfil.tsx'] = `import { getAuth, signOut } from 'firebase/auth';
+import { Ico } from '../icons';
+import { s } from '../styles';
+import type { CurrentUser, Screen, Post, Sorteio } from '../types';
+const auth = getAuth();
+interface Props { currentUser:CurrentUser; isAdmin:boolean; posts:Post[]; uid:string; songsCount:number; sorteioSemana:Sorteio|null; goTo:(sc:Screen)=>void; }
+export function PerfilScreen({currentUser,isAdmin,posts,uid,songsCount,sorteioSemana,goTo}:Props) {
+  const meusPosts = posts.filter(p=>p.userId===uid).length;
+  const oracoes = sorteioSemana?.historico?.length||0;
+  return <div className="fade" style={s.page}>
+    <div style={s.pageHeader}><button style={s.backBtn} onClick={()=>goTo('home')}>{Ico.back()}</button><div style={s.pageTitle}>MEU PERFIL</div></div>
+    <div style={{...s.card,padding:28,textAlign:'center' as const,marginBottom:14}}>
+      <img src={currentUser.photo} style={{width:90,height:90,borderRadius:'50%',border:'4px solid #F07830',objectFit:'cover' as const,margin:'0 auto 16px',display:'block'}} alt=""/>
+      <div style={{fontFamily:'Bebas Neue',fontSize:28,color:'#1A1A1A',letterSpacing:2}}>{currentUser.fullName.toUpperCase()}</div>
+      <div style={{fontFamily:'Barlow',fontSize:13,color:'#999',marginBottom:22}}>{currentUser.email}</div>
+      <div style={{display:'flex',justifyContent:'center',gap:28,marginBottom:22}}>
+        {[{n:meusPosts,label:'Posts'},{n:songsCount,label:'Músicas'},{n:oracoes,label:'Orações'}].map(item=><div key={item.label}><div style={{fontFamily:'Bebas Neue',fontSize:30,color:'#F07830'}}>{item.n}</div><div style={{fontFamily:'Barlow',fontSize:12,color:'#999'}}>{item.label}</div></div>)}
+      </div>
+      <div style={{background:'#F07830',borderRadius:12,padding:'12px 16px',textAlign:'left' as const,marginBottom:16}}>
+        <div style={{fontFamily:'Barlow Condensed',fontSize:10,fontWeight:700,letterSpacing:3,color:'rgba(0,0,0,0.4)',marginBottom:3}}>MEMBRO DO PG</div>
+        <div style={{fontFamily:'Bebas Neue',fontSize:18,color:'#1A1A1A'}}>VERTICALIZADOS · MJA ESPLANADA</div>
+      </div>
+      {isAdmin&&<div style={{background:'#1A1A1A',borderRadius:12,padding:'10px 16px',textAlign:'left' as const,marginBottom:16,display:'flex',alignItems:'center',gap:8}}>{Ico.admin('#F07830')}<div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:14,color:'#F07830',letterSpacing:1}}>ADMINISTRADOR</div></div>}
+      <button onClick={()=>signOut(auth)} style={{width:'100%',padding:'12px',borderRadius:50,background:'transparent',border:'1.5px solid #e0e0e0',color:'#999',fontFamily:'Barlow Condensed',fontWeight:700,fontSize:13,letterSpacing:1,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>{Ico.logout()} Sair da conta</button>
+    </div>
+  </div>;
+}
+`;
+
+files['src/components/AdminPanel.tsx'] = `import { useState } from 'react';
+import { collection, addDoc, deleteDoc, doc, updateDoc, getDocs, query } from 'firebase/firestore';
+import { db } from '../firebase';
+import { Ico } from '../icons';
+import { s } from '../styles';
+import type { Song, Cifra, Evento } from '../types';
+type Tab = 'songs'|'cifras'|'eventos'|'membros';
+interface Props { goHome:()=>void; songs:Song[]; cifras:Cifra[]; eventos:Evento[]; membros:string[]; }
+export function AdminPanel({goHome,songs,cifras,eventos,membros}:Props) {
+  const [tab,setTab] = useState<Tab>('songs');
+  const [form,setForm] = useState<any>(null);
+  const [editId,setEditId] = useState<string|null>(null);
+  const set = (f:string,v:string) => setForm((x:any)=>({...x,[f]:v}));
+  const salvar = async () => {
+    if(!form) return;
+    if(tab==='songs'&&form.title){ const d={title:form.title,letra:form.letra||'',spotify:form.spotify||'',youtube:form.youtube||'',ordem:editId?form.ordem:songs.length,sections:form.sections||[]}; editId?await updateDoc(doc(db,'songs',editId),d):await addDoc(collection(db,'songs'),d); }
+    if(tab==='cifras'&&form.title){ const d={title:form.title,tom:form.tom||'',cifra:form.cifra||'',ordem:editId?form.ordem:cifras.length}; editId?await updateDoc(doc(db,'cifras',editId),d):await addDoc(collection(db,'cifras'),d); }
+    if(tab==='eventos'&&form.tema){ const d={tema:form.tema,data:form.data||'',hora:form.hora||'',local:form.local||''}; editId?await updateDoc(doc(db,'eventos',editId),d):await addDoc(collection(db,'eventos'),d); }
+    if(tab==='membros'&&form.nome) await addDoc(collection(db,'membros'),{nome:form.nome});
+    setForm(null); setEditId(null);
+  };
+  const deletar = async (col:string,id:string) => { if(!window.confirm('Apagar?')) return; await deleteDoc(doc(db,col,id)); };
+  const deletarMembro = async (nome:string) => { if(!window.confirm(\`Remover \${nome}?\`)) return; const snap=await getDocs(query(collection(db,'membros'))); const found=snap.docs.find(d=>d.data().nome===nome); if(found) await deleteDoc(doc(db,'membros',found.id)); };
+  const inp = (field:string,placeholder:string,multi=false) => multi
+    ?<textarea value={form?.[field]||''} onChange={e=>set(field,e.target.value)} placeholder={placeholder} style={{...s.textarea,marginBottom:8,color:'#1A1A1A',textAlign:'left' as const}} rows={5}/>
+    :<input value={form?.[field]||''} onChange={e=>set(field,e.target.value)} placeholder={placeholder} style={{border:'1.5px solid #e0e0e0',borderRadius:10,padding:'10px 12px',fontFamily:'Barlow',fontSize:13,width:'100%',marginBottom:8,color:'#1A1A1A',outline:'none',background:'#fff'}}/>;
+  const TABS:{id:Tab;label:string}[] = [{id:'songs',label:'MÚSICAS'},{id:'cifras',label:'CIFRAS'},{id:'eventos',label:'EVENTOS'},{id:'membros',label:'MEMBROS'}];
+  return <div className="fade" style={s.page}>
+    <div style={s.pageHeader}><button style={s.backBtn} onClick={goHome}>{Ico.back()}</button><div style={s.pageTitle}>PAINEL ADMIN</div></div>
+    <div style={{display:'flex',gap:8,marginBottom:16,overflowX:'auto' as const}}>
+      {TABS.map(t=><button key={t.id} onClick={()=>{setTab(t.id);setForm(null);setEditId(null);}} style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:12,letterSpacing:1,padding:'8px 16px',borderRadius:50,border:'none',cursor:'pointer',background:tab===t.id?'#F07830':'#f0ebe3',color:tab===t.id?'#fff':'#888',whiteSpace:'nowrap' as const}}>{t.label}</button>)}
+    </div>
+    {form!==null&&<div style={{...s.card,padding:16,marginBottom:14}}>
+      <div style={{fontFamily:'Bebas Neue',fontSize:18,color:'#1A1A1A',letterSpacing:1,marginBottom:12}}>{editId?'EDITAR':'NOVO'} {tab==='songs'?'MÚSICA':tab==='cifras'?'CIFRA':tab==='eventos'?'EVENTO':'MEMBRO'}</div>
+      {tab==='songs'&&<>{inp('title','Título da música')}{inp('letra','Letra completa...',true)}{inp('spotify','Link Spotify')}{inp('youtube','Link YouTube')}</>}
+      {tab==='cifras'&&<>{inp('title','Título')}{inp('tom','Tom (ex: D, G, A)')}{inp('cifra','Cifra completa...',true)}</>}
+      {tab==='eventos'&&<>{inp('tema','Tema do evento')}{inp('data','Data (ex: Sexta-feira, 14 de março)')}{inp('hora','Hora (ex: 19h30)')}{inp('local','Local')}</>}
+      {tab==='membros'&&<>{inp('nome','Nome do membro')}</>}
+      <div style={{display:'flex',gap:8,marginTop:8}}><button onClick={salvar} style={s.btnOrange}>{Ico.check()} Salvar</button><button onClick={()=>{setForm(null);setEditId(null);}} style={{...s.btnOrange,background:'#e0e0e0',color:'#666'}}>Cancelar</button></div>
+    </div>}
+    <div style={{...s.card,padding:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+        <div style={s.cardTag}>{tab==='songs'?\`\${songs.length} MÚSICAS\`:tab==='cifras'?\`\${cifras.length} CIFRAS\`:tab==='eventos'?\`\${eventos.length} EVENTOS\`:\`\${membros.length} MEMBROS\`}</div>
+        <button onClick={()=>{setForm({});setEditId(null);}} style={{...s.btnOrange,padding:'6px 14px',fontSize:11,gap:4}}>{Ico.plus()} Novo</button>
+      </div>
+      {tab==='songs'&&songs.map(item=><div key={item.id} style={s.adminRow}><div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:14,color:'#1A1A1A',flex:1}}>{item.title}</div><button onClick={()=>{setForm({...item});setEditId(item.id);}} style={s.adminActionBtn}>{Ico.edit()}</button><button onClick={()=>deletar('songs',item.id)} style={{...s.adminActionBtn,color:'#e53935'}}>{Ico.trash()}</button></div>)}
+      {tab==='cifras'&&cifras.map(item=><div key={item.id} style={s.adminRow}><div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:14,color:'#1A1A1A',flex:1}}>{item.title} <span style={{color:'#aaa',fontWeight:400}}>· Tom {item.tom}</span></div><button onClick={()=>{setForm({...item});setEditId(item.id);}} style={s.adminActionBtn}>{Ico.edit()}</button><button onClick={()=>deletar('cifras',item.id)} style={{...s.adminActionBtn,color:'#e53935'}}>{Ico.trash()}</button></div>)}
+      {tab==='eventos'&&eventos.map(item=><div key={item.id} style={s.adminRow}><div style={{fontFamily:'Barlow Condensed',fontWeight:700,fontSize:14,color:'#1A1A1A',flex:1}}>{item.tema} <span style={{color:'#aaa',fontWeight:400,fontSize:11}}>· {item.data}</span></div><button onClick={()=>{setForm({...item});setEditId(item.id);}} style={s.adminActionBtn}>{Ico.edit()}</button><button onClick={()=>deletar('eventos',item.id)} style={{...s.adminActionBtn,color:'#e53935'}}>{Ico.trash()}</button></div>)}
+      {tab==='membros'&&membros.map((nome,i)=><div key={i} style={s.adminRow}><div style={{fontFamily:'Barlow',fontSize:14,color:'#1A1A1A',flex:1}}>{nome}</div><button onClick={()=>deletarMembro(nome)} style={{...s.adminActionBtn,color:'#e53935'}}>{Ico.trash()}</button></div>)}
+    </div>
+  </div>;
+}
+`;
+
 
 files['src/types.ts'] = `export type Screen = 'home' | 'musicas' | 'cifras' | 'oracao' | 'feed' | 'eventos' | 'perfil' | 'admin';
 
@@ -110,7 +486,6 @@ export function tempoRelativo(ts: any): string {
 
 for (const [path, content] of Object.entries(files)) {
   writeFileSync(path, content);
-  console.log('✅ criado:', path);
+  console.log('✅', path);
 }
-
-console.log('\nAgora rode: git add . && git commit -m "fix: add missing files" && git push');
+console.log('\nAgora rode: git add . && git commit -m "fix: add screens and components" && git push');
