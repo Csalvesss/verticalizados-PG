@@ -14,7 +14,7 @@ interface Props {
   onComment: (postId: string) => void;
   onRepost: (post: Post) => void;
   onDelete: (postId: string) => void;
-  onSubmitComment: (postId: string, text: string) => void;
+  onSubmitComment: (postId: string, text: string) => Promise<void>;
 }
 
 export function Timeline({
@@ -70,7 +70,7 @@ export function Timeline({
                 placeholder="Poste sua resposta"
                 submitLabel="Responder"
                 autoFocus
-                onPost={(t) => Promise.resolve(onSubmitComment(post.id, t))}
+                onPost={(t) => onSubmitComment(post.id, t)}
               />
             </div>
           )}
