@@ -22,8 +22,13 @@ export function Composer({
   const [text, setText] = useState('');
   const [img, setImg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) textareaRef.current?.focus();
+  }, [autoFocus]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -35,6 +40,8 @@ export function Composer({
   const hasContent = !!(text.trim() || img);
   const canPost = allowEmpty ? !loading : (!loading && hasContent);
   const isActive = allowEmpty ? true : hasContent;
+  const over280 = text.length > 280;
+  const near280 = text.length > 240 && !over280;
 
   const handlePost = async () => {
     if (!canPost) return;
@@ -43,6 +50,7 @@ export function Composer({
       await onPost(text.trim(), img);
       setText('');
       setImg(null);
+      setFocused(false);
     } catch (e) {
       console.error(e);
     } finally {
@@ -61,26 +69,38 @@ export function Composer({
     e.target.value = '';
   };
 
-  const over280 = text.length > 280;
-  const near280 = text.length > 240 && !over280;
-
   return (
     <div style={{
       display: 'flex',
       gap: 12,
-      padding: '14px 16px',
-      borderBottom: '1px solid #2f3336',
+      padding: '12px 14px',
+      borderBottom: '1px solid #1a1a1a',
       background: '#000',
+      alignItems: 'flex-start',
     }}>
-      <Avatar src={userPhoto} size={40} />
+      {/* Avatar with subtle gradient ring */}
+      <div style={{
+        flexShrink: 0,
+        padding: 1.5,
+        borderRadius: '50%',
+        background: focused || hasContent
+          ? 'linear-gradient(135deg, #F07830, #D4621A)'
+          : 'transparent',
+        transition: 'background 0.2s',
+      }}>
+        <div style={{ borderRadius: '50%', border: '1.5px solid #000' }}>
+          <Avatar src={userPhoto} size={36} />
+        </div>
+      </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <textarea
           ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => !hasContent && setFocused(false)}
           placeholder={placeholder}
-          autoFocus={autoFocus}
           rows={1}
           style={{
             width: '100%',
@@ -88,27 +108,27 @@ export function Composer({
             border: 'none',
             outline: 'none',
             color: '#e7e9ea',
-            fontSize: 17,
+            fontSize: 15,
             fontFamily: 'Barlow, sans-serif',
             resize: 'none',
-            padding: '6px 0',
-            lineHeight: 1.45,
-            minHeight: 42,
+            padding: '8px 0 4px',
+            lineHeight: 1.5,
+            minHeight: 38,
           }}
         />
 
+        {/* Image preview */}
         {img && (
           <div style={{
             position: 'relative',
-            marginTop: 10,
-            borderRadius: 16,
+            marginTop: 8,
+            borderRadius: 14,
             overflow: 'hidden',
-            border: '1px solid #2f3336',
           }}>
             <img
               src={img}
               alt="Preview"
-              style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }}
+              style={{ width: '100%', maxHeight: 300, objectFit: 'cover', display: 'block' }}
             />
             <button
               onClick={() => setImg(null)}
@@ -116,10 +136,10 @@ export function Composer({
                 position: 'absolute',
                 top: 8,
                 right: 8,
-                width: 30,
-                height: 30,
+                width: 28,
+                height: 28,
                 borderRadius: '50%',
-                background: 'rgba(15,20,25,0.8)',
+                background: 'rgba(0,0,0,0.75)',
                 color: '#fff',
                 border: 'none',
                 cursor: 'pointer',
@@ -128,6 +148,7 @@ export function Composer({
                 justifyContent: 'center',
                 fontSize: 18,
                 fontWeight: 700,
+                lineHeight: 1,
               }}
             >
               ×
@@ -135,29 +156,27 @@ export function Composer({
           </div>
         )}
 
+        {/* Actions row */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginTop: 10,
-          paddingTop: 10,
-          borderTop: '1px solid #1e1e1e',
+          marginTop: 6,
         }}>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="composer-icon-btn"
+            className="composer-ico-btn"
             style={{
               color: '#F07830',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 34,
-              height: 34,
+              width: 32,
+              height: 32,
               borderRadius: '50%',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              transition: 'background 0.15s',
             }}
           >
             {Ico.image()}
@@ -170,11 +189,11 @@ export function Composer({
             onChange={handleFile}
           />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {text.length > 0 && (
               <span style={{
-                fontSize: 12,
-                color: over280 ? '#f4212e' : near280 ? '#FFD700' : '#555',
+                fontSize: 11,
+                color: over280 ? '#f4212e' : near280 ? '#FFD700' : '#444',
                 fontFamily: 'Barlow, sans-serif',
                 transition: 'color 0.2s',
               }}>
@@ -185,12 +204,12 @@ export function Composer({
               onClick={handlePost}
               disabled={!canPost}
               style={{
-                background: isActive ? '#F07830' : '#1a1a1a',
-                color: isActive ? '#fff' : '#444',
-                padding: '7px 18px',
+                background: isActive ? '#F07830' : '#111',
+                color: isActive ? '#fff' : '#333',
+                padding: '6px 16px',
                 borderRadius: 999,
                 fontWeight: 700,
-                fontSize: 14,
+                fontSize: 13,
                 fontFamily: 'Barlow, sans-serif',
                 border: 'none',
                 cursor: canPost ? 'pointer' : 'default',
@@ -206,11 +225,11 @@ export function Composer({
       </div>
 
       <style>{`
-        .composer-icon-btn:hover {
+        .composer-ico-btn:hover {
           background: rgba(240, 120, 48, 0.12) !important;
         }
         textarea::placeholder {
-          color: #444;
+          color: #333;
         }
       `}</style>
     </div>
