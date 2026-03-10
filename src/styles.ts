@@ -11,16 +11,27 @@ export const GLOBAL_CSS = `
   }
 
   html {
+    height: 100%;
     height: -webkit-fill-available;
   }
 
   body, #root {
+    height: 100%;
     min-height: 100vh;
     min-height: 100dvh;
     min-height: -webkit-fill-available;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
     background: #000;
     color: #e7e9ea;
     font-family: 'Barlow', sans-serif;
+  }
+
+  #root {
+    width: 100%;
   }
 
   ::-webkit-scrollbar {
@@ -68,6 +79,14 @@ export const GLOBAL_CSS = `
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
+
+  @media (min-width: 560px) {
+    #root {
+      max-width: 500px;
+      border-left: 1px solid #2f3336;
+      border-right: 1px solid #2f3336;
+    }
+  }
 `;
 
 export const s: Record<string, CSSProperties> = {
@@ -80,8 +99,6 @@ export const s: Record<string, CSSProperties> = {
     maxWidth: 500,
     margin: '0 auto',
     position: 'relative',
-    borderLeft: '1px solid #2f3336',
-    borderRight: '1px solid #2f3336',
   },
   content: {
     flex: 1,
