@@ -142,14 +142,30 @@ export function FeedScreen({
             {Ico.back()}
           </button>
 
-          {/* Centered cross + brand */}
+          {/* Centered PG logo + brand */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            color: '#F07830',
+            gap: 8,
           }}>
-            {Ico.cross()}
+            <div style={{
+              width: 28,
+              height: 28,
+              background: '#F07830',
+              borderRadius: 7,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <svg width="17" height="19" viewBox="0 0 48 52" fill="none">
+                <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
+                <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
+                <rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff" />
+                <rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff" />
+                <path d="M26 42 L30 42 L30 50 L28 47 L26 50 Z" fill="#fff" />
+              </svg>
+            </div>
             <span style={{
               fontFamily: 'Bebas Neue, sans-serif',
               fontSize: 18,
@@ -157,7 +173,7 @@ export function FeedScreen({
               color: '#e7e9ea',
               lineHeight: 1,
             }}>
-              Comunidade
+              PG VERTICALIZADOS
             </span>
           </div>
 
