@@ -1,5 +1,5 @@
 import { Ico } from '../icons';
-import { tempoRelativo, ADMIN_EMAIL } from '../constants';
+import { tempoRelativo, tempoRelativoStr, toHandle, ADMIN_EMAIL } from '../constants';
 import type { Post } from '../types';
 import { Avatar } from './Avatar';
 import { PostActions } from './PostActions';
@@ -33,10 +33,11 @@ export function PostCard({
   const isOwner = post.userId === uid;
   const liked = post.likes?.includes(uid);
   const isVerified = post.userEmail === ADMIN_EMAIL;
+  const hasComments = (post.comments?.length ?? 0) > 0;
 
   return (
     <div className="post-card" style={{
-      padding: '12px 16px',
+      padding: '12px 16px 0',
       borderBottom: '1px solid #2f3336',
       background: '#000',
       cursor: 'default',
@@ -47,8 +48,8 @@ export function PostCard({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
-          marginBottom: 8,
+          gap: 6,
+          marginBottom: 6,
           paddingLeft: 52,
           fontSize: 13,
           fontWeight: 600,
@@ -60,29 +61,46 @@ export function PostCard({
         </div>
       )}
 
-      {/* Main row: avatar + content */}
+      {/* Main tweet row */}
       <div style={{ display: 'flex', gap: 12 }}>
-        {/* Avatar */}
-        <div style={{ flexShrink: 0, paddingTop: 2 }}>
+
+        {/* Left column: avatar + thread line */}
+        <div style={{
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
           <Avatar src={post.photo} size={40} />
+          {hasComments && (
+            <div style={{
+              flex: 1,
+              width: 2,
+              background: '#2f3336',
+              marginTop: 4,
+              borderRadius: 1,
+              minHeight: 16,
+            }} />
+          )}
         </div>
 
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Header */}
+        {/* Right column: content */}
+        <div style={{ flex: 1, minWidth: 0, paddingBottom: hasComments ? 6 : 12 }}>
+
+          {/* Header: name @handle · time | delete */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            marginBottom: 4,
+            marginBottom: 3,
           }}>
             <div style={{
               display: 'flex',
+              flexWrap: 'wrap',
               alignItems: 'center',
               gap: 4,
-              flexWrap: 'wrap',
-              minWidth: 0,
               flex: 1,
+              minWidth: 0,
               lineHeight: 1.3,
             }}>
               <span style={{
@@ -102,8 +120,10 @@ export function PostCard({
                 fontSize: 14,
                 fontFamily: 'Barlow, sans-serif',
                 whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}>
-                · {tempoRelativo(post.createdAt)}
+                {toHandle(post.user)} · {tempoRelativo(post.createdAt)}
               </span>
             </div>
 
@@ -139,7 +159,7 @@ export function PostCard({
               color: '#e7e9ea',
               lineHeight: 1.55,
               margin: 0,
-              marginBottom: (post.imageUrl || post.repostOf) ? 10 : 12,
+              marginBottom: (post.imageUrl || post.repostOf) ? 10 : 2,
               wordBreak: 'break-word',
               whiteSpace: 'pre-wrap',
               fontFamily: 'Barlow, sans-serif',
@@ -154,7 +174,7 @@ export function PostCard({
               borderRadius: 16,
               overflow: 'hidden',
               border: '1px solid #2f3336',
-              marginBottom: 12,
+              marginBottom: 10,
             }}>
               <img
                 src={post.imageUrl}
@@ -177,53 +197,83 @@ export function PostCard({
             onComment={onComment}
             onRepost={onRepost}
           />
-
-          {/* Comments */}
-          {post.comments?.length > 0 && (
-            <div style={{
-              marginTop: 12,
-              paddingTop: 12,
-              borderTop: '1px solid #1e1e1e',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-            }}>
-              {post.comments.map((c, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10 }}>
-                  <Avatar src={c.photo} size={28} />
-                  <div style={{
-                    flex: 1,
-                    minWidth: 0,
-                    background: '#0d0d0d',
-                    borderRadius: 12,
-                    padding: '8px 12px',
-                    border: '1px solid #1e1e1e',
-                  }}>
-                    <span style={{
-                      fontWeight: 700,
-                      color: '#e7e9ea',
-                      fontSize: 13,
-                      fontFamily: 'Barlow, sans-serif',
-                    }}>
-                      {c.user}
-                    </span>
-                    <p style={{
-                      fontSize: 13,
-                      color: '#ccc',
-                      lineHeight: 1.45,
-                      margin: '2px 0 0',
-                      wordBreak: 'break-word',
-                      fontFamily: 'Barlow, sans-serif',
-                    }}>
-                      {c.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Comments as tweet replies */}
+      {hasComments && post.comments.map((c, i) => {
+        const isLast = i === post.comments.length - 1;
+        return (
+          <div key={i} style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
+            {/* Left column: reply avatar + optional thread line */}
+            <div style={{
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}>
+              <Avatar src={c.photo} size={32} />
+              {!isLast && (
+                <div style={{
+                  flex: 1,
+                  width: 2,
+                  background: '#2f3336',
+                  marginTop: 4,
+                  borderRadius: 1,
+                  minHeight: 16,
+                }} />
+              )}
+            </div>
+
+            {/* Reply content */}
+            <div style={{ flex: 1, minWidth: 0, paddingBottom: isLast ? 12 : 4 }}>
+              <div style={{
+                color: '#71767b',
+                fontSize: 12,
+                fontFamily: 'Barlow, sans-serif',
+                marginBottom: 1,
+              }}>
+                Respondendo a {toHandle(post.user)}
+              </div>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 4,
+                marginBottom: 3,
+              }}>
+                <span style={{
+                  fontWeight: 700,
+                  color: '#e7e9ea',
+                  fontSize: 14,
+                  fontFamily: 'Barlow, sans-serif',
+                }}>
+                  {c.user}
+                </span>
+                <span style={{
+                  color: '#71767b',
+                  fontSize: 13,
+                  fontFamily: 'Barlow, sans-serif',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {toHandle(c.user)} · {tempoRelativoStr(c.time)}
+                </span>
+              </div>
+              <p style={{
+                fontSize: 14,
+                color: '#e7e9ea',
+                lineHeight: 1.5,
+                margin: 0,
+                wordBreak: 'break-word',
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'Barlow, sans-serif',
+              }}>
+                {c.text}
+              </p>
+            </div>
+          </div>
+        );
+      })}
 
       <style>{`
         .post-card:hover {

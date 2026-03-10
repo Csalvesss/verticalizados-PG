@@ -117,12 +117,18 @@ export function FeedScreen({
         WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid #1e1e1e',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        {/* Top row: back | logo | spacer */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 16px 4px',
+        }}>
           <button
             onClick={() => goTo('home')}
             className="feed-back-btn"
             style={{
-              padding: '10px 14px',
+              padding: '6px',
               color: '#F07830',
               background: 'transparent',
               border: 'none',
@@ -131,51 +137,70 @@ export function FeedScreen({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginLeft: 4,
             }}
           >
             {Ico.back()}
           </button>
 
-          <div style={{ flex: 1, display: 'flex' }}>
-            {(['para-voce', 'seguindo'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
-                  flex: 1,
-                  padding: '14px 0',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  fontWeight: tab === t ? 700 : 400,
-                  color: tab === t ? '#e7e9ea' : '#555',
-                  fontSize: 15,
-                  fontFamily: 'Barlow, sans-serif',
-                  background: 'transparent',
-                  border: 'none',
-                  transition: 'color 0.15s',
-                }}
-              >
-                {t === 'para-voce' ? 'Para você' : 'Seguindo'}
-                {tab === t && (
-                  <span style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 52,
-                    height: 3,
-                    background: '#F07830',
-                    borderRadius: 99,
-                    display: 'block',
-                  }} />
-                )}
-              </button>
-            ))}
+          {/* Centered cross + brand */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            color: '#F07830',
+          }}>
+            {Ico.cross()}
+            <span style={{
+              fontFamily: 'Bebas Neue, sans-serif',
+              fontSize: 18,
+              letterSpacing: 2,
+              color: '#e7e9ea',
+              lineHeight: 1,
+            }}>
+              Comunidade
+            </span>
           </div>
 
-          <div style={{ width: 44 }} />
+          <div style={{ width: 34 }} />
+        </div>
+
+        {/* Tabs row */}
+        <div style={{ display: 'flex' }}>
+          {(['para-voce', 'seguindo'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                flex: 1,
+                padding: '12px 0',
+                textAlign: 'center',
+                cursor: 'pointer',
+                position: 'relative',
+                fontWeight: tab === t ? 700 : 400,
+                color: tab === t ? '#e7e9ea' : '#555',
+                fontSize: 15,
+                fontFamily: 'Barlow, sans-serif',
+                background: 'transparent',
+                border: 'none',
+                transition: 'color 0.15s',
+              }}
+            >
+              {t === 'para-voce' ? 'Para você' : 'Seguindo'}
+              {tab === t && (
+                <span style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 52,
+                  height: 3,
+                  background: '#F07830',
+                  borderRadius: 99,
+                  display: 'block',
+                }} />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
