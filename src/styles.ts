@@ -158,11 +158,8 @@ export const s: Record<string, CSSProperties> = {
   logoBox: {
     width: 32,
     height: 32,
-    background: '#F07830',
     borderRadius: 8,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     flexShrink: 0,
   },
   avatarSmall: {
