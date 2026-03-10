@@ -190,10 +190,9 @@ export function PostCard({
           lineHeight: 1.55,
           fontFamily: 'Barlow, sans-serif',
           wordBreak: 'break-word',
-          whiteSpace: 'pre-wrap',
         }}>
-          <span style={{ fontWeight: 700, marginRight: 6 }}>{post.user}</span>
-          {post.text}
+          <span style={{ fontWeight: 700 }}>{post.user}</span>
+          {' '}{post.text}
         </div>
       )}
 
@@ -237,8 +236,8 @@ export function PostCard({
                   lineHeight: 1.5,
                   wordBreak: 'break-word',
                 }}>
-                  <span style={{ fontWeight: 700, marginRight: 5 }}>{c.user}</span>
-                  {c.text}
+                  <span style={{ fontWeight: 700 }}>{c.user}</span>
+                  {' '}{c.text}
                 </div>
                 <div style={{
                   fontSize: 11,
@@ -264,8 +263,8 @@ export function PostCard({
           lineHeight: 1.5,
           wordBreak: 'break-word',
         }}>
-          <span style={{ fontWeight: 700, marginRight: 5 }}>{lastComment.user}</span>
-          <span style={{ color: '#aaa' }}>{lastComment.text}</span>
+          <span style={{ fontWeight: 700 }}>{lastComment.user}</span>
+          {' '}<span style={{ color: '#aaa' }}>{lastComment.text}</span>
         </div>
       )}
 

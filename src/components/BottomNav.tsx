@@ -61,9 +61,10 @@ export function BottomNav({
                 width: 28,
                 height: 28,
                 borderRadius: '50%',
-                padding: active ? 2 : 0,
-                background: active ? 'linear-gradient(135deg, #F07830, #D4621A)' : 'transparent',
+                padding: active ? 2 : 1,
+                background: active ? 'linear-gradient(135deg, #F07830, #D4621A)' : '#222',
                 transition: 'all 0.2s',
+                boxSizing: 'border-box',
               }}>
                 <img
                   src={userPhoto}
@@ -73,9 +74,9 @@ export function BottomNav({
                     height: '100%',
                     borderRadius: '50%',
                     objectFit: 'cover',
-                    border: active ? '1.5px solid #000' : '1.5px solid #333',
+                    border: '2px solid #000',
                     display: 'block',
-                    transition: 'border 0.2s',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>

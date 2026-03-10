@@ -36,6 +36,7 @@ export function FeedScreen({
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [repostingOn, setRepostingOn] = useState<Post | null>(null);
+  const [filterUserId, setFilterUserId] = useState<string | null>(null);
 
   const postar = async (text: string, img: string | null) => {
     await addDoc(collection(db, 'posts'), {
@@ -152,14 +153,11 @@ export function FeedScreen({
             <div style={{
               width: 28,
               height: 28,
-              background: '#F07830',
               borderRadius: 7,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              overflow: 'hidden',
               flexShrink: 0,
             }}>
-              <svg width="17" height="19" viewBox="0 0 48 52" fill="none">
+              <svg width="28" height="28" viewBox="4 2 34 52" fill="none">
                 <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
                 <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
                 <rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff" />
@@ -222,14 +220,54 @@ export function FeedScreen({
       </div>
 
       {/* ── Stories bar ───────────────────────────────────── */}
-      <StoriesBar posts={posts} currentUser={currentUser} />
+      <StoriesBar
+        posts={posts}
+        currentUser={currentUser}
+        activeUserId={filterUserId}
+        onStoryPress={(userId) => setFilterUserId(filterUserId === userId ? null : userId)}
+      />
 
       {/* ── Composer ──────────────────────────────────────── */}
       <Composer userPhoto={currentUser.photo} onPost={postar} />
 
+      {/* ── Filter banner ─────────────────────────────────── */}
+      {filterUserId && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 16px',
+          background: 'rgba(240,120,48,0.08)',
+          borderBottom: '1px solid rgba(240,120,48,0.15)',
+        }}>
+          <span style={{
+            fontFamily: 'Barlow, sans-serif',
+            fontSize: 13,
+            color: '#F07830',
+          }}>
+            Posts de {posts.find(p => p.userId === filterUserId)?.user ?? '...'}
+          </span>
+          <button
+            onClick={() => setFilterUserId(null)}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(240,120,48,0.4)',
+              borderRadius: 99,
+              color: '#F07830',
+              fontSize: 11,
+              fontFamily: 'Barlow, sans-serif',
+              padding: '3px 10px',
+              cursor: 'pointer',
+            }}
+          >
+            Limpar
+          </button>
+        </div>
+      )}
+
       {/* ── Timeline ──────────────────────────────────────── */}
       <Timeline
-        posts={posts}
+        posts={filterUserId ? posts.filter(p => p.userId === filterUserId) : posts}
         loading={loading}
         uid={uid}
         isAdmin={isAdmin}
