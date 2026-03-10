@@ -1,19 +1,15 @@
 import { useState } from 'react';
-import {
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from '../firebase';
 import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
+import { StoriesBar } from '../components/StoriesBar';
+import {
+  addPostComment,
+  createFeedPost,
+  removePost,
+  togglePostLike,
+} from '../services/postService';
 
 interface Props {
   posts: Post[];
@@ -35,64 +31,88 @@ export function FeedScreen({
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [repostingOn, setRepostingOn] = useState<Post | null>(null);
+  const [filterUserId, setFilterUserId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string>('');
 
   const postar = async (text: string, img: string | null) => {
-    await addDoc(collection(db, 'posts'), {
-      user: currentUser.name,
-      userId: uid,
-      photo: currentUser.photo,
-      text: text.trim(),
-      imageUrl: img,
-      likes: [],
-      comments: [],
-      createdAt: serverTimestamp(),
-      userEmail: currentUser.email,
-    });
-  };
-
-  const curtir = async (p: Post) => {
-    await updateDoc(doc(db, 'posts', p.id), {
-      likes: p.likes?.includes(uid) ? arrayRemove(uid) : arrayUnion(uid),
-    });
-  };
-
-  const comentar = async (id: string, text: string) => {
-    await updateDoc(doc(db, 'posts', id), {
-      comments: arrayUnion({
+    try {
+      setErrorMsg('');
+      await createFeedPost({
         user: currentUser.name,
         userId: uid,
         photo: currentUser.photo,
-        text: text.trim(),
+        text,
+        imageUrl: img,
+        userEmail: currentUser.email,
+      });
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('Não foi possível publicar agora. Tente novamente.');
+      throw error;
+    }
+  };
+
+  const curtir = async (p: Post) => {
+    try {
+      setErrorMsg('');
+      await togglePostLike(p.id, p.likes?.includes(uid), uid);
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('Falha ao curtir/descurtir o post.');
+    }
+  };
+
+  const comentar = async (id: string, text: string) => {
+    try {
+      setErrorMsg('');
+      await addPostComment(id, {
+        user: currentUser.name,
+        userId: uid,
+        photo: currentUser.photo,
+        text,
         time: new Date().toISOString(),
-      }),
-    });
-    setCommentingOn(null);
+      });
+      setCommentingOn(null);
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('Falha ao enviar comentário.');
+    }
   };
 
   const repostar = async (post: Post, text: string) => {
-    await addDoc(collection(db, 'posts'), {
-      user: currentUser.name,
-      userId: uid,
-      photo: currentUser.photo,
-      text: text.trim(),
-      imageUrl: null,
-      likes: [],
-      comments: [],
-      createdAt: serverTimestamp(),
-      userEmail: currentUser.email,
-      repostOf: {
-        user: post.user,
-        text: post.text,
-        imageUrl: post.imageUrl || null,
-        userEmail: post.userEmail || '',
-      },
-    });
-    setRepostingOn(null);
+    try {
+      setErrorMsg('');
+      await createFeedPost({
+        user: currentUser.name,
+        userId: uid,
+        photo: currentUser.photo,
+        text,
+        imageUrl: null,
+        userEmail: currentUser.email,
+        repostOf: {
+          user: post.user,
+          text: post.text,
+          imageUrl: post.imageUrl || undefined,
+          userEmail: post.userEmail || '',
+        },
+      });
+      setRepostingOn(null);
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('Falha ao repostar.');
+      throw error;
+    }
   };
 
   const deletar = async (id: string) => {
     if (!window.confirm('Apagar post?')) return;
-    await deleteDoc(doc(db, 'posts', id));
+    try {
+      setErrorMsg('');
+      await removePost(id);
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('Falha ao apagar o post.');
+    }
   };
 
   const handleComment = (postId: string) => {
@@ -117,12 +137,18 @@ export function FeedScreen({
         WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid #1e1e1e',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        {/* Top row: back | logo | spacer */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 16px 4px',
+        }}>
           <button
             onClick={() => goTo('home')}
             className="feed-back-btn"
             style={{
-              padding: '10px 14px',
+              padding: '6px',
               color: '#F07830',
               background: 'transparent',
               border: 'none',
@@ -131,60 +157,150 @@ export function FeedScreen({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginLeft: 4,
             }}
           >
             {Ico.back()}
           </button>
 
-          <div style={{ flex: 1, display: 'flex' }}>
-            {(['para-voce', 'seguindo'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
-                  flex: 1,
-                  padding: '14px 0',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  fontWeight: tab === t ? 700 : 400,
-                  color: tab === t ? '#e7e9ea' : '#555',
-                  fontSize: 15,
-                  fontFamily: 'Barlow, sans-serif',
-                  background: 'transparent',
-                  border: 'none',
-                  transition: 'color 0.15s',
-                }}
-              >
-                {t === 'para-voce' ? 'Para você' : 'Seguindo'}
-                {tab === t && (
-                  <span style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 52,
-                    height: 3,
-                    background: '#F07830',
-                    borderRadius: 99,
-                    display: 'block',
-                  }} />
-                )}
-              </button>
-            ))}
+          {/* Centered PG logo + brand */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <div style={{
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}>
+              <svg width="28" height="28" viewBox="4 2 34 52" fill="none">
+                <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
+                <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
+                <rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff" />
+                <rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff" />
+                <path d="M26 42 L30 42 L30 50 L28 47 L26 50 Z" fill="#fff" />
+              </svg>
+            </div>
+            <span style={{
+              fontFamily: 'Bebas Neue, sans-serif',
+              fontSize: 18,
+              letterSpacing: 2,
+              color: '#e7e9ea',
+              lineHeight: 1,
+            }}>
+              PG VERTICALIZADOS
+            </span>
           </div>
 
-          <div style={{ width: 44 }} />
+          <div style={{ width: 34 }} />
+        </div>
+
+        {/* Tabs row */}
+        <div style={{ display: 'flex' }}>
+          {(['para-voce', 'seguindo'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                flex: 1,
+                padding: '12px 0',
+                textAlign: 'center',
+                cursor: 'pointer',
+                position: 'relative',
+                fontWeight: tab === t ? 700 : 400,
+                color: tab === t ? '#e7e9ea' : '#555',
+                fontSize: 15,
+                fontFamily: 'Barlow, sans-serif',
+                background: 'transparent',
+                border: 'none',
+                transition: 'color 0.15s',
+              }}
+            >
+              {t === 'para-voce' ? 'Para você' : 'Seguindo'}
+              {tab === t && (
+                <span style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 52,
+                  height: 3,
+                  background: '#F07830',
+                  borderRadius: 99,
+                  display: 'block',
+                }} />
+              )}
+            </button>
+          ))}
         </div>
       </div>
+
+      {errorMsg && (
+        <div style={{
+          margin: '8px 16px 0',
+          padding: '10px 12px',
+          borderRadius: 10,
+          background: 'rgba(244, 33, 46, 0.12)',
+          border: '1px solid rgba(244, 33, 46, 0.35)',
+          color: '#ff8f98',
+          fontFamily: 'Barlow, sans-serif',
+          fontSize: 13,
+        }}>
+          {errorMsg}
+        </div>
+      )}
+
+      {/* ── Stories bar ───────────────────────────────────── */}
+      <StoriesBar
+        posts={posts}
+        currentUser={currentUser}
+        activeUserId={filterUserId}
+        onStoryPress={(userId) => setFilterUserId(filterUserId === userId ? null : userId)}
+      />
 
       {/* ── Composer ──────────────────────────────────────── */}
       <Composer userPhoto={currentUser.photo} onPost={postar} />
 
+      {/* ── Filter banner ─────────────────────────────────── */}
+      {filterUserId && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 16px',
+          background: 'rgba(240,120,48,0.08)',
+          borderBottom: '1px solid rgba(240,120,48,0.15)',
+        }}>
+          <span style={{
+            fontFamily: 'Barlow, sans-serif',
+            fontSize: 13,
+            color: '#F07830',
+          }}>
+            Posts de {posts.find(p => p.userId === filterUserId)?.user ?? '...'}
+          </span>
+          <button
+            onClick={() => setFilterUserId(null)}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(240,120,48,0.4)',
+              borderRadius: 99,
+              color: '#F07830',
+              fontSize: 11,
+              fontFamily: 'Barlow, sans-serif',
+              padding: '3px 10px',
+              cursor: 'pointer',
+            }}
+          >
+            Limpar
+          </button>
+        </div>
+      )}
+
       {/* ── Timeline ──────────────────────────────────────── */}
       <Timeline
-        posts={posts}
+        posts={filterUserId ? posts.filter(p => p.userId === filterUserId) : posts}
         loading={loading}
         uid={uid}
         isAdmin={isAdmin}

@@ -10,11 +10,28 @@ export const GLOBAL_CSS = `
     -webkit-tap-highlight-color: transparent;
   }
 
-  html, body, #root {
+  html {
     height: 100%;
+    height: -webkit-fill-available;
+  }
+
+  body, #root {
+    height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
     background: #000;
     color: #e7e9ea;
     font-family: 'Barlow', sans-serif;
+  }
+
+  #root {
+    width: 100%;
   }
 
   ::-webkit-scrollbar {
@@ -62,24 +79,31 @@ export const GLOBAL_CSS = `
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
+
+  @media (min-width: 560px) {
+    #root {
+      max-width: 500px;
+      border-left: 1px solid #2f3336;
+      border-right: 1px solid #2f3336;
+    }
+  }
 `;
 
 export const s: Record<string, CSSProperties> = {
   root: {
     background: '#000',
-    minHeight: '100%',
+    minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
     maxWidth: 500,
     margin: '0 auto',
     position: 'relative',
-    borderLeft: '1px solid #2f3336',
-    borderRight: '1px solid #2f3336',
   },
   content: {
     flex: 1,
     overflowY: 'auto',
-    paddingBottom: 70,
+    paddingBottom: 'calc(70px + env(safe-area-inset-bottom, 0px))',
   },
   page: {
     padding: '0 16px',
@@ -158,11 +182,8 @@ export const s: Record<string, CSSProperties> = {
   logoBox: {
     width: 32,
     height: 32,
-    background: '#F07830',
     borderRadius: 8,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     flexShrink: 0,
   },
   avatarSmall: {

@@ -35,3 +35,21 @@ export function tempoRelativo(ts: { toDate: () => Date } | null | undefined): st
   if (diff < 1440) return `${Math.floor(diff / 60)}h`;
   return `${Math.floor(diff / 1440)}d`;
 }
+
+export function tempoRelativoStr(iso: string): string {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (diff < 1) return 'agora';
+  if (diff < 60) return `${diff}min`;
+  if (diff < 1440) return `${Math.floor(diff / 60)}h`;
+  return `${Math.floor(diff / 1440)}d`;
+}
+
+export function toHandle(name: string): string {
+  return '@' + name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+    .replace(/[^a-z0-9_]/g, '')
+    .slice(0, 20);
+}

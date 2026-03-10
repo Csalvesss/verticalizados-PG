@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import { getAuth, signOut } from 'firebase/auth';
 import { Ico } from '../icons';
-import { s } from '../styles';
 import type { CurrentUser, Screen, Post, Sorteio } from '../types';
 
 const auth = getAuth();
@@ -15,6 +15,8 @@ interface Props {
   goTo: (sc: Screen) => void;
 }
 
+type Tab = 'posts' | 'curtidos';
+
 export function PerfilScreen({
   currentUser,
   isAdmin,
@@ -24,182 +26,376 @@ export function PerfilScreen({
   sorteioSemana,
   goTo,
 }: Props) {
-  const meusPosts = posts.filter((p) => p.userId === uid).length;
+  const [tab, setTab] = useState<Tab>('posts');
+
+  const meusPosts = posts.filter(p => p.userId === uid);
+  const curtidos = posts.filter(p => p.likes?.includes(uid));
   const oracoes = sorteioSemana?.historico?.length || 0;
 
+  const gridPosts = tab === 'posts' ? meusPosts : curtidos;
+
   return (
-    <div className="fade">
-      <div style={s.pageHeader}>
-        <button style={s.backBtn} onClick={() => goTo('home')}>
+    <div style={{ background: '#000', minHeight: '100%' }}>
+      {/* ── Header ── */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '12px 16px',
+        borderBottom: '1px solid #1a1a1a',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        background: 'rgba(0,0,0,0.9)',
+        backdropFilter: 'blur(12px)',
+      }}>
+        <button onClick={() => goTo('home')} style={{
+          padding: 6,
+          borderRadius: '50%',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          marginRight: 8,
+        }}>
           {Ico.back()}
         </button>
-        <div style={s.pageTitle}>MEU PERFIL</div>
+        <span style={{
+          fontFamily: 'Barlow Condensed, sans-serif',
+          fontWeight: 700,
+          fontSize: 18,
+          color: '#fff',
+          letterSpacing: 0.5,
+          flex: 1,
+        }}>
+          {currentUser.name}
+        </span>
+        {isAdmin && (
+          <button onClick={() => goTo('admin')} style={{
+            padding: 8,
+            borderRadius: '50%',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+          }}>
+            {Ico.admin('#71767b')}
+          </button>
+        )}
       </div>
 
-      <div style={s.page}>
-        <div style={{ ...s.card, padding: '32px 24px', textAlign: 'center' }}>
-          <img
-            src={currentUser.photo}
-            style={{
-              width: 96,
-              height: 96,
-              borderRadius: '50%',
-              border: '3px solid #F07830',
-              objectFit: 'cover',
-              margin: '0 auto 16px',
-              display: 'block',
-            }}
-            alt=""
-          />
-          <div
-            style={{
-              fontFamily: 'Barlow Condensed',
-              fontSize: 26,
-              fontWeight: 700,
-              color: '#fff',
-              letterSpacing: 0.5,
-            }}
-          >
-            {currentUser.fullName}
-          </div>
-          <div
-            style={{
-              fontFamily: 'Barlow',
-              fontSize: 14,
-              color: '#71767b',
-              marginBottom: 24,
-            }}
-          >
-            {currentUser.email}
+      {/* ── Profile info ── */}
+      <div style={{ padding: '20px 20px 0' }}>
+        {/* Avatar + stats row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 16 }}>
+          {/* Avatar with gradient ring */}
+          <div style={{
+            width: 88,
+            height: 88,
+            borderRadius: '50%',
+            padding: 3,
+            background: 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)',
+            flexShrink: 0,
+          }}>
+            <img
+              src={currentUser.photo}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2.5px solid #000',
+                display: 'block',
+              }}
+            />
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: 32,
-              marginBottom: 32,
-              borderTop: '1px solid #2f3336',
-              borderBottom: '1px solid #2f3336',
-              padding: '16px 0',
-            }}
-          >
+          {/* Stats */}
+          <div style={{ display: 'flex', gap: 20, flex: 1, justifyContent: 'center' }}>
             {[
-              { n: meusPosts, label: 'Posts' },
+              { n: meusPosts.length, label: 'Posts' },
               { n: songsCount, label: 'Músicas' },
               { n: oracoes, label: 'Orações' },
-            ].map((item) => (
-              <div key={item.label}>
-                <div
-                  style={{
-                    fontFamily: 'Barlow Condensed',
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: '#fff',
-                  }}
-                >
+            ].map(item => (
+              <div key={item.label} style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontFamily: 'Barlow Condensed, sans-serif',
+                  fontWeight: 700,
+                  fontSize: 22,
+                  color: '#fff',
+                  lineHeight: 1.2,
+                }}>
                   {item.n}
                 </div>
-                <div
-                  style={{
-                    fontFamily: 'Barlow',
-                    fontSize: 12,
-                    color: '#71767b',
-                    fontWeight: 500,
-                  }}
-                >
+                <div style={{
+                  fontFamily: 'Barlow, sans-serif',
+                  fontSize: 12,
+                  color: '#71767b',
+                  marginTop: 1,
+                }}>
                   {item.label}
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          <div
-            style={{
-              background: 'rgba(240,120,48,0.1)',
-              borderRadius: 16,
-              padding: '16px',
-              textAlign: 'left',
-              marginBottom: 24,
-              border: '1px solid rgba(240,120,48,0.1)',
-            }}
-          >
-            <div
-              style={{
-                fontFamily: 'Barlow Condensed',
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 2,
-                color: '#F07830',
-                marginBottom: 4,
-              }}
-            >
-              MEMBRO DO PG
-            </div>
-            <div
-              style={{
-                fontFamily: 'Barlow Condensed',
-                fontSize: 18,
-                fontWeight: 700,
-                color: '#fff',
-                letterSpacing: 0.5,
-              }}
-            >
-              VERTICALIZADOS · MJA ESPLANADA
-            </div>
+        {/* Name */}
+        <div style={{ marginBottom: 8 }}>
+          <div style={{
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontWeight: 700,
+            fontSize: 17,
+            color: '#fff',
+          }}>
+            {currentUser.fullName}
           </div>
+          <div style={{
+            fontFamily: 'Barlow, sans-serif',
+            fontSize: 12,
+            color: '#555',
+          }}>
+            {currentUser.email}
+          </div>
+        </div>
 
-          {isAdmin && (
-            <div
-              style={{
-                background: '#16181c',
-                borderRadius: 12,
-                padding: '12px 16px',
-                textAlign: 'left',
-                marginBottom: 24,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                border: '1px solid #2f3336',
-              }}
-            >
-              {Ico.admin('#F07830')}
-              <div
-                style={{
-                  fontFamily: 'Barlow Condensed',
-                  fontWeight: 700,
-                  fontSize: 14,
-                  color: '#F07830',
-                  letterSpacing: 1,
-                }}
-              >
-                ADMINISTRADOR
-              </div>
-            </div>
-          )}
+        {/* PG badge */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'rgba(240,120,48,0.1)',
+          border: '1px solid rgba(240,120,48,0.25)',
+          borderRadius: 8,
+          padding: '5px 10px',
+          marginBottom: 16,
+        }}>
+          <div style={{ width: 14, height: 14, background: '#F07830', borderRadius: 3, flexShrink: 0 }} />
+          <span style={{
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontWeight: 700,
+            fontSize: 11,
+            letterSpacing: 1,
+            color: '#F07830',
+          }}>
+            VERTICALIZADOS · MJA ESPLANADA
+          </span>
+        </div>
 
+        {/* Admin badge */}
+        {isAdmin && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: '#16181c',
+            border: '1px solid #2f3336',
+            borderRadius: 8,
+            padding: '8px 12px',
+            marginBottom: 12,
+          }}>
+            {Ico.admin('#F07830')}
+            <span style={{
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontWeight: 700,
+              fontSize: 13,
+              letterSpacing: 1,
+              color: '#F07830',
+            }}>
+              ADMINISTRADOR
+            </span>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          <div style={{
+            flex: 1,
+            padding: '8px 16px',
+            borderRadius: 8,
+            border: '1px solid #2f3336',
+            background: 'transparent',
+            color: '#e7e9ea',
+            fontFamily: 'Barlow, sans-serif',
+            fontWeight: 600,
+            fontSize: 13,
+            textAlign: 'center',
+          }}>
+            Editar perfil
+          </div>
           <button
             onClick={() => signOut(auth)}
             style={{
-              width: '100%',
-              padding: '14px',
-              borderRadius: 999,
+              padding: '8px 16px',
+              borderRadius: 8,
+              border: '1px solid #331111',
               background: 'transparent',
-              border: '1px solid #2f3336',
               color: '#f4212e',
-              fontFamily: 'Barlow',
-              fontWeight: 700,
-              fontSize: 14,
+              fontFamily: 'Barlow, sans-serif',
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
+              gap: 6,
             }}
           >
-            {Ico.logout()} Sair da conta
+            {Ico.logout()} Sair
           </button>
         </div>
       </div>
+
+      {/* ── Tab bar ── */}
+      <div style={{
+        display: 'flex',
+        borderTop: '1px solid #1a1a1a',
+        borderBottom: '1px solid #1a1a1a',
+        position: 'sticky',
+        top: 49,
+        background: '#000',
+        zIndex: 40,
+      }}>
+        {([
+          { id: 'posts' as Tab, label: '⊞  POSTS' },
+          { id: 'curtidos' as Tab, label: '♥  CURTIDOS' },
+        ]).map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              position: 'relative',
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontWeight: 700,
+              fontSize: 12,
+              letterSpacing: 1.5,
+              color: tab === t.id ? '#F07830' : '#444',
+              transition: 'color 0.2s',
+            }}
+          >
+            {t.label}
+            {tab === t.id && (
+              <span style={{
+                position: 'absolute',
+                bottom: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 40,
+                height: 2,
+                background: '#F07830',
+                display: 'block',
+                borderRadius: 99,
+              }} />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Posts grid ── */}
+      {gridPosts.length === 0 ? (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '60px 16px',
+          gap: 12,
+        }}>
+          <div style={{ fontSize: 40 }}>📷</div>
+          <div style={{
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontSize: 18,
+            fontWeight: 700,
+            color: '#555',
+            letterSpacing: 0.5,
+          }}>
+            {tab === 'posts' ? 'Nenhum post ainda' : 'Nenhuma curtida ainda'}
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 2,
+          padding: 2,
+        }}>
+          {gridPosts.map(post => (
+            <div
+              key={post.id}
+              style={{
+                aspectRatio: '1',
+                overflow: 'hidden',
+                background: post.imageUrl ? '#111' : 'rgba(240,120,48,0.08)',
+                position: 'relative',
+              }}
+            >
+              {post.imageUrl ? (
+                <img
+                  src={post.imageUrl}
+                  alt=""
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 8,
+                }}>
+                  <span style={{
+                    fontFamily: 'Barlow, sans-serif',
+                    fontSize: 10,
+                    color: '#777',
+                    textAlign: 'center',
+                    lineHeight: 1.4,
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 4,
+                    WebkitBoxOrient: 'vertical' as never,
+                  }}>
+                    {post.text}
+                  </span>
+                </div>
+              )}
+
+              {(post.likes?.length ?? 0) > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: 4,
+                  left: 0,
+                  right: 0,
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}>
+                  <div style={{
+                    background: 'rgba(0,0,0,0.65)',
+                    borderRadius: 99,
+                    padding: '1px 7px',
+                    fontSize: 10,
+                    color: '#fff',
+                    fontFamily: 'Barlow, sans-serif',
+                  }}>
+                    ♥ {post.likes!.length}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ height: 80 }} />
     </div>
   );
 }

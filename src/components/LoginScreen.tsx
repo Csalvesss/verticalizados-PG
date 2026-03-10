@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-
-const auth = getAuth();
-const provider = new GoogleAuthProvider();
+import { signInWithGoogle } from '../services/authService';
 
 export function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -12,7 +9,7 @@ export function LoginScreen() {
     setLoading(true);
     setErro('');
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithGoogle();
     } catch (e) {
       console.error(e);
       setErro('Não foi possível entrar. Tente novamente.');
