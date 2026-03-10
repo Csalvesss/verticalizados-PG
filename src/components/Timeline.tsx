@@ -9,12 +9,15 @@ interface Props {
   uid: string;
   isAdmin: boolean;
   currentUser: CurrentUser;
+  following: string[];
   commentingOn: string | null;
   onLike: (post: Post) => void;
   onComment: (postId: string) => void;
   onRepost: (post: Post) => void;
   onDelete: (postId: string) => void;
-  onSubmitComment: (postId: string, text: string) => Promise<void>;
+  onSubmitComment: (postId: string, text: string) => void;
+  onFollow: (userId: string) => void;
+  onUnfollow: (userId: string) => void;
 }
 
 export function Timeline({
@@ -23,16 +26,19 @@ export function Timeline({
   uid,
   isAdmin,
   currentUser,
+  following,
   commentingOn,
   onLike,
   onComment,
   onRepost,
   onDelete,
   onSubmitComment,
+  onFollow,
+  onUnfollow,
 }: Props) {
   if (loading) {
     return (
-      <div style={{ ...s.empty, padding: '40px 16px' }}>
+      <div style={{ ...s.empty, padding: '60px 16px' }}>
         Carregando...
       </div>
     );
@@ -40,8 +46,8 @@ export function Timeline({
 
   if (posts.length === 0) {
     return (
-      <div style={{ ...s.empty, padding: '40px 16px' }}>
-        Nenhum post ainda. Seja o primeiro 🙌
+      <div style={{ ...s.empty, padding: '60px 16px' }}>
+        Nenhum post ainda. Seja o primeiro!
       </div>
     );
   }
@@ -54,10 +60,13 @@ export function Timeline({
             post={post}
             uid={uid}
             isAdmin={isAdmin}
+            following={following}
             onLike={() => onLike(post)}
             onComment={() => onComment(post.id)}
             onRepost={() => onRepost(post)}
             onDelete={() => onDelete(post.id)}
+            onFollow={onFollow}
+            onUnfollow={onUnfollow}
           />
 
           {commentingOn === post.id && (
@@ -70,7 +79,7 @@ export function Timeline({
                 placeholder="Poste sua resposta"
                 submitLabel="Responder"
                 autoFocus
-                onPost={(t) => onSubmitComment(post.id, t)}
+                onPost={(t) => Promise.resolve(onSubmitComment(post.id, t))}
               />
             </div>
           )}
