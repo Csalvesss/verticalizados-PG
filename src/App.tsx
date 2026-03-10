@@ -57,7 +57,10 @@ function MainApp({ user }: { user: User }) {
     email: user.email || '',
   };
 
-  const [screen, setScreen] = useState<Screen>('home');
+  const [screen, setScreen] = useState<Screen>(() => {
+    const saved = window.localStorage.getItem('pg:screen') as Screen | null;
+    return saved ?? 'home';
+  });
 
   // ── Dados do Firestore ──────────────────────────────────────────────────────
   const [songs, setSongs] = useState<Song[]>([]);
@@ -68,6 +71,10 @@ function MainApp({ user }: { user: User }) {
   const [confirmacoes, setConfirmacoes] = useState<Confirmacao[]>([]);
   const [membrosLista, setMembrosLista] = useState<string[]>([]);
   const [sorteioSemana, setSorteioSemana] = useState<Sorteio | null>(null);
+
+  useEffect(() => {
+    window.localStorage.setItem('pg:screen', screen);
+  }, [screen]);
 
   useEffect(() => {
     // Músicas — seed automático se vazio

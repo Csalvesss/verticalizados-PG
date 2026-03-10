@@ -36,6 +36,7 @@ export function PostCard({
   const isOwner = post.userId === uid;
   const liked = post.likes?.includes(uid);
   const isVerified = post.userEmail === ADMIN_EMAIL;
+  const handle = post.userEmail?.split('@')[0] || post.user.toLowerCase().replace(/\s+/g, '');
   const likesCount = post.likes?.length || 0;
   const commentsCount = post.comments?.length || 0;
   const hasComments = commentsCount > 0;
@@ -72,27 +73,22 @@ export function PostCard({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Avatar src={post.photo} size={38} />
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              fontWeight: 700,
               color: '#e7e9ea',
               fontSize: 14,
               fontFamily: 'Barlow, sans-serif',
               lineHeight: 1.3,
+              minWidth: 0,
             }}>
-              {post.user}
+              <span style={{ fontWeight: 700 }}>{post.user}</span>
               {isVerified && verifiedBadge}
-            </div>
-            <div style={{
-              color: '#555',
-              fontSize: 12,
-              fontFamily: 'Barlow, sans-serif',
-              lineHeight: 1.2,
-            }}>
-              {tempoRelativo(post.createdAt)}
+              <span style={{ color: '#6e767d', fontWeight: 400 }}>@{handle}</span>
+              <span style={{ color: '#6e767d' }}>·</span>
+              <span style={{ color: '#6e767d', whiteSpace: 'nowrap' }}>{tempoRelativo(post.createdAt)}</span>
             </div>
           </div>
         </div>
@@ -171,7 +167,7 @@ export function PostCard({
       {/* ── Likes count ── */}
       {likesCount > 0 && (
         <div style={{
-          padding: '0 16px 4px',
+          padding: '0 16px 4px 64px',
           fontSize: 13,
           fontWeight: 700,
           color: '#e7e9ea',
@@ -184,15 +180,15 @@ export function PostCard({
       {/* ── Caption: Name bold + text ── */}
       {post.text && (
         <div style={{
-          padding: '2px 16px 6px',
-          fontSize: 14,
+          padding: '2px 16px 8px 64px',
+          fontSize: 15,
           color: '#e7e9ea',
           lineHeight: 1.55,
           fontFamily: 'Barlow, sans-serif',
           wordBreak: 'break-word',
+          whiteSpace: 'pre-wrap',
         }}>
-          <span style={{ fontWeight: 700 }}>{post.user}</span>
-          {' '}{post.text}
+          {post.text}
         </div>
       )}
 
@@ -202,7 +198,7 @@ export function PostCard({
           onClick={() => setShowComments(!showComments)}
           style={{
             display: 'block',
-            padding: '0 16px 4px',
+            padding: '0 16px 4px 64px',
             fontSize: 13,
             color: '#555',
             background: 'transparent',
@@ -220,7 +216,7 @@ export function PostCard({
 
       {/* ── Expanded comments ── */}
       {showComments && hasComments && (
-        <div style={{ padding: '4px 16px 8px' }}>
+        <div style={{ padding: '4px 16px 8px 64px' }}>
           {post.comments.map((c, i) => (
             <div key={i} style={{
               display: 'flex',
@@ -256,7 +252,7 @@ export function PostCard({
       {/* ── Last comment preview (when collapsed) ── */}
       {!showComments && lastComment && (
         <div style={{
-          padding: '0 16px 12px',
+          padding: '0 16px 12px 64px',
           fontSize: 13,
           color: '#e7e9ea',
           fontFamily: 'Barlow, sans-serif',
@@ -274,7 +270,7 @@ export function PostCard({
         style={{
           display: 'block',
           width: '100%',
-          padding: '4px 16px 14px',
+          padding: '4px 16px 14px 64px',
           textAlign: 'left',
           fontSize: 13,
           color: '#444',
