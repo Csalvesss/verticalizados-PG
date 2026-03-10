@@ -10,8 +10,14 @@ export const GLOBAL_CSS = `
     -webkit-tap-highlight-color: transparent;
   }
 
-  html, body, #root {
-    height: 100%;
+  html {
+    height: -webkit-fill-available;
+  }
+
+  body, #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
     background: #000;
     color: #e7e9ea;
     font-family: 'Barlow', sans-serif;
@@ -67,9 +73,10 @@ export const GLOBAL_CSS = `
 export const s: Record<string, CSSProperties> = {
   root: {
     background: '#000',
-    minHeight: '100%',
+    minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
     maxWidth: 500,
     margin: '0 auto',
     position: 'relative',
@@ -79,7 +86,7 @@ export const s: Record<string, CSSProperties> = {
   content: {
     flex: 1,
     overflowY: 'auto',
-    paddingBottom: 70,
+    paddingBottom: 'calc(70px + env(safe-area-inset-bottom, 0px))',
   },
   page: {
     padding: '0 16px',
