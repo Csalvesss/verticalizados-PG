@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { Ico } from '../icons';
-import { tempoRelativo, tempoRelativoStr, ADMIN_EMAIL } from '../constants';
+import { tempoRelativo, ADMIN_EMAIL } from '../constants';
 import type { Post } from '../types';
 import { Avatar } from './Avatar';
-import { PostActions } from './PostActions';
 import { RepostBlock } from './RepostBlock';
 
 interface Props {
   post: Post;
   uid: string;
   isAdmin: boolean;
+  following: string[];
   onLike: () => void;
   onComment: () => void;
   onRepost: () => void;
   onDelete: () => void;
+  onFollow: (userId: string) => void;
+  onUnfollow: (userId: string) => void;
 }
 
 const verifiedBadge = (
@@ -26,12 +28,16 @@ export function PostCard({
   post,
   uid,
   isAdmin,
+  following,
   onLike,
   onComment,
   onRepost,
   onDelete,
+  onFollow,
+  onUnfollow,
 }: Props) {
   const [showComments, setShowComments] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isOwner = post.userId === uid;
   const liked = post.likes?.includes(uid);
@@ -39,12 +45,13 @@ export function PostCard({
   const likesCount = post.likes?.length || 0;
   const commentsCount = post.comments?.length || 0;
   const hasComments = commentsCount > 0;
-  const lastComment = hasComments ? post.comments[post.comments.length - 1] : null;
+  const isFollowing = following.includes(post.userId);
 
   return (
     <div style={{
       borderBottom: '1px solid #1a1a1a',
       background: '#000',
+      padding: '12px 16px',
     }}>
       {/* Repost indicator */}
       {post.repostOf && (
@@ -52,7 +59,8 @@ export function PostCard({
           display: 'flex',
           alignItems: 'center',
           gap: 6,
-          padding: '8px 16px 0',
+          paddingBottom: 8,
+          paddingLeft: 52,
           fontSize: 12,
           fontWeight: 600,
           color: '#71767b',
@@ -63,238 +71,256 @@ export function PostCard({
         </div>
       )}
 
-      {/* ── Header: avatar + name + time + delete ── */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '12px 16px 8px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Avatar src={post.photo} size={38} />
-          <div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              fontWeight: 700,
-              color: '#e7e9ea',
-              fontSize: 14,
-              fontFamily: 'Barlow, sans-serif',
-              lineHeight: 1.3,
-            }}>
-              {post.user}
+      {/* Two-column layout: avatar | content */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        {/* Left: avatar */}
+        <div style={{ flexShrink: 0 }}>
+          <Avatar src={post.photo} size={40} />
+        </div>
+
+        {/* Right: all content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Header: name + time + action button */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+              <span style={{
+                fontWeight: 700,
+                color: '#e7e9ea',
+                fontSize: 14,
+                fontFamily: 'Barlow, sans-serif',
+                lineHeight: 1.3,
+              }}>
+                {post.user}
+              </span>
               {isVerified && verifiedBadge}
+              <span style={{
+                color: '#555',
+                fontSize: 13,
+                fontFamily: 'Barlow, sans-serif',
+              }}>
+                · {tempoRelativo(post.createdAt)}
+              </span>
             </div>
-            <div style={{
-              color: '#555',
-              fontSize: 12,
-              fontFamily: 'Barlow, sans-serif',
-              lineHeight: 1.2,
-            }}>
-              {tempoRelativo(post.createdAt)}
+
+            {/* Dots / delete button */}
+            <div style={{ position: 'relative' }}>
+              {(isOwner || isAdmin) ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                  className="postcard-del-btn"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#555',
+                    padding: 6,
+                    cursor: 'pointer',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {Ico.trash()}
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v); }}
+                  className="postcard-dots-btn"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 6,
+                    cursor: 'pointer',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {Ico.dots()}
+                </button>
+              )}
+
+              {/* Follow/unfollow dropdown */}
+              {menuOpen && (
+                <>
+                  <div
+                    onClick={() => setMenuOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 10 }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '100%',
+                    zIndex: 20,
+                    background: '#1a1a1a',
+                    border: '1px solid #2f3336',
+                    borderRadius: 12,
+                    minWidth: 180,
+                    overflow: 'hidden',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                  }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        isFollowing ? onUnfollow(post.userId) : onFollow(post.userId);
+                        setMenuOpen(false);
+                      }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '12px 16px',
+                        textAlign: 'left',
+                        background: 'transparent',
+                        border: 'none',
+                        color: isFollowing ? '#f4212e' : '#e7e9ea',
+                        fontSize: 14,
+                        fontFamily: 'Barlow, sans-serif',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {isFollowing ? `Deixar de seguir` : `Seguir @${post.user}`}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </div>
 
-        {(isOwner || isAdmin) ? (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="postcard-del-btn"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#555',
-              padding: 8,
-              cursor: 'pointer',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {Ico.trash()}
-          </button>
-        ) : (
-          <button
-            className="postcard-dots-btn"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 8,
-              cursor: 'pointer',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {Ico.dots()}
-          </button>
-        )}
+          {/* Text content - ABOVE image, Threads style */}
+          {post.text && (
+            <div style={{
+              fontSize: 15,
+              color: '#e7e9ea',
+              lineHeight: 1.55,
+              fontFamily: 'Barlow, sans-serif',
+              wordBreak: 'break-word',
+              whiteSpace: 'pre-wrap',
+              marginBottom: (post.imageUrl || post.repostOf) ? 10 : 6,
+            }}>
+              {post.text}
+            </div>
+          )}
+
+          {/* Image - with rounded corners, Threads style */}
+          {post.imageUrl && !post.repostOf && (
+            <div style={{
+              borderRadius: 14,
+              overflow: 'hidden',
+              border: '1px solid #2f3336',
+              marginBottom: 10,
+            }}>
+              <img
+                src={post.imageUrl}
+                alt=""
+                style={{ width: '100%', maxHeight: 440, objectFit: 'cover', display: 'block' }}
+              />
+            </div>
+          )}
+
+          {/* Repost block */}
+          {post.repostOf && <RepostBlock repostOf={post.repostOf} />}
+
+          {/* Actions row with counts - Threads style */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            marginTop: 4,
+          }}>
+            <button
+              onClick={onLike}
+              className={`threads-action-btn${liked ? ' liked' : ''}`}
+            >
+              {Ico.heart(!!liked)}
+              {likesCount > 0 && <span className="action-count">{likesCount}</span>}
+            </button>
+
+            <button onClick={onComment} className="threads-action-btn">
+              {Ico.comment()}
+              {commentsCount > 0 && <span className="action-count">{commentsCount}</span>}
+            </button>
+
+            <button onClick={onRepost} className="threads-action-btn">
+              {Ico.repost()}
+            </button>
+
+            <button className="threads-action-btn">
+              {Ico.send()}
+            </button>
+          </div>
+
+          {/* Comments toggle */}
+          {hasComments && (
+            <button
+              onClick={() => setShowComments(!showComments)}
+              style={{
+                display: 'block',
+                marginTop: 4,
+                fontSize: 13,
+                color: '#555',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'Barlow, sans-serif',
+                padding: '2px 0',
+                textAlign: 'left',
+              }}
+            >
+              {showComments
+                ? 'Ocultar respostas'
+                : `Ver ${commentsCount} resposta${commentsCount !== 1 ? 's' : ''}`}
+            </button>
+          )}
+
+          {/* Expanded comments */}
+          {showComments && hasComments && (
+            <div style={{ marginTop: 10 }}>
+              {post.comments.map((c, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                  <Avatar src={c.photo} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: '#e7e9ea',
+                      fontFamily: 'Barlow, sans-serif',
+                    }}>{c.user} </span>
+                    <span style={{
+                      fontSize: 14,
+                      color: '#ccc',
+                      fontFamily: 'Barlow, sans-serif',
+                      lineHeight: 1.5,
+                      wordBreak: 'break-word',
+                    }}>
+                      {c.text}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ── Image (full-width, before caption) ── */}
-      {post.imageUrl && !post.repostOf && (
-        <div style={{ width: '100%', overflow: 'hidden' }}>
-          <img
-            src={post.imageUrl}
-            alt=""
-            style={{
-              width: '100%',
-              maxHeight: 420,
-              objectFit: 'cover',
-              display: 'block',
-            }}
-          />
-        </div>
-      )}
-
-      {/* ── Repost block ── */}
-      {post.repostOf && (
-        <div style={{ padding: '0 16px 8px' }}>
-          <RepostBlock repostOf={post.repostOf} />
-        </div>
-      )}
-
-      {/* ── Actions: ♥ 💬 ✈️ | 🔖 ── */}
-      <PostActions
-        liked={!!liked}
-        likesCount={likesCount}
-        commentsCount={commentsCount}
-        repostsCount={0}
-        onLike={onLike}
-        onComment={onComment}
-        onRepost={onRepost}
-      />
-
-      {/* ── Likes count ── */}
-      {likesCount > 0 && (
-        <div style={{
-          padding: '0 16px 4px',
-          fontSize: 13,
-          fontWeight: 700,
-          color: '#e7e9ea',
-          fontFamily: 'Barlow, sans-serif',
-        }}>
-          {likesCount} curtida{likesCount !== 1 ? 's' : ''}
-        </div>
-      )}
-
-      {/* ── Caption: Name bold + text ── */}
-      {post.text && (
-        <div style={{
-          padding: '2px 16px 6px',
-          fontSize: 14,
-          color: '#e7e9ea',
-          lineHeight: 1.55,
-          fontFamily: 'Barlow, sans-serif',
-          wordBreak: 'break-word',
-        }}>
-          <span style={{ fontWeight: 700 }}>{post.user}</span>
-          {' '}{post.text}
-        </div>
-      )}
-
-      {/* ── Ver todos os comentários ── */}
-      {hasComments && (
-        <button
-          onClick={() => setShowComments(!showComments)}
-          style={{
-            display: 'block',
-            padding: '0 16px 4px',
-            fontSize: 13,
-            color: '#555',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'Barlow, sans-serif',
-            textAlign: 'left',
-          }}
-        >
-          {showComments
-            ? 'Ocultar comentários'
-            : `Ver todos os ${commentsCount} comentário${commentsCount !== 1 ? 's' : ''}`}
-        </button>
-      )}
-
-      {/* ── Expanded comments ── */}
-      {showComments && hasComments && (
-        <div style={{ padding: '4px 16px 8px' }}>
-          {post.comments.map((c, i) => (
-            <div key={i} style={{
-              display: 'flex',
-              gap: 8,
-              marginBottom: 8,
-            }}>
-              <Avatar src={c.photo} size={28} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 13,
-                  color: '#e7e9ea',
-                  fontFamily: 'Barlow, sans-serif',
-                  lineHeight: 1.5,
-                  wordBreak: 'break-word',
-                }}>
-                  <span style={{ fontWeight: 700 }}>{c.user}</span>
-                  {' '}{c.text}
-                </div>
-                <div style={{
-                  fontSize: 11,
-                  color: '#555',
-                  fontFamily: 'Barlow, sans-serif',
-                  marginTop: 2,
-                }}>
-                  {tempoRelativoStr(c.time)}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Last comment preview (when collapsed) ── */}
-      {!showComments && lastComment && (
-        <div style={{
-          padding: '0 16px 12px',
-          fontSize: 13,
-          color: '#e7e9ea',
-          fontFamily: 'Barlow, sans-serif',
-          lineHeight: 1.5,
-          wordBreak: 'break-word',
-        }}>
-          <span style={{ fontWeight: 700 }}>{lastComment.user}</span>
-          {' '}<span style={{ color: '#aaa' }}>{lastComment.text}</span>
-        </div>
-      )}
-
-      {/* ── Add comment shortcut ── */}
-      <button
-        onClick={onComment}
-        style={{
-          display: 'block',
-          width: '100%',
-          padding: '4px 16px 14px',
-          textAlign: 'left',
-          fontSize: 13,
-          color: '#444',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          fontFamily: 'Barlow, sans-serif',
-        }}
-      >
-        Adicione um comentário...
-      </button>
-
       <style>{`
-        .postcard-del-btn:hover {
-          background: rgba(249, 24, 128, 0.12) !important;
-          color: #f91880 !important;
+        .postcard-del-btn:hover { background: rgba(249,24,128,0.12) !important; color: #f91880 !important; }
+        .postcard-dots-btn:hover { background: rgba(255,255,255,0.06) !important; }
+        .threads-action-btn {
+          display: flex; align-items: center; gap: 5px;
+          padding: 6px 8px; border-radius: 20px;
+          background: transparent; border: none; cursor: pointer;
+          transition: background 0.15s; color: #888;
         }
-        .postcard-dots-btn:hover {
-          background: rgba(255,255,255,0.06) !important;
+        .threads-action-btn:hover { background: rgba(255,255,255,0.06); }
+        .threads-action-btn:active { transform: scale(0.88); }
+        .threads-action-btn.liked svg { fill: #F07830; stroke: #F07830; }
+        .action-count {
+          font-size: 13px; font-family: 'Barlow', sans-serif;
+          color: #888; line-height: 1;
         }
+        .threads-action-btn.liked .action-count { color: #F07830; }
       `}</style>
     </div>
   );

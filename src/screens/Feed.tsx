@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  serverTimestamp,
+  getDoc,
+  setDoc,
+} from 'firebase/firestore';
+import { db } from '../firebase';
 import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
-import { StoriesBar } from '../components/StoriesBar';
-import {
-  addPostComment,
-  createFeedPost,
-  removePost,
-  togglePostLike,
-} from '../services/postService';
 
 interface Props {
   posts: Post[];
@@ -31,93 +37,102 @@ export function FeedScreen({
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [repostingOn, setRepostingOn] = useState<Post | null>(null);
-  const [filterUserId, setFilterUserId] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [following, setFollowing] = useState<string[]>([]);
+
+  // Load following list from Firestore
+  useEffect(() => {
+    const ref = doc(db, 'follows', uid);
+    getDoc(ref).then(snap => {
+      if (snap.exists()) {
+        setFollowing(snap.data().following || []);
+      }
+    });
+  }, [uid]);
+
+  const follow = async (targetUserId: string) => {
+    const ref = doc(db, 'follows', uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      await updateDoc(ref, { following: arrayUnion(targetUserId) });
+    } else {
+      await setDoc(ref, { following: [targetUserId] });
+    }
+    setFollowing(prev => [...prev, targetUserId]);
+  };
+
+  const unfollow = async (targetUserId: string) => {
+    const ref = doc(db, 'follows', uid);
+    await updateDoc(ref, { following: arrayRemove(targetUserId) });
+    setFollowing(prev => prev.filter(id => id !== targetUserId));
+  };
 
   const postar = async (text: string, img: string | null) => {
-    try {
-      setErrorMsg('');
-      await createFeedPost({
-        user: currentUser.name,
-        userId: uid,
-        photo: currentUser.photo,
-        text,
-        imageUrl: img,
-        userEmail: currentUser.email,
-      });
-    } catch (error) {
-      console.error(error);
-      setErrorMsg('Não foi possível publicar agora. Tente novamente.');
-      throw error;
-    }
+    await addDoc(collection(db, 'posts'), {
+      user: currentUser.name,
+      userId: uid,
+      photo: currentUser.photo,
+      text: text.trim(),
+      imageUrl: img,
+      likes: [],
+      comments: [],
+      createdAt: serverTimestamp(),
+      userEmail: currentUser.email,
+    });
   };
 
   const curtir = async (p: Post) => {
-    try {
-      setErrorMsg('');
-      await togglePostLike(p.id, p.likes?.includes(uid), uid);
-    } catch (error) {
-      console.error(error);
-      setErrorMsg('Falha ao curtir/descurtir o post.');
-    }
+    await updateDoc(doc(db, 'posts', p.id), {
+      likes: p.likes?.includes(uid) ? arrayRemove(uid) : arrayUnion(uid),
+    });
   };
 
   const comentar = async (id: string, text: string) => {
-    try {
-      setErrorMsg('');
-      await addPostComment(id, {
+    await updateDoc(doc(db, 'posts', id), {
+      comments: arrayUnion({
         user: currentUser.name,
         userId: uid,
         photo: currentUser.photo,
-        text,
+        text: text.trim(),
         time: new Date().toISOString(),
-      });
-      setCommentingOn(null);
-    } catch (error) {
-      console.error(error);
-      setErrorMsg('Falha ao enviar comentário.');
-    }
+      }),
+    });
+    setCommentingOn(null);
   };
 
   const repostar = async (post: Post, text: string) => {
-    try {
-      setErrorMsg('');
-      await createFeedPost({
-        user: currentUser.name,
-        userId: uid,
-        photo: currentUser.photo,
-        text,
-        imageUrl: null,
-        userEmail: currentUser.email,
-        repostOf: {
-          user: post.user,
-          text: post.text,
-          imageUrl: post.imageUrl || undefined,
-          userEmail: post.userEmail || '',
-        },
-      });
-      setRepostingOn(null);
-    } catch (error) {
-      console.error(error);
-      setErrorMsg('Falha ao repostar.');
-      throw error;
-    }
+    await addDoc(collection(db, 'posts'), {
+      user: currentUser.name,
+      userId: uid,
+      photo: currentUser.photo,
+      text: text.trim(),
+      imageUrl: null,
+      likes: [],
+      comments: [],
+      createdAt: serverTimestamp(),
+      userEmail: currentUser.email,
+      repostOf: {
+        user: post.user,
+        text: post.text,
+        imageUrl: post.imageUrl || null,
+        userEmail: post.userEmail || '',
+      },
+    });
+    setRepostingOn(null);
   };
 
   const deletar = async (id: string) => {
     if (!window.confirm('Apagar post?')) return;
-    try {
-      setErrorMsg('');
-      await removePost(id);
-    } catch (error) {
-      console.error(error);
-      setErrorMsg('Falha ao apagar o post.');
-    }
+    await deleteDoc(doc(db, 'posts', id));
   };
 
   const handleComment = (postId: string) => {
     setCommentingOn(commentingOn === postId ? null : postId);
   };
+
+  // Filter posts for "Seguindo" tab
+  const feedPosts = tab === 'seguindo'
+    ? posts.filter(p => following.includes(p.userId))
+    : posts;
 
   return (
     <div style={{
@@ -127,22 +142,22 @@ export function FeedScreen({
       background: '#000',
       width: '100%',
     }}>
-      {/* ── Sticky header ───────────────────────────────────── */}
+      {/* ── Sticky header ── */}
       <div style={{
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        background: 'rgba(0,0,0,0.9)',
+        background: 'rgba(0,0,0,0.92)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid #1e1e1e',
       }}>
-        {/* Top row: back | logo | spacer */}
+        {/* Top row */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '8px 16px 4px',
+          padding: '10px 16px 4px',
         }}>
           <button
             onClick={() => goTo('home')}
@@ -162,19 +177,8 @@ export function FeedScreen({
             {Ico.back()}
           </button>
 
-          {/* Centered PG logo + brand */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}>
-            <div style={{
-              width: 28,
-              height: 28,
-              borderRadius: 7,
-              overflow: 'hidden',
-              flexShrink: 0,
-            }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 7, overflow: 'hidden', flexShrink: 0 }}>
               <svg width="28" height="28" viewBox="4 2 34 52" fill="none">
                 <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
                 <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
@@ -197,7 +201,7 @@ export function FeedScreen({
           <div style={{ width: 34 }} />
         </div>
 
-        {/* Tabs row */}
+        {/* Tabs */}
         <div style={{ display: 'flex' }}>
           {(['para-voce', 'seguindo'] as const).map((t) => (
             <button
@@ -237,83 +241,72 @@ export function FeedScreen({
         </div>
       </div>
 
-      {errorMsg && (
+      {/* ── Composer (only on Para você tab) ── */}
+      {tab === 'para-voce' && (
+        <Composer userPhoto={currentUser.photo} onPost={postar} />
+      )}
+
+      {/* ── Seguindo empty state ── */}
+      {tab === 'seguindo' && following.length === 0 && !loading && (
         <div style={{
-          margin: '8px 16px 0',
-          padding: '10px 12px',
-          borderRadius: 10,
-          background: 'rgba(244, 33, 46, 0.12)',
-          border: '1px solid rgba(244, 33, 46, 0.35)',
-          color: '#ff8f98',
+          padding: '60px 32px',
+          textAlign: 'center',
+          color: '#555',
           fontFamily: 'Barlow, sans-serif',
-          fontSize: 13,
+          fontSize: 15,
+          lineHeight: 1.6,
         }}>
-          {errorMsg}
+          <div style={{ fontSize: 40, marginBottom: 16 }}>👥</div>
+          <div style={{ fontWeight: 700, color: '#888', marginBottom: 8, fontSize: 17 }}>
+            Você ainda não segue ninguém
+          </div>
+          <div style={{ color: '#444' }}>
+            Toque em "..." em qualquer post e escolha seguir o usuário para ver os posts aqui.
+          </div>
         </div>
       )}
 
-      {/* ── Stories bar ───────────────────────────────────── */}
-      <StoriesBar
-        posts={posts}
-        currentUser={currentUser}
-        activeUserId={filterUserId}
-        onStoryPress={(userId) => setFilterUserId(filterUserId === userId ? null : userId)}
-      />
-
-      {/* ── Composer ──────────────────────────────────────── */}
-      <Composer userPhoto={currentUser.photo} onPost={postar} />
-
-      {/* ── Filter banner ─────────────────────────────────── */}
-      {filterUserId && (
+      {/* ── Seguindo: posts from followed users but none yet ── */}
+      {tab === 'seguindo' && following.length > 0 && feedPosts.length === 0 && !loading && (
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '8px 16px',
-          background: 'rgba(240,120,48,0.08)',
-          borderBottom: '1px solid rgba(240,120,48,0.15)',
+          padding: '60px 32px',
+          textAlign: 'center',
+          color: '#555',
+          fontFamily: 'Barlow, sans-serif',
+          fontSize: 15,
+          lineHeight: 1.6,
         }}>
-          <span style={{
-            fontFamily: 'Barlow, sans-serif',
-            fontSize: 13,
-            color: '#F07830',
-          }}>
-            Posts de {posts.find(p => p.userId === filterUserId)?.user ?? '...'}
-          </span>
-          <button
-            onClick={() => setFilterUserId(null)}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(240,120,48,0.4)',
-              borderRadius: 99,
-              color: '#F07830',
-              fontSize: 11,
-              fontFamily: 'Barlow, sans-serif',
-              padding: '3px 10px',
-              cursor: 'pointer',
-            }}
-          >
-            Limpar
-          </button>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>📭</div>
+          <div style={{ fontWeight: 700, color: '#888', marginBottom: 8, fontSize: 17 }}>
+            Nenhum post ainda
+          </div>
+          <div style={{ color: '#444' }}>
+            As pessoas que você segue ainda não postaram nada.
+          </div>
         </div>
       )}
 
-      {/* ── Timeline ──────────────────────────────────────── */}
-      <Timeline
-        posts={filterUserId ? posts.filter(p => p.userId === filterUserId) : posts}
-        loading={loading}
-        uid={uid}
-        isAdmin={isAdmin}
-        currentUser={currentUser}
-        commentingOn={commentingOn}
-        onLike={curtir}
-        onComment={handleComment}
-        onRepost={setRepostingOn}
-        onDelete={deletar}
-        onSubmitComment={comentar}
-      />
+      {/* ── Timeline ── */}
+      {(tab === 'para-voce' || (tab === 'seguindo' && following.length > 0)) && (
+        <Timeline
+          posts={feedPosts}
+          loading={loading}
+          uid={uid}
+          isAdmin={isAdmin}
+          currentUser={currentUser}
+          following={following}
+          commentingOn={commentingOn}
+          onLike={curtir}
+          onComment={handleComment}
+          onRepost={setRepostingOn}
+          onDelete={deletar}
+          onSubmitComment={comentar}
+          onFollow={follow}
+          onUnfollow={unfollow}
+        />
+      )}
 
-      {/* ── Repost modal ──────────────────────────────────── */}
+      {/* ── Repost modal ── */}
       {repostingOn && (
         <div
           onClick={() => setRepostingOn(null)}
@@ -342,7 +335,6 @@ export function FeedScreen({
               borderBottom: 'none',
             }}
           >
-            {/* Modal header */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -370,14 +362,12 @@ export function FeedScreen({
                 color: '#e7e9ea',
                 fontSize: 16,
                 fontFamily: 'Barlow, sans-serif',
-                letterSpacing: 0.2,
               }}>
                 Repostar
               </span>
               <div style={{ width: 28 }} />
             </div>
 
-            {/* Scrollable body */}
             <div style={{ overflowY: 'auto', flex: 1 }}>
               <Composer
                 userPhoto={currentUser.photo}
@@ -388,7 +378,6 @@ export function FeedScreen({
                 onPost={(t) => repostar(repostingOn, t)}
               />
 
-              {/* Original post preview */}
               <div style={{ padding: '0 16px 20px' }}>
                 <div style={{
                   border: '1px solid #2f3336',
@@ -435,9 +424,7 @@ export function FeedScreen({
       )}
 
       <style>{`
-        .feed-back-btn:hover {
-          background: rgba(240, 120, 48, 0.1) !important;
-        }
+        .feed-back-btn:hover { background: rgba(240,120,48,0.1) !important; }
       `}</style>
     </div>
   );
