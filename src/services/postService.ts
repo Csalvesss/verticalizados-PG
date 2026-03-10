@@ -90,7 +90,6 @@ export function listenToReplies(
   });
 }
 
-// Helpers usados pelo feed atual (modelo com arrays)
 export async function createFeedPost(data: {
   user: string;
   userId: string;
@@ -101,13 +100,14 @@ export async function createFeedPost(data: {
   repostOf?: Post['repostOf'];
 }) {
   const { repostOf: rawRepostOf, ...rest } = data;
+
   const repostOf = rawRepostOf
     ? {
-      user: rawRepostOf.user,
-      text: rawRepostOf.text,
-      ...(rawRepostOf.imageUrl ? { imageUrl: rawRepostOf.imageUrl } : {}),
-      ...(rawRepostOf.userEmail ? { userEmail: rawRepostOf.userEmail } : {}),
-    }
+        user: rawRepostOf.user,
+        text: rawRepostOf.text,
+        ...(rawRepostOf.imageUrl ? { imageUrl: rawRepostOf.imageUrl } : {}),
+        ...(rawRepostOf.userEmail ? { userEmail: rawRepostOf.userEmail } : {}),
+      }
     : null;
 
   await addDoc(collection(db, 'posts'), {
