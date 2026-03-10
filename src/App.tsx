@@ -199,7 +199,7 @@ function MainApp({ user }: { user: User }) {
 
       </div>
 
-      <BottomNav screen={screen} goTo={goTo} />
+      <BottomNav screen={screen} goTo={goTo} userPhoto={currentUser.photo} />
     </div>
   );
 }

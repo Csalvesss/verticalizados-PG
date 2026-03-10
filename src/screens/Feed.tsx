@@ -14,6 +14,7 @@ import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
+import { StoriesBar } from '../components/StoriesBar';
 
 interface Props {
   posts: Post[];
@@ -219,6 +220,9 @@ export function FeedScreen({
           ))}
         </div>
       </div>
+
+      {/* ── Stories bar ───────────────────────────────────── */}
+      <StoriesBar posts={posts} currentUser={currentUser} />
 
       {/* ── Composer ──────────────────────────────────────── */}
       <Composer userPhoto={currentUser.photo} onPost={postar} />
