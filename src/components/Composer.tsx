@@ -11,6 +11,24 @@ interface Props {
   allowEmpty?: boolean;
 }
 
+// Compress image to keep base64 under Firestore's 1MB document limit
+async function compressImage(dataUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_W = 900;
+      const ratio = Math.min(1, MAX_W / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = dataUrl;
+  });
+}
+
 export function Composer({
   userPhoto,
   placeholder = "O que está acontecendo?",
@@ -23,6 +41,7 @@ export function Composer({
   const [img, setImg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,6 +65,7 @@ export function Composer({
   const handlePost = async () => {
     if (!canPost) return;
     setLoading(true);
+    setError(null);
     try {
       await onPost(text.trim(), img);
       setText('');
@@ -53,6 +73,7 @@ export function Composer({
       setFocused(false);
     } catch (e) {
       console.error(e);
+      setError('Erro ao postar. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -62,8 +83,11 @@ export function Composer({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      if (ev.target?.result) setImg(ev.target.result as string);
+    reader.onload = async (ev) => {
+      if (ev.target?.result) {
+        const compressed = await compressImage(ev.target.result as string);
+        setImg(compressed);
+      }
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -153,6 +177,19 @@ export function Composer({
             >
               ×
             </button>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div style={{
+            fontSize: 12,
+            color: '#f4212e',
+            fontFamily: 'Barlow, sans-serif',
+            marginTop: 4,
+            marginBottom: 2,
+          }}>
+            {error}
           </div>
         )}
 
