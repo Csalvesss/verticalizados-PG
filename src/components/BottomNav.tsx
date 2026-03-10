@@ -42,6 +42,7 @@ export function BottomNav({
           <button
             key={item.id}
             onClick={() => goTo(item.id)}
+            aria-label={item.label}
             style={{
               display: 'flex',
               flexDirection: 'column',
