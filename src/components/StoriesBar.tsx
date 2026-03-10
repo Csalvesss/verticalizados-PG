@@ -3,15 +3,14 @@ import type { Post, CurrentUser } from '../types';
 interface Props {
   posts: Post[];
   currentUser: CurrentUser;
+  activeUserId?: string | null;
   onStoryPress?: (userId: string) => void;
 }
 
-export function StoriesBar({ posts, currentUser, onStoryPress }: Props) {
-  // Deduplicate posters (keep first occurrence = most recent)
+export function StoriesBar({ posts, currentUser, activeUserId, onStoryPress }: Props) {
   const seen = new Set<string>();
   const posters: { userId: string; user: string; photo: string; hasPost: boolean }[] = [];
 
-  // Current user first
   seen.add(currentUser.uid);
   posters.push({
     userId: currentUser.uid,
@@ -20,7 +19,6 @@ export function StoriesBar({ posts, currentUser, onStoryPress }: Props) {
     hasPost: posts.some(p => p.userId === currentUser.uid),
   });
 
-  // Then recent posters
   for (const p of posts) {
     if (!seen.has(p.userId)) {
       seen.add(p.userId);
@@ -37,10 +35,11 @@ export function StoriesBar({ posts, currentUser, onStoryPress }: Props) {
       padding: '12px 14px 14px',
       borderBottom: '1px solid #1a1a1a',
       scrollbarWidth: 'none',
-      WebkitOverflowScrolling: 'touch' as never,
     }}>
       {posters.map((p) => {
         const isMe = p.userId === currentUser.uid;
+        const isActive = activeUserId === p.userId;
+
         return (
           <button
             key={p.userId}
@@ -55,6 +54,8 @@ export function StoriesBar({ posts, currentUser, onStoryPress }: Props) {
               cursor: 'pointer',
               flexShrink: 0,
               padding: 0,
+              opacity: activeUserId && !isActive ? 0.45 : 1,
+              transition: 'opacity 0.2s',
             }}
           >
             {/* Ring + avatar */}
@@ -62,11 +63,14 @@ export function StoriesBar({ posts, currentUser, onStoryPress }: Props) {
               width: 60,
               height: 60,
               borderRadius: '50%',
-              padding: 2.5,
-              background: p.hasPost
-                ? 'linear-gradient(135deg, #F07830 0%, #D4621A 50%, #ff9a55 100%)'
-                : '#2a2a2a',
+              padding: 3,
+              background: isActive
+                ? 'linear-gradient(135deg, #fff 0%, #F07830 100%)'
+                : p.hasPost
+                  ? 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)'
+                  : '#2a2a2a',
               position: 'relative',
+              boxSizing: 'border-box',
             }}>
               <img
                 src={p.photo}
@@ -76,17 +80,17 @@ export function StoriesBar({ posts, currentUser, onStoryPress }: Props) {
                   height: '100%',
                   borderRadius: '50%',
                   objectFit: 'cover',
-                  border: '2px solid #000',
+                  border: '3px solid #000',
                   display: 'block',
+                  boxSizing: 'border-box',
                 }}
               />
 
-              {/* + badge for current user */}
               {isMe && (
                 <div style={{
                   position: 'absolute',
-                  bottom: 0,
-                  right: 0,
+                  bottom: 1,
+                  right: 1,
                   width: 20,
                   height: 20,
                   borderRadius: '50%',
@@ -99,22 +103,24 @@ export function StoriesBar({ posts, currentUser, onStoryPress }: Props) {
                   color: '#fff',
                   fontWeight: 700,
                   lineHeight: 1,
+                  boxSizing: 'border-box',
                 }}>
                   +
                 </div>
               )}
             </div>
 
-            {/* Name label */}
             <span style={{
               fontSize: 10,
-              color: '#aaa',
+              color: isActive ? '#F07830' : '#888',
               fontFamily: 'Barlow, sans-serif',
+              fontWeight: isActive ? 700 : 400,
               maxWidth: 60,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               display: 'block',
+              transition: 'color 0.2s',
             }}>
               {isMe ? 'Seu feed' : p.user}
             </span>
@@ -123,9 +129,7 @@ export function StoriesBar({ posts, currentUser, onStoryPress }: Props) {
       })}
 
       <style>{`
-        div::-webkit-scrollbar {
-          display: none;
-        }
+        .stories-scroll::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
