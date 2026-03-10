@@ -5,7 +5,7 @@ import type { Screen } from '../types';
 const NAV: { id: Screen; label: string; icon: ((c: string) => ReactElement) | null }[] = [
   { id: 'home', label: 'Início', icon: Ico.home },
   { id: 'musicas', label: 'Músicas', icon: Ico.music },
-  { id: 'feed', label: 'Feed', icon: Ico.feed },
+  { id: 'feed', label: 'PGWHITTER', icon: Ico.feed },
   { id: 'eventos', label: 'Eventos', icon: Ico.event },
   { id: 'perfil', label: 'Perfil', icon: null },
 ];

@@ -189,12 +189,12 @@ export function FeedScreen({
             </div>
             <span style={{
               fontFamily: 'Bebas Neue, sans-serif',
-              fontSize: 18,
-              letterSpacing: 2,
+              fontSize: 22,
+              letterSpacing: 3,
               color: '#e7e9ea',
               lineHeight: 1,
             }}>
-              PG VERTICALIZADOS
+              PGWHITTER
             </span>
           </div>
 
