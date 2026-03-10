@@ -23,29 +23,37 @@ export function PostActions({
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      gap: 4,
+      justifyContent: 'space-between',
       marginLeft: -8,
       marginTop: 2,
     }}>
-      <button onClick={onComment} className="action-btn comment">
-        <span className="icon-wrap">{Ico.comment()}</span>
-        <span className="count">{commentsCount > 0 ? commentsCount : ''}</span>
-      </button>
+      {/* Left: comment, repost, like */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <button onClick={onComment} className="action-btn comment">
+          <span className="icon-wrap">{Ico.comment()}</span>
+          <span className="count">{commentsCount > 0 ? commentsCount : ''}</span>
+        </button>
 
-      <button onClick={onRepost} className="action-btn repost">
-        <span className="icon-wrap">{Ico.repost('#71767b')}</span>
-        <span className="count">{repostsCount > 0 ? repostsCount : ''}</span>
-      </button>
+        <button onClick={onRepost} className="action-btn repost">
+          <span className="icon-wrap">{Ico.repost('#71767b')}</span>
+          <span className="count">{repostsCount > 0 ? repostsCount : ''}</span>
+        </button>
 
-      <button
-        onClick={onLike}
-        className={`action-btn heart${liked ? ' liked' : ''}`}
-        style={{ color: liked ? '#f91880' : undefined }}
-      >
-        <span className="icon-wrap">{Ico.heart(liked)}</span>
-        <span className="count" style={{ color: liked ? '#f91880' : undefined }}>
-          {likesCount > 0 ? likesCount : ''}
-        </span>
+        <button
+          onClick={onLike}
+          className={`action-btn heart${liked ? ' liked' : ''}`}
+          style={{ color: liked ? '#f91880' : undefined }}
+        >
+          <span className="icon-wrap">{Ico.heart(liked)}</span>
+          <span className="count" style={{ color: liked ? '#f91880' : undefined }}>
+            {likesCount > 0 ? likesCount : ''}
+          </span>
+        </button>
+      </div>
+
+      {/* Right: share */}
+      <button className="action-btn share" style={{ marginRight: -8 }}>
+        <span className="icon-wrap">{Ico.share()}</span>
       </button>
 
       <style>{`
@@ -88,6 +96,10 @@ export function PostActions({
         .action-btn.heart:hover { color: #f91880; }
         .action-btn.heart:hover .icon-wrap { background: rgba(249, 24, 128, 0.12); }
         .action-btn.heart.liked .icon-wrap { background: rgba(249, 24, 128, 0.08); }
+
+        .action-btn.share { min-width: unset; }
+        .action-btn.share:hover { color: #F07830; }
+        .action-btn.share:hover .icon-wrap { background: rgba(240, 120, 48, 0.12); }
 
         .action-btn:active { transform: scale(0.92); }
       `}</style>
