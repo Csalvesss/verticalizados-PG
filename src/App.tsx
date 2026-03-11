@@ -18,6 +18,7 @@ import { OracaoScreen } from './screens/Oracao';
 import { FeedScreen } from './screens/Feed';
 import { EventosScreen } from './screens/Eventos';
 import { PerfilScreen } from './screens/Perfil';
+import { ComunhaoScreen } from './screens/Comunhao';
 
 const auth = getAuth();
 
@@ -192,6 +193,10 @@ function MainApp({ user }: { user: User }) {
             sorteioSemana={sorteioSemana}
             goTo={goTo}
           />
+        )}
+
+        {screen === 'comunhao' && (
+          <ComunhaoScreen currentUser={currentUser} isAdmin={isAdmin} uid={user.uid} goTo={goTo} />
         )}
 
         {screen === 'admin' && isAdmin && (
