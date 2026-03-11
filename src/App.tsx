@@ -310,6 +310,7 @@ function MainApp({ user }: { user: User }) {
             posts={posts}
             adminEmails={adminEmails}
             goBack={() => goTo('feed')}
+            onOpenProfile={(targetUid) => { setProfileTarget(targetUid); goTo('userPerfil'); }}
           />
         )}
 
