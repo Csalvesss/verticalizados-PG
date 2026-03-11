@@ -33,6 +33,7 @@ export function HomeScreen({
     { icon: Ico.pray, label: 'Oração', sub: 'Sorteio semanal', sc: 'oracao' },
     { icon: Ico.feed, label: 'Feed', sub: `${postsCount} posts`, sc: 'feed' },
     { icon: Ico.event, label: 'Eventos', sub: `${confirmacoesCount} confirmados`, sc: 'eventos' },
+    { icon: Ico.cross, label: 'Jogando em Comunhão', sub: 'Quiz bíblico — ganhe pontos!', sc: 'jogandoEmComunhao' },
   ];
 
   return (
