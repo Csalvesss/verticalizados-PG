@@ -3,6 +3,7 @@ import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, Timesta
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { s } from '../styles';
+import { useUserPhoto, useUserName } from '../contexts/UserPhotos';
 import type { CurrentUser, Screen } from '../types';
 
 interface Pedido {
@@ -20,6 +21,30 @@ const TIPOS = {
   pedido: { label: 'Pedido', emoji: '💛', color: '#F07830' },
   testemunho: { label: 'Testemunho', emoji: '✨', color: '#9C27B0' },
 } as const;
+
+function PedidoCard({ p, uid, isAdmin, onRemover }: { p: Pedido; uid: string; isAdmin: boolean; onRemover: (id: string) => void }) {
+  const resolvedPhoto = useUserPhoto(p.userId, p.userPhoto);
+  const resolvedName = useUserName(p.userId, p.userName);
+  const tipoInfo = TIPOS[p.tipo] || TIPOS.pedido;
+  const canDelete = p.userId === uid || isAdmin;
+  return (
+    <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <img src={resolvedPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #222' }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 14, color: '#fff' }}>{resolvedName}</div>
+          <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: tipoInfo.color }}>
+            {tipoInfo.emoji} {tipoInfo.label.toUpperCase()}
+          </div>
+        </div>
+        {canDelete && (
+          <button onClick={() => onRemover(p.id)} style={{ background: 'transparent', border: 'none', color: '#333', cursor: 'pointer', fontSize: 16, padding: 4 }}>✕</button>
+        )}
+      </div>
+      <div style={{ fontFamily: 'Barlow', fontSize: 14, color: '#ccc', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{p.texto}</div>
+    </div>
+  );
+}
 
 export function ComunhaoScreen({
   currentUser,
@@ -169,53 +194,9 @@ export function ComunhaoScreen({
           <div style={s.empty}>Nenhum compartilhamento ainda. Seja o primeiro!</div>
         )}
 
-        {pedidos.map(p => {
-          const tipoInfo = TIPOS[p.tipo] || TIPOS.pedido;
-          const canDelete = p.userId === uid || isAdmin;
-
-          return (
-            <div key={p.id} style={{
-              background: '#111', border: '1px solid #1a1a1a',
-              borderRadius: 16, padding: 16, marginBottom: 12,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <img
-                  src={p.userPhoto}
-                  alt=""
-                  style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #222' }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 14, color: '#fff' }}>
-                    {p.userName}
-                  </div>
-                  <div style={{
-                    fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700,
-                    letterSpacing: 1.5, color: tipoInfo.color,
-                  }}>
-                    {tipoInfo.emoji} {tipoInfo.label.toUpperCase()}
-                  </div>
-                </div>
-                {canDelete && (
-                  <button
-                    onClick={() => remover(p.id)}
-                    style={{
-                      background: 'transparent', border: 'none',
-                      color: '#333', cursor: 'pointer', fontSize: 16, padding: 4,
-                    }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-              <div style={{
-                fontFamily: 'Barlow', fontSize: 14, color: '#ccc',
-                lineHeight: 1.6, whiteSpace: 'pre-wrap',
-              }}>
-                {p.texto}
-              </div>
-            </div>
-          );
-        })}
+        {pedidos.map(p => (
+          <PedidoCard key={p.id} p={p} uid={uid} isAdmin={isAdmin} onRemover={remover} />
+        ))}
       </div>
     </div>
   );

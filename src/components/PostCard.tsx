@@ -1,10 +1,26 @@
 import { useState } from 'react';
 import { Ico } from '../icons';
 import { tempoRelativo, ADMIN_EMAIL } from '../constants';
-import type { Post } from '../types';
+import type { Post, Comment } from '../types';
 import { Avatar } from './Avatar';
 import { RepostBlock } from './RepostBlock';
-import { useUserPhoto } from '../contexts/UserPhotos';
+import { useUserPhoto, useUserName } from '../contexts/UserPhotos';
+
+function CommentRow({ c }: { c: Comment }) {
+  const resolvedPhoto = useUserPhoto(c.userId, c.photo);
+  const resolvedName = useUserName(c.userId, c.user);
+  return (
+    <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+      <Avatar src={resolvedPhoto} name={resolvedName} size={28} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontWeight: 700, fontSize: 13, color: '#e7e9ea', fontFamily: 'Barlow, sans-serif' }}>{resolvedName} </span>
+        <span style={{ fontSize: 14, color: '#ccc', fontFamily: 'Barlow, sans-serif', lineHeight: 1.5, wordBreak: 'break-word' }}>
+          {c.text}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   post: Post;
@@ -44,6 +60,7 @@ export function PostCard({
   const [showComments, setShowComments] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const resolvedPhoto = useUserPhoto(post.userId, post.photo);
+  const resolvedName = useUserName(post.userId, post.user);
 
   const isOwner = post.userId === uid;
   const liked = post.likes?.includes(uid);
@@ -73,7 +90,7 @@ export function PostCard({
           fontFamily: 'Barlow, sans-serif',
         }}>
           {Ico.repost('#71767b')}
-          <span>{post.user} repostou</span>
+          <span>{resolvedName} repostou</span>
         </div>
       )}
 
@@ -82,9 +99,9 @@ export function PostCard({
         {/* Left: avatar */}
         <div
           style={{ flexShrink: 0, cursor: onOpenProfile ? 'pointer' : 'default' }}
-          onClick={() => onOpenProfile?.(post.userId, post.user)}
+          onClick={() => onOpenProfile?.(post.userId, resolvedName)}
         >
-          <Avatar src={resolvedPhoto} name={post.user} size={40} />
+          <Avatar src={resolvedPhoto} name={resolvedName} size={40} />
         </div>
 
         {/* Right: all content */}
@@ -93,7 +110,7 @@ export function PostCard({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
               <button
-                onClick={() => onOpenProfile?.(post.userId, post.user)}
+                onClick={() => onOpenProfile?.(post.userId, resolvedName)}
                 style={{
                   fontWeight: 700, color: '#e7e9ea', fontSize: 14,
                   fontFamily: 'Barlow, sans-serif', lineHeight: 1.3,
@@ -101,7 +118,7 @@ export function PostCard({
                   cursor: onOpenProfile ? 'pointer' : 'default',
                 }}
               >
-                {post.user}
+                {resolvedName}
               </button>
               {isVerified && verifiedBadge}
               <span style={{
@@ -191,7 +208,7 @@ export function PostCard({
                         fontWeight: 600,
                       }}
                     >
-                      {isFollowing ? `Deixar de seguir` : `Seguir @${post.user}`}
+                      {isFollowing ? `Deixar de seguir` : `Seguir @${resolvedName}`}
                     </button>
                   </div>
                 </>
@@ -260,7 +277,7 @@ export function PostCard({
             <button
               className="threads-action-btn"
               onClick={() => {
-                const shareText = `${post.user}: ${post.text || ''}`.trim();
+                const shareText = `${resolvedName}: ${post.text || ''}`.trim();
                 if (navigator.share) {
                   navigator.share({ title: 'Verticalizados', text: shareText }).catch(() => {});
                 } else {
@@ -298,28 +315,7 @@ export function PostCard({
           {/* Expanded comments */}
           {showComments && hasComments && (
             <div style={{ marginTop: 10 }}>
-              {post.comments.map((c, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-                  <Avatar src={c.photo} name={c.user} size={28} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{
-                      fontWeight: 700,
-                      fontSize: 13,
-                      color: '#e7e9ea',
-                      fontFamily: 'Barlow, sans-serif',
-                    }}>{c.user} </span>
-                    <span style={{
-                      fontSize: 14,
-                      color: '#ccc',
-                      fontFamily: 'Barlow, sans-serif',
-                      lineHeight: 1.5,
-                      wordBreak: 'break-word',
-                    }}>
-                      {c.text}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              {post.comments.map((c, i) => <CommentRow key={i} c={c} />)}
             </div>
           )}
         </div>
