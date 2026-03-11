@@ -1,24 +1,112 @@
 import { useState } from 'react';
 import { Ico } from '../icons';
 import { tempoRelativo, ADMIN_EMAIL } from '../constants';
-import type { Post, Comment } from '../types';
+import type { Post, Comment, Reply } from '../types';
 import { Avatar } from './Avatar';
 import { RepostBlock } from './RepostBlock';
 import { useUserPhoto, useUserName } from '../contexts/UserPhotos';
 import { ShareCard } from './ShareCard';
 
-function CommentRow({ c }: { c: Comment }) {
-  const resolvedPhoto = useUserPhoto(c.userId, c.photo);
-  const resolvedName = useUserName(c.userId, c.user);
+function ReplyRow({ r }: { r: Reply }) {
+  const resolvedPhoto = useUserPhoto(r.userId, r.photo);
+  const resolvedName = useUserName(r.userId, r.user);
   return (
-    <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-      <Avatar src={resolvedPhoto} name={resolvedName} size={28} />
+    <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingLeft: 36 }}>
+      <Avatar src={resolvedPhoto} name={resolvedName} size={22} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ fontWeight: 700, fontSize: 13, color: '#e7e9ea', fontFamily: 'Barlow, sans-serif' }}>{resolvedName} </span>
-        <span style={{ fontSize: 14, color: '#ccc', fontFamily: 'Barlow, sans-serif', lineHeight: 1.5, wordBreak: 'break-word' }}>
-          {c.text}
+        <span style={{ fontWeight: 700, fontSize: 12, color: '#e7e9ea', fontFamily: 'Barlow, sans-serif' }}>{resolvedName} </span>
+        <span style={{ fontSize: 13, color: '#aaa', fontFamily: 'Barlow, sans-serif', lineHeight: 1.5, wordBreak: 'break-word' }}>
+          {r.text}
         </span>
       </div>
+    </div>
+  );
+}
+
+function CommentRow({
+  c,
+  currentUserPhoto,
+  onReply,
+}: {
+  c: Comment;
+  currentUserPhoto: string;
+  onReply: (commentId: string, text: string) => void;
+}) {
+  const resolvedPhoto = useUserPhoto(c.userId, c.photo);
+  const resolvedName = useUserName(c.userId, c.user);
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyText, setReplyText] = useState('');
+
+  const commentId = c.id || c.time;
+
+  function submitReply() {
+    if (!replyText.trim() || !commentId) return;
+    onReply(commentId, replyText.trim());
+    setReplyText('');
+    setReplyOpen(false);
+  }
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <Avatar src={resolvedPhoto} name={resolvedName} size={28} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: 13, color: '#e7e9ea', fontFamily: 'Barlow, sans-serif' }}>{resolvedName} </span>
+          <span style={{ fontSize: 14, color: '#ccc', fontFamily: 'Barlow, sans-serif', lineHeight: 1.5, wordBreak: 'break-word' }}>
+            {c.text}
+          </span>
+          <div>
+            <button
+              onClick={() => setReplyOpen(v => !v)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'Barlow, sans-serif', fontSize: 12,
+                color: replyOpen ? '#F07830' : '#555', padding: '4px 0', marginTop: 2,
+              }}
+            >
+              Responder
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Existing replies */}
+      {(c.replies || []).map((r, i) => <ReplyRow key={r.id || i} r={r} />)}
+
+      {/* Inline reply input */}
+      {replyOpen && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingLeft: 36 }}>
+          <Avatar src={currentUserPhoto} name="" size={22} />
+          <div style={{
+            flex: 1, display: 'flex', alignItems: 'center', gap: 6,
+            background: '#111', borderRadius: 20, padding: '6px 12px',
+            border: '1px solid #2a2a2a',
+          }}>
+            <input
+              autoFocus
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReply(); } }}
+              placeholder="Responder..."
+              style={{
+                flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#e7e9ea',
+              }}
+            />
+            <button
+              onClick={submitReply}
+              disabled={!replyText.trim()}
+              style={{
+                background: 'none', border: 'none', cursor: replyText.trim() ? 'pointer' : 'default',
+                fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12,
+                color: replyText.trim() ? '#F07830' : '#333', padding: 0,
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -33,6 +121,7 @@ interface Props {
   onComment: () => void;
   onRepost: () => void;
   onDelete: () => void;
+  onCommentReply: (commentId: string, text: string) => void;
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
   onOpenProfile?: (userId: string, userName: string) => void;
@@ -54,6 +143,7 @@ export function PostCard({
   onComment,
   onRepost,
   onDelete,
+  onCommentReply,
   onFollow,
   onUnfollow,
   onOpenProfile,
@@ -310,7 +400,14 @@ export function PostCard({
           {/* Expanded comments */}
           {showComments && hasComments && (
             <div style={{ marginTop: 10 }}>
-              {post.comments.map((c, i) => <CommentRow key={i} c={c} />)}
+              {post.comments.map((c, i) => (
+                <CommentRow
+                  key={c.id || i}
+                  c={c}
+                  currentUserPhoto={resolvedPhoto}
+                  onReply={onCommentReply}
+                />
+              ))}
             </div>
           )}
         </div>

@@ -333,7 +333,7 @@ export function PerfilScreen({
         ))}
       </div>
 
-      {/* Posts grid */}
+      {/* Posts feed (Threads-style list) */}
       {gridPosts.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 16px', gap: 10 }}>
           <div style={{ fontSize: 36 }}>📷</div>
@@ -342,30 +342,69 @@ export function PerfilScreen({
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: 2 }}>
+        <div>
           {gridPosts.map(post => (
             <div key={post.id} style={{
-              aspectRatio: '1', overflow: 'hidden', position: 'relative',
-              background: post.imageUrl ? '#111' : 'rgba(240,120,48,0.07)',
+              borderBottom: '1px solid #111',
+              padding: '14px 16px',
             }}>
-              {post.imageUrl ? (
-                <img src={post.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8 }}>
-                  <span style={{
-                    fontFamily: 'Barlow, sans-serif', fontSize: 10, color: '#666',
-                    textAlign: 'center', lineHeight: 1.4, overflow: 'hidden',
-                    display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical' as never,
-                  }}>{post.text}</span>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0, padding: 2,
+                  background: 'linear-gradient(135deg, #F07830, #D4621A)',
+                }}>
+                  <img src={currentUser.photo} alt="" style={{
+                    width: '100%', height: '100%', borderRadius: '50%',
+                    objectFit: 'cover', border: '2px solid #000', display: 'block',
+                  }} />
                 </div>
-              )}
-              {(post.likes?.length ?? 0) > 0 && (
-                <div style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-                  <div style={{ background: 'rgba(0,0,0,0.7)', borderRadius: 99, padding: '2px 7px', fontSize: 10, color: '#fff', fontFamily: 'Barlow, sans-serif' }}>
-                    ♥ {post.likes!.length}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                    {currentUser.fullName}
+                  </div>
+                  <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>
+                    {post.createdAt ? (() => {
+                      const d = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt as any);
+                      return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+                    })() : ''}
                   </div>
                 </div>
+              </div>
+
+              {/* Text */}
+              {post.text && (
+                <div style={{
+                  fontFamily: 'Barlow, sans-serif', fontSize: 15, color: '#e7e9ea',
+                  lineHeight: 1.55, marginBottom: post.imageUrl ? 10 : 0,
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                }}>
+                  {post.text}
+                </div>
               )}
+
+              {/* Image */}
+              {post.imageUrl && !post.repostOf && (
+                <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #1a1a1a' }}>
+                  <img src={post.imageUrl} alt="" style={{ width: '100%', maxHeight: 380, objectFit: 'cover', display: 'block' }} />
+                </div>
+              )}
+
+              {/* Stats */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
+                {(post.likes?.length ?? 0) > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="#F07830"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    <span style={{ color: '#F07830' }}>{post.likes!.length}</span>
+                  </div>
+                )}
+                {(post.comments?.length ?? 0) > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="#555"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01z"/></svg>
+                    {post.comments!.length}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

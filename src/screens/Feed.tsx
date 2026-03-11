@@ -68,8 +68,14 @@ export function FeedScreen({
     return () => uns();
   }, [uid]);
 
-  async function sendNotification(toUserId: string, type: 'like' | 'comment' | 'repost', postText: string) {
-    if (toUserId === uid) return; // Don't notify yourself
+  async function sendNotification(
+    toUserId: string,
+    type: 'like' | 'comment' | 'repost' | 'reply',
+    postText: string,
+    postId?: string,
+    postImageUrl?: string,
+  ) {
+    if (toUserId === uid) return;
     await addDoc(collection(db, 'notifications'), {
       toUserId,
       fromUserId: uid,
@@ -77,6 +83,8 @@ export function FeedScreen({
       fromUserPhoto: currentUser.photo,
       type,
       postText: postText.slice(0, 100),
+      ...(postId ? { postId } : {}),
+      ...(postImageUrl ? { postImageUrl } : {}),
       read: false,
       createdAt: serverTimestamp(),
     });
@@ -119,7 +127,7 @@ export function FeedScreen({
       likes: alreadyLiked ? arrayRemove(uid) : arrayUnion(uid),
     });
     if (!alreadyLiked) {
-      sendNotification(p.userId, 'like', p.text);
+      sendNotification(p.userId, 'like', p.text, p.id, p.imageUrl);
     }
   };
 
@@ -127,17 +135,45 @@ export function FeedScreen({
     const post = posts.find(p => p.id === id);
     await updateDoc(doc(db, 'posts', id), {
       comments: arrayUnion({
+        id: Date.now().toString() + Math.random().toString(36).slice(2),
         user: currentUser.name,
         userId: uid,
         photo: currentUser.photo,
         text: text.trim(),
         time: new Date().toISOString(),
+        replies: [],
       }),
     });
     if (post) {
-      sendNotification(post.userId, 'comment', post.text);
+      sendNotification(post.userId, 'comment', post.text, post.id, post.imageUrl);
     }
     setCommentingOn(null);
+  };
+
+  const replyToComment = async (postId: string, commentId: string, replyText: string) => {
+    const postRef = doc(db, 'posts', postId);
+    const snap = await getDoc(postRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const comments = [...(data.comments || [])];
+    const idx = comments.findIndex((c: any) => c.id === commentId);
+    if (idx === -1) return;
+    const reply = {
+      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      user: currentUser.name,
+      userId: uid,
+      photo: currentUser.photo,
+      text: replyText.trim(),
+      time: new Date().toISOString(),
+    };
+    comments[idx] = { ...comments[idx], replies: [...(comments[idx].replies || []), reply] };
+    await updateDoc(postRef, { comments });
+    // Notify comment owner (if different from post owner and from self)
+    const commentOwner = comments[idx].userId;
+    const post = posts.find(p => p.id === postId);
+    if (commentOwner !== uid) {
+      sendNotification(commentOwner, 'reply', comments[idx].text, postId, post?.imageUrl);
+    }
   };
 
   const repostar = async (post: Post, text: string) => {
@@ -158,7 +194,7 @@ export function FeedScreen({
         userEmail: post.userEmail || '',
       },
     });
-    sendNotification(post.userId, 'repost', post.text);
+    sendNotification(post.userId, 'repost', post.text, post.id, post.imageUrl);
     setRepostingOn(null);
   };
 
@@ -387,6 +423,7 @@ export function FeedScreen({
           onRepost={setRepostingOn}
           onDelete={deletar}
           onSubmitComment={comentar}
+          onCommentReply={replyToComment}
           onFollow={follow}
           onUnfollow={unfollow}
           onOpenProfile={onOpenProfile}
