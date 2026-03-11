@@ -22,6 +22,7 @@ import { PerfilScreen } from './screens/Perfil';
 import { ComunhaoScreen } from './screens/Comunhao';
 import { NotificacoesScreen } from './screens/Notificacoes';
 import { BuscarScreen } from './screens/Buscar';
+import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPhotosProvider } from './contexts/UserPhotos';
 
 const auth = getAuth();
@@ -260,6 +261,10 @@ function MainApp({ user }: { user: User }) {
 
         {screen === 'buscar' && (
           <BuscarScreen uid={user.uid} goTo={goTo} />
+        )}
+
+        {screen === 'jogandoEmComunhao' && (
+          <JogandoEmComunhaoScreen currentUser={currentUser} goTo={goTo} />
         )}
 
         {screen === 'admin' && isAdmin && (

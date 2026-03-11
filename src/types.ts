@@ -11,7 +11,8 @@ export type Screen =
   | 'admin'
   | 'comunhao'
   | 'notificacoes'
-  | 'buscar';
+  | 'buscar'
+  | 'jogandoEmComunhao';
 
 export interface CurrentUser {
   uid: string;
