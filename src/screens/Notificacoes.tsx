@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { tempoRelativo } from '../constants';
