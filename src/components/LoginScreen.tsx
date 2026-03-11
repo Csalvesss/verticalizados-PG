@@ -34,7 +34,10 @@ export function LoginScreen() {
       else if (code === 'auth/invalid-email') setErro('E-mail inválido.');
       else if (code === 'auth/weak-password') setErro('A senha deve ter pelo menos 6 caracteres.');
       else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') setErro('E-mail ou senha incorretos.');
-      else setErro('Erro ao entrar. Tente novamente.');
+      else if (code === 'auth/operation-not-allowed') setErro('Login com e-mail não está ativado. Ative no Firebase Console.');
+      else if (code === 'auth/too-many-requests') setErro('Muitas tentativas. Aguarde alguns minutos.');
+      else if (code === 'auth/network-request-failed') setErro('Erro de rede. Verifique sua conexão.');
+      else setErro('Erro ao entrar. Tente novamente. (' + code + ')');
       setLoading(false);
     }
   };
