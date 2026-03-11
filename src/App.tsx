@@ -21,6 +21,7 @@ import { PerfilScreen } from './screens/Perfil';
 import { ComunhaoScreen } from './screens/Comunhao';
 import { NotificacoesScreen } from './screens/Notificacoes';
 import { BuscarScreen } from './screens/Buscar';
+import { UserPhotosProvider } from './contexts/UserPhotos';
 
 const auth = getAuth();
 
@@ -167,6 +168,7 @@ function MainApp({ user }: { user: User }) {
     : [];
 
   return (
+    <UserPhotosProvider>
     <div style={s.root}>
       <style>{GLOBAL_CSS}</style>
       <div style={s.content}>
@@ -260,5 +262,6 @@ function MainApp({ user }: { user: User }) {
 
       <BottomNav screen={screen} goTo={goTo} userPhoto={currentUser.photo} />
     </div>
+    </UserPhotosProvider>
   );
 }

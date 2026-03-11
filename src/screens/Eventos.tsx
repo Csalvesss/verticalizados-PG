@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { s } from '../styles';
@@ -22,6 +22,7 @@ export function EventosScreen({
   goTo,
 }: Props) {
   const [lanche, setLanche] = useState<string | null>(null);
+  const [editando, setEditando] = useState(false);
   const prox = eventos[0] || null;
   const euConfirmei = confirmacoes.find(
     (c) => c.userId === uid && c.eventoId === prox?.id
@@ -118,106 +119,74 @@ export function EventosScreen({
               </div>
             </div>
 
-            {!euConfirmei ? (
+            {!euConfirmei || editando ? (
               <div style={{ ...s.card, padding: 20 }}>
-                <div style={s.cardTag}>CONFIRMAR PRESENÇA</div>
-                <div
-                  style={{
-                    fontFamily: 'Barlow',
-                    fontSize: 14,
-                    color: '#71767b',
-                    margin: '8px 0 20px',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Você vai comparecer? Selecione o que pode levar.{' '}
+                <div style={s.cardTag}>{editando ? 'EDITAR PRESENÇA' : 'CONFIRMAR PRESENÇA'}</div>
+                <div style={{ fontFamily: 'Barlow', fontSize: 14, color: '#71767b', margin: '8px 0 20px', lineHeight: 1.5 }}>
+                  {editando ? 'Altere o que vai levar.' : 'Você vai comparecer? Selecione o que pode levar.'}{' '}
                   <span style={{ opacity: 0.5 }}>(opcional)</span>
                 </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 8,
-                    marginBottom: 24,
-                  }}
-                >
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
                   {LANCHES.map((l: string) => (
-                    <button
-                      key={l}
-                      onClick={() => setLanche(lanche === l ? null : l)}
-                      style={{
-                        fontFamily: 'Barlow',
-                        fontSize: 13,
-                        padding: '8px 16px',
-                        borderRadius: 999,
-                        border: `1px solid ${
-                          lanche === l ? '#F07830' : '#2f3336'
-                        }`,
-                        background: lanche === l ? 'rgba(240,120,48,0.1)' : 'transparent',
-                        color: lanche === l ? '#F07830' : '#71767b',
-                        fontWeight: lanche === l ? 700 : 500,
-                      }}
-                    >
-                      {l}
-                    </button>
+                    <button key={l} onClick={() => setLanche(lanche === l ? null : l)} style={{
+                      fontFamily: 'Barlow', fontSize: 13, padding: '8px 16px', borderRadius: 999,
+                      border: `1px solid ${lanche === l ? '#F07830' : '#2f3336'}`,
+                      background: lanche === l ? 'rgba(240,120,48,0.1)' : 'transparent',
+                      color: lanche === l ? '#F07830' : '#71767b', fontWeight: lanche === l ? 700 : 500,
+                    }}>{l}</button>
                   ))}
                 </div>
-                <button
-                  onClick={confirmar}
-                  style={{ ...s.btnOrange, width: '100%', justifyContent: 'center' }}
-                >
-                  {Ico.check()} Confirmar Presença
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {editando && (
+                    <button onClick={() => setEditando(false)} style={{
+                      flex: 1, padding: '12px', borderRadius: 999, border: '1px solid #333',
+                      background: 'transparent', color: '#888', fontFamily: 'Barlow', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                    }}>Cancelar</button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      if (editando && euConfirmei) {
+                        await updateDoc(doc(db, 'confirmacoes', euConfirmei.id), { lanche });
+                        setEditando(false);
+                        setLanche(null);
+                      } else {
+                        await confirmar();
+                      }
+                    }}
+                    style={{ ...s.btnOrange, flex: 2, justifyContent: 'center' }}
+                  >
+                    {Ico.check()} {editando ? 'Salvar' : 'Confirmar Presença'}
+                  </button>
+                </div>
               </div>
             ) : (
-              <div
-                style={{
-                  ...s.card,
-                  padding: 20,
-                  border: '1px solid #1DB954',
-                  background: 'rgba(29, 185, 84, 0.05)',
-                }}
-              >
-                <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      background: '#1DB954',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
+              <div style={{ ...s.card, padding: 20, border: '1px solid #1DB954', background: 'rgba(29, 185, 84, 0.05)' }}>
+                <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 14 }}>
+                  <div style={{ width: 44, height: 44, background: '#1DB954', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {Ico.check()}
                   </div>
                   <div>
-                    <div
-                      style={{
-                        fontFamily: 'Barlow Condensed',
-                        fontWeight: 700,
-                        fontSize: 17,
-                        color: '#1DB954',
-                        letterSpacing: 0.5,
-                      }}
-                    >
+                    <div style={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 17, color: '#1DB954', letterSpacing: 0.5 }}>
                       PRESENÇA CONFIRMADA!
                     </div>
-                    <div
-                      style={{
-                        fontFamily: 'Barlow',
-                        fontSize: 13,
-                        color: '#71767b',
-                        marginTop: 2,
-                      }}
-                    >
-                      {euConfirmei.lanche
-                        ? `Você vai levar ${euConfirmei.lanche}`
-                        : 'Sem lanche selecionado'}
+                    <div style={{ fontFamily: 'Barlow', fontSize: 13, color: '#71767b', marginTop: 2 }}>
+                      {euConfirmei.lanche ? `Você vai levar ${euConfirmei.lanche}` : 'Sem lanche selecionado'}
                     </div>
                   </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setLanche(euConfirmei.lanche || null); setEditando(true); }} style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 999, border: '1px solid #2f3336',
+                    background: 'transparent', color: '#e7e9ea', fontFamily: 'Barlow', fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                  }}>Editar lanche</button>
+                  <button onClick={async () => {
+                    if (window.confirm('Cancelar sua presença?')) {
+                      await deleteDoc(doc(db, 'confirmacoes', euConfirmei.id));
+                    }
+                  }} style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 999, border: '1px solid #331111',
+                    background: 'transparent', color: '#f4212e', fontFamily: 'Barlow', fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                  }}>Cancelar presença</button>
                 </div>
               </div>
             )}

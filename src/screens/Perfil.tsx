@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
-import { getAuth, signOut, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { getAuth, signOut, updateProfile, deleteUser } from 'firebase/auth';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import type { CurrentUser, Screen, Post, Sorteio } from '../types';
@@ -88,10 +88,15 @@ export function PerfilScreen({
     try {
       const user = auth.currentUser;
       if (user) {
-        await updateProfile(user, {
-          displayName: editName.trim(),
-          photoURL: editPhoto.trim() || user.photoURL,
-        });
+        // Only update displayName in Firebase Auth (photoURL has size limit)
+        await updateProfile(user, { displayName: editName.trim() });
+        // Save photo + name to Firestore (no size limit for photoData)
+        await setDoc(doc(db, 'users', uid), {
+          fullName: editName.trim(),
+          name: editName.trim().split(' ')[0],
+          ...(editPhoto !== currentUser.photo ? { photoData: editPhoto } : {}),
+        }, { merge: true });
+      }
       }
       setShowEdit(false);
       window.location.reload();
@@ -196,6 +201,28 @@ export function PerfilScreen({
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
           }}>{Ico.logout()} Sair</button>
         </div>
+
+        <button
+          onClick={async () => {
+            if (!window.confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.')) return;
+            if (!window.confirm('ÚLTIMA CHANCE: Todos os seus dados serão apagados permanentemente.')) return;
+            try {
+              const user = auth.currentUser;
+              if (user) {
+                await deleteDoc(doc(db, 'users', uid));
+                await deleteUser(user);
+              }
+            } catch (e: any) {
+              alert('Erro ao excluir conta: ' + (e?.message || 'Faça login novamente e tente de novo.'));
+            }
+          }}
+          style={{
+            width: '100%', padding: '10px', borderRadius: 8,
+            border: '1px solid #220000', background: 'transparent',
+            color: '#661111', fontFamily: 'Barlow, sans-serif',
+            fontWeight: 500, fontSize: 11, cursor: 'pointer', marginBottom: 20,
+          }}
+        >Excluir minha conta</button>
       </div>
 
       {/* Tab bar */}
