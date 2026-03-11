@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { getAuth, signOut, updateProfile, deleteUser } from 'firebase/auth';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
-import type { CurrentUser, Screen, Post, Sorteio } from '../types';
+import type { CurrentUser, Screen, Post } from '../types';
 
 const auth = getAuth();
 
@@ -12,8 +12,6 @@ interface Props {
   isAdmin: boolean;
   posts: Post[];
   uid: string;
-  songsCount: number;
-  sorteioSemana: Sorteio | null;
   goTo: (sc: Screen) => void;
 }
 
@@ -24,11 +22,24 @@ export function PerfilScreen({
   isAdmin,
   posts,
   uid,
-  songsCount,
-  sorteioSemana,
   goTo,
 }: Props) {
   const [tab, setTab] = useState<Tab>('posts');
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
+
+  useEffect(() => {
+    // Following count
+    getDoc(doc(db, 'follows', uid)).then(snap => {
+      if (snap.exists()) setFollowingCount((snap.data().following || []).length);
+    });
+    // Followers count
+    getDocs(collection(db, 'follows')).then(snap => {
+      let count = 0;
+      snap.docs.forEach(d => { if ((d.data().following || []).includes(uid)) count++; });
+      setFollowersCount(count);
+    });
+  }, [uid]);
   const [showEdit, setShowEdit] = useState(false);
   const [editName, setEditName] = useState(currentUser.fullName);
   const [editPhoto, setEditPhoto] = useState(currentUser.photo);
@@ -39,7 +50,6 @@ export function PerfilScreen({
 
   const meusPosts = posts.filter(p => p.userId === uid);
   const curtidos = posts.filter(p => p.likes?.includes(uid));
-  const oracoes = sorteioSemana?.historico?.length || 0;
   const gridPosts = tab === 'posts' ? meusPosts : curtidos;
 
   async function handlePhotoUpload(file: File) {
@@ -143,8 +153,8 @@ export function PerfilScreen({
           <div style={{ display: 'flex', gap: 20, flex: 1, justifyContent: 'center' }}>
             {[
               { n: meusPosts.length, label: 'Posts' },
-              { n: songsCount, label: 'Músicas' },
-              { n: oracoes, label: 'Orações' },
+              { n: followingCount, label: 'Seguindo' },
+              { n: followersCount, label: 'Seguidores' },
             ].map(item => (
               <div key={item.label} style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 22, color: '#fff', lineHeight: 1.2 }}>{item.n}</div>

@@ -7,13 +7,19 @@ import {
   updateDoc,
   getDocs,
   query,
+  where,
+  setDoc,
+  getDoc,
+  arrayRemove,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { s } from '../styles';
-import type { Song, Cifra, Evento } from '../types';
+import { ADMIN_EMAIL } from '../constants';
+import { Avatar } from './Avatar';
+import type { Song, Cifra, Evento, UserProfile } from '../types';
 
-type Tab = 'songs' | 'cifras' | 'eventos' | 'membros';
+type Tab = 'songs' | 'cifras' | 'eventos' | 'membros' | 'usuarios';
 
 interface Props {
   goHome: () => void;
@@ -21,15 +27,26 @@ interface Props {
   cifras: Cifra[];
   eventos: Evento[];
   membros: string[];
+  adminEmails: string[];
 }
 
-export function AdminPanel({ goHome, songs, cifras, eventos, membros }: Props) {
+export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmails }: Props) {
   const [tab, setTab] = useState<Tab>('songs');
-  const [form, setForm] = useState<Partial<Song & Cifra & Evento & { nome: string } > | null>(null);
+  const [form, setForm] = useState<Partial<Song & Cifra & Evento & { nome: string }> | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
+  const [usuarios, setUsuarios] = useState<UserProfile[]>([]);
+  const [usuariosLoaded, setUsuariosLoaded] = useState(false);
+  const [deletingUid, setDeletingUid] = useState<string | null>(null);
 
   const set = (f: string, v: string) =>
     setForm((x) => ({ ...x, [f]: v }));
+
+  const loadUsuarios = async () => {
+    if (usuariosLoaded) return;
+    const snap = await getDocs(collection(db, 'users'));
+    setUsuarios(snap.docs.map((d) => ({ uid: d.id, ...d.data() } as UserProfile)));
+    setUsuariosLoaded(true);
+  };
 
   const salvar = async () => {
     if (!form) return;
@@ -92,6 +109,62 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros }: Props) {
     if (found) await deleteDoc(doc(db, 'membros', found.id));
   };
 
+  const deletarUsuario = async (user: UserProfile) => {
+    if (!window.confirm(`Excluir TODOS os dados de ${user.fullName || user.name}?\n\nIsso remove posts, presenças, dados do perfil. Esta ação não pode ser desfeita.`)) return;
+    setDeletingUid(user.uid);
+    try {
+      // Delete posts
+      const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', user.uid)));
+      for (const d of postsSnap.docs) await deleteDoc(doc(db, 'posts', d.id));
+
+      // Delete confirmações (attendance)
+      const confSnap = await getDocs(query(collection(db, 'confirmacoes'), where('userId', '==', user.uid)));
+      for (const d of confSnap.docs) await deleteDoc(doc(db, 'confirmacoes', d.id));
+
+      // Delete membros entry (by first name)
+      const firstName = (user.name || user.fullName || '').split(' ')[0];
+      if (firstName) {
+        const membrosSnap = await getDocs(query(collection(db, 'membros'), where('nome', '==', firstName)));
+        for (const d of membrosSnap.docs) await deleteDoc(doc(db, 'membros', d.id));
+      }
+
+      // Delete follows doc
+      await deleteDoc(doc(db, 'follows', user.uid));
+
+      // Delete user doc
+      await deleteDoc(doc(db, 'users', user.uid));
+
+      setUsuarios((prev) => prev.filter((u) => u.uid !== user.uid));
+      alert(`Dados de ${user.fullName || user.name} removidos com sucesso.`);
+    } catch (e: any) {
+      alert('Erro ao excluir: ' + (e?.message || 'tente novamente'));
+    } finally {
+      setDeletingUid(null);
+    }
+  };
+
+  const grantAdmin = async (user: UserProfile) => {
+    if (!window.confirm(`Dar permissão de administrador para ${user.fullName || user.name}?`)) return;
+    const ref = doc(db, 'config', 'admins');
+    const snap = await getDoc(ref);
+    const current: string[] = snap.exists() ? (snap.data().emails || []) : [];
+    if (!current.includes(user.email)) {
+      await setDoc(ref, { emails: [...current, user.email] }, { merge: true });
+    }
+    alert(`${user.fullName || user.name} agora é administrador.`);
+  };
+
+  const revokeAdmin = async (user: UserProfile) => {
+    if (user.email === ADMIN_EMAIL) {
+      alert('Não é possível remover o administrador principal.');
+      return;
+    }
+    if (!window.confirm(`Remover permissão de administrador de ${user.fullName || user.name}?`)) return;
+    const ref = doc(db, 'config', 'admins');
+    await updateDoc(ref, { emails: arrayRemove(user.email) });
+    alert(`Permissão de ${user.fullName || user.name} removida.`);
+  };
+
   const inp = (field: keyof (Song & Cifra & Evento & { nome: string }), placeholder: string, multi = false) =>
     multi ? (
       <textarea
@@ -132,6 +205,7 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros }: Props) {
     { id: 'cifras', label: 'CIFRAS' },
     { id: 'eventos', label: 'EVENTOS' },
     { id: 'membros', label: 'MEMBROS' },
+    { id: 'usuarios', label: 'USUÁRIOS' },
   ];
 
   return (
@@ -160,6 +234,7 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros }: Props) {
                 setTab(t.id);
                 setForm(null);
                 setEditId(null);
+                if (t.id === 'usuarios') loadUsuarios();
               }}
               style={{
                 fontFamily: 'Barlow Condensed',
@@ -181,7 +256,7 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros }: Props) {
           ))}
         </div>
 
-        {form !== null && (
+        {form !== null && tab !== 'usuarios' && (
           <div style={{ ...s.card, padding: 20, marginBottom: 20 }}>
             <div
               style={{
@@ -248,175 +323,294 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros }: Props) {
           </div>
         )}
 
-        <div style={{ ...s.card, padding: 20 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 16,
-            }}
-          >
-            <div style={s.cardTag}>
-              {tab === 'songs'
-                ? `${songs.length} MÚSICAS`
-                : tab === 'cifras'
-                ? `${cifras.length} CIFRAS`
-                : tab === 'eventos'
-                ? `${eventos.length} EVENTOS`
-                : `${membros.length} MEMBROS`}
+        {/* USUÁRIOS tab */}
+        {tab === 'usuarios' && (
+          <div style={{ ...s.card, padding: 20 }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16,
+            }}>
+              <div style={s.cardTag}>{usuarios.length} USUÁRIOS</div>
+              <button
+                onClick={() => { setUsuariosLoaded(false); loadUsuarios(); }}
+                style={{ ...s.btnOrange, padding: '6px 14px', fontSize: 12, gap: 6 }}
+              >
+                Atualizar
+              </button>
             </div>
-            <button
-              onClick={() => {
-                setForm({});
-                setEditId(null);
-              }}
+
+            {!usuariosLoaded && (
+              <div style={{ textAlign: 'center', padding: 20, color: '#555', fontFamily: 'Barlow', fontSize: 14 }}>
+                Carregando usuários...
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {usuarios.map((user) => {
+                const isUserAdmin = adminEmails.includes(user.email);
+                const isSuperAdmin = user.email === ADMIN_EMAIL;
+                return (
+                  <div key={user.uid} style={{
+                    background: '#0a0a0a',
+                    border: '1px solid #1a1a1a',
+                    borderRadius: 12,
+                    padding: '12px 14px',
+                    opacity: deletingUid === user.uid ? 0.5 : 1,
+                  }}>
+                    {/* User info row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                      <Avatar src={user.photo} name={user.name || user.fullName || '?'} size={36} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ fontFamily: 'Barlow', fontWeight: 700, fontSize: 14, color: '#fff' }}>
+                            {user.fullName || user.name}
+                          </div>
+                          {isUserAdmin && (
+                            <div style={{
+                              background: 'rgba(240,120,48,0.15)',
+                              border: '1px solid rgba(240,120,48,0.3)',
+                              borderRadius: 6,
+                              padding: '1px 6px',
+                              fontSize: 9,
+                              fontFamily: 'Barlow Condensed',
+                              fontWeight: 700,
+                              letterSpacing: 1,
+                              color: '#F07830',
+                            }}>
+                              {isSuperAdmin ? 'SUPER ADMIN' : 'ADMIN'}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555' }}>{user.email}</div>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {!isSuperAdmin && (
+                        isUserAdmin ? (
+                          <button
+                            onClick={() => revokeAdmin(user)}
+                            style={{
+                              flex: 1, padding: '7px 10px', borderRadius: 8,
+                              border: '1px solid rgba(240,120,48,0.3)',
+                              background: 'transparent', color: '#F07830',
+                              fontFamily: 'Barlow Condensed', fontWeight: 700,
+                              fontSize: 11, letterSpacing: 0.5, cursor: 'pointer',
+                            }}
+                          >
+                            Tirar admin
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => grantAdmin(user)}
+                            style={{
+                              flex: 1, padding: '7px 10px', borderRadius: 8,
+                              border: '1px solid #2f3336',
+                              background: 'transparent', color: '#888',
+                              fontFamily: 'Barlow Condensed', fontWeight: 700,
+                              fontSize: 11, letterSpacing: 0.5, cursor: 'pointer',
+                            }}
+                          >
+                            Dar admin
+                          </button>
+                        )
+                      )}
+                      {!isSuperAdmin && (
+                        <button
+                          onClick={() => deletarUsuario(user)}
+                          disabled={deletingUid === user.uid}
+                          style={{
+                            flex: 1, padding: '7px 10px', borderRadius: 8,
+                            border: '1px solid rgba(244,33,46,0.3)',
+                            background: 'transparent', color: '#f4212e',
+                            fontFamily: 'Barlow Condensed', fontWeight: 700,
+                            fontSize: 11, letterSpacing: 0.5,
+                            cursor: deletingUid === user.uid ? 'default' : 'pointer',
+                          }}
+                        >
+                          {deletingUid === user.uid ? 'Removendo...' : 'Excluir tudo'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Other tabs */}
+        {tab !== 'usuarios' && (
+          <div style={{ ...s.card, padding: 20 }}>
+            <div
               style={{
-                ...s.btnOrange,
-                padding: '6px 14px',
-                fontSize: 12,
-                gap: 6,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
               }}
             >
-              {Ico.plus()} Novo
-            </button>
-          </div>
+              <div style={s.cardTag}>
+                {tab === 'songs'
+                  ? `${songs.length} MÚSICAS`
+                  : tab === 'cifras'
+                  ? `${cifras.length} CIFRAS`
+                  : tab === 'eventos'
+                  ? `${eventos.length} EVENTOS`
+                  : `${membros.length} MEMBROS`}
+              </div>
+              <button
+                onClick={() => {
+                  setForm({});
+                  setEditId(null);
+                }}
+                style={{
+                  ...s.btnOrange,
+                  padding: '6px 14px',
+                  fontSize: 12,
+                  gap: 6,
+                }}
+              >
+                {Ico.plus()} Novo
+              </button>
+            </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {tab === 'songs' &&
-              songs.map((item) => (
-                <div key={item.id} style={s.adminRow}>
-                  <div
-                    style={{
-                      fontFamily: 'Barlow',
-                      fontWeight: 600,
-                      fontSize: 15,
-                      color: '#fff',
-                      flex: 1,
-                    }}
-                  >
-                    {item.title}
-                  </div>
-                  <button
-                    onClick={() => {
-                      setForm({ ...item });
-                      setEditId(item.id);
-                    }}
-                    style={s.adminActionBtn}
-                  >
-                    {Ico.edit()}
-                  </button>
-                  <button
-                    onClick={() => deletar('songs', item.id)}
-                    style={{ ...s.adminActionBtn, color: '#f4212e' }}
-                  >
-                    {Ico.trash()}
-                  </button>
-                </div>
-              ))}
-            {tab === 'cifras' &&
-              cifras.map((item) => (
-                <div key={item.id} style={s.adminRow}>
-                  <div
-                    style={{
-                      fontFamily: 'Barlow',
-                      fontWeight: 600,
-                      fontSize: 15,
-                      color: '#fff',
-                      flex: 1,
-                    }}
-                  >
-                    {item.title}{' '}
-                    <span
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {tab === 'songs' &&
+                songs.map((item) => (
+                  <div key={item.id} style={s.adminRow}>
+                    <div
                       style={{
-                        color: '#71767b',
-                        fontWeight: 400,
-                        fontSize: 13,
+                        fontFamily: 'Barlow',
+                        fontWeight: 600,
+                        fontSize: 15,
+                        color: '#fff',
+                        flex: 1,
                       }}
                     >
-                      · Tom {item.tom}
-                    </span>
+                      {item.title}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setForm({ ...item });
+                        setEditId(item.id);
+                      }}
+                      style={s.adminActionBtn}
+                    >
+                      {Ico.edit()}
+                    </button>
+                    <button
+                      onClick={() => deletar('songs', item.id)}
+                      style={{ ...s.adminActionBtn, color: '#f4212e' }}
+                    >
+                      {Ico.trash()}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setForm({ ...item });
-                      setEditId(item.id);
-                    }}
-                    style={s.adminActionBtn}
-                  >
-                    {Ico.edit()}
-                  </button>
-                  <button
-                    onClick={() => deletar('cifras', item.id)}
-                    style={{ ...s.adminActionBtn, color: '#f4212e' }}
-                  >
-                    {Ico.trash()}
-                  </button>
-                </div>
-              ))}
-            {tab === 'eventos' &&
-              eventos.map((item) => (
-                <div key={item.id} style={s.adminRow}>
-                  <div
-                    style={{
-                      fontFamily: 'Barlow',
-                      fontWeight: 600,
-                      fontSize: 15,
-                      color: '#fff',
-                      flex: 1,
-                    }}
-                  >
-                    {item.tema}{' '}
-                    <span
+                ))}
+              {tab === 'cifras' &&
+                cifras.map((item) => (
+                  <div key={item.id} style={s.adminRow}>
+                    <div
                       style={{
-                        color: '#71767b',
-                        fontWeight: 400,
-                        fontSize: 12,
+                        fontFamily: 'Barlow',
+                        fontWeight: 600,
+                        fontSize: 15,
+                        color: '#fff',
+                        flex: 1,
                       }}
                     >
-                      · {item.data}
-                    </span>
+                      {item.title}{' '}
+                      <span
+                        style={{
+                          color: '#71767b',
+                          fontWeight: 400,
+                          fontSize: 13,
+                        }}
+                      >
+                        · Tom {item.tom}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setForm({ ...item });
+                        setEditId(item.id);
+                      }}
+                      style={s.adminActionBtn}
+                    >
+                      {Ico.edit()}
+                    </button>
+                    <button
+                      onClick={() => deletar('cifras', item.id)}
+                      style={{ ...s.adminActionBtn, color: '#f4212e' }}
+                    >
+                      {Ico.trash()}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setForm({ ...item });
-                      setEditId(item.id);
-                    }}
-                    style={s.adminActionBtn}
-                  >
-                    {Ico.edit()}
-                  </button>
-                  <button
-                    onClick={() => deletar('eventos', item.id)}
-                    style={{ ...s.adminActionBtn, color: '#f4212e' }}
-                  >
-                    {Ico.trash()}
-                  </button>
-                </div>
-              ))}
-            {tab === 'membros' &&
-              membros.map((nome, i) => (
-                <div key={i} style={s.adminRow}>
-                  <div
-                    style={{
-                      fontFamily: 'Barlow',
-                      fontSize: 15,
-                      color: '#fff',
-                      flex: 1,
-                    }}
-                  >
-                    {nome}
+                ))}
+              {tab === 'eventos' &&
+                eventos.map((item) => (
+                  <div key={item.id} style={s.adminRow}>
+                    <div
+                      style={{
+                        fontFamily: 'Barlow',
+                        fontWeight: 600,
+                        fontSize: 15,
+                        color: '#fff',
+                        flex: 1,
+                      }}
+                    >
+                      {item.tema}{' '}
+                      <span
+                        style={{
+                          color: '#71767b',
+                          fontWeight: 400,
+                          fontSize: 12,
+                        }}
+                      >
+                        · {item.data}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setForm({ ...item });
+                        setEditId(item.id);
+                      }}
+                      style={s.adminActionBtn}
+                    >
+                      {Ico.edit()}
+                    </button>
+                    <button
+                      onClick={() => deletar('eventos', item.id)}
+                      style={{ ...s.adminActionBtn, color: '#f4212e' }}
+                    >
+                      {Ico.trash()}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => deletarMembro(nome)}
-                    style={{ ...s.adminActionBtn, color: '#f4212e' }}
-                  >
-                    {Ico.trash()}
-                  </button>
-                </div>
-              ))}
+                ))}
+              {tab === 'membros' &&
+                membros.map((nome, i) => (
+                  <div key={i} style={s.adminRow}>
+                    <div
+                      style={{
+                        fontFamily: 'Barlow',
+                        fontSize: 15,
+                        color: '#fff',
+                        flex: 1,
+                      }}
+                    >
+                      {nome}
+                    </div>
+                    <button
+                      onClick={() => deletarMembro(nome)}
+                      style={{ ...s.adminActionBtn, color: '#f4212e' }}
+                    >
+                      {Ico.trash()}
+                    </button>
+                  </div>
+                ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

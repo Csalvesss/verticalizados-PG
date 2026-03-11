@@ -26,7 +26,9 @@ interface Props {
   currentUser: CurrentUser;
   isAdmin: boolean;
   uid: string;
+  adminEmails: string[];
   goTo: (sc: Screen) => void;
+  onOpenProfile?: (userId: string, userName: string) => void;
 }
 
 export function FeedScreen({
@@ -35,7 +37,9 @@ export function FeedScreen({
   currentUser,
   isAdmin,
   uid,
+  adminEmails,
   goTo,
+  onOpenProfile,
 }: Props) {
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
@@ -376,6 +380,7 @@ export function FeedScreen({
           isAdmin={isAdmin}
           currentUser={currentUser}
           following={following}
+          adminEmails={adminEmails}
           commentingOn={commentingOn}
           onLike={curtir}
           onComment={handleComment}
@@ -384,6 +389,7 @@ export function FeedScreen({
           onSubmitComment={comentar}
           onFollow={follow}
           onUnfollow={unfollow}
+          onOpenProfile={onOpenProfile}
         />
       )}
 

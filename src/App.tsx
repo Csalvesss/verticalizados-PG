@@ -23,6 +23,7 @@ import { ComunhaoScreen } from './screens/Comunhao';
 import { NotificacoesScreen } from './screens/Notificacoes';
 import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
+import { UserPerfilScreen } from './screens/UserPerfil';
 import { UserPhotosProvider } from './contexts/UserPhotos';
 
 const auth = getAuth();
@@ -54,7 +55,9 @@ export default function App() {
 
 // ── MAIN APP (dados globais + roteamento) ─────────────────────────────────────
 function MainApp({ user }: { user: User }) {
-  const isAdmin = user.email === ADMIN_EMAIL;
+  const [adminEmails, setAdminEmails] = useState<string[]>([ADMIN_EMAIL]);
+  const isAdmin = adminEmails.includes(user.email || '') || user.email === ADMIN_EMAIL;
+  const [profileTarget, setProfileTarget] = useState<string | null>(null);
   const baseName = user.displayName?.split(' ')[0] || 'Membro';
   const baseFullName = user.displayName || 'Membro';
   const basePhoto = user.photoURL || null;
@@ -98,7 +101,15 @@ function MainApp({ user }: { user: User }) {
       }
     })();
 
-    return () => uns();
+    // Listen to admin emails config
+    const unsAdmins = onSnapshot(doc(db, 'config', 'admins'), snap => {
+      if (snap.exists()) {
+        const extra: string[] = snap.data().emails || [];
+        setAdminEmails([ADMIN_EMAIL, ...extra]);
+      }
+    });
+
+    return () => { uns(); unsAdmins(); };
   }, [user.uid, baseFullName, basePhoto, baseEmail, baseName]);
 
   // Use Firestore photo if available (uploaded), otherwise Firebase Auth photo
@@ -225,7 +236,12 @@ function MainApp({ user }: { user: User }) {
             currentUser={currentUser}
             isAdmin={isAdmin}
             uid={user.uid}
+            adminEmails={adminEmails}
             goTo={goTo}
+            onOpenProfile={(targetUid) => {
+              setProfileTarget(targetUid);
+              goTo('userPerfil');
+            }}
           />
         )}
 
@@ -245,8 +261,6 @@ function MainApp({ user }: { user: User }) {
             isAdmin={isAdmin}
             posts={posts}
             uid={user.uid}
-            songsCount={songs.length}
-            sorteioSemana={sorteioSemana}
             goTo={goTo}
           />
         )}
@@ -274,6 +288,17 @@ function MainApp({ user }: { user: User }) {
             cifras={cifras}
             eventos={eventos}
             membros={membrosLista}
+            adminEmails={adminEmails}
+          />
+        )}
+
+        {screen === 'userPerfil' && profileTarget && (
+          <UserPerfilScreen
+            targetUserId={profileTarget}
+            currentUid={user.uid}
+            posts={posts}
+            adminEmails={adminEmails}
+            goBack={() => goTo('feed')}
           />
         )}
 
