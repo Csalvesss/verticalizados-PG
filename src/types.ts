@@ -118,4 +118,5 @@ export interface UserProfile {
   fullName: string;
   photo: string;
   email: string;
+  username?: string;
 }

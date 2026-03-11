@@ -2,14 +2,26 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
+import { Avatar } from '../components/Avatar';
 import type { Screen, UserProfile } from '../types';
+
+function toUsername(name: string): string {
+  return '@' + (name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9.]/g, '');
+}
 
 export function BuscarScreen({
   uid,
   goTo,
+  onOpenProfile,
 }: {
   uid: string;
   goTo: (sc: Screen) => void;
+  onOpenProfile?: (userId: string, userName: string) => void;
 }) {
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -50,8 +62,7 @@ export function BuscarScreen({
     .filter(u => {
       if (!term) return true;
       const name = (u.fullName || u.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const email = (u.email || '').toLowerCase();
-      return name.includes(term) || email.includes(term);
+      return name.includes(term);
     });
 
   return (
@@ -82,7 +93,7 @@ export function BuscarScreen({
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por nome ou email..."
+            placeholder="Buscar por nome..."
             autoFocus
             style={{
               flex: 1, background: 'transparent', border: 'none',
@@ -114,25 +125,26 @@ export function BuscarScreen({
         <div>
           {filtered.map(u => {
             const isFollowing = following.includes(u.uid);
+            const displayName = u.fullName || u.name || 'Membro';
             return (
               <div key={u.uid} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '12px 16px', borderBottom: '1px solid #111',
-              }}>
-                <img src={u.photo} alt="" style={{
-                  width: 44, height: 44, borderRadius: '50%',
-                  objectFit: 'cover', flexShrink: 0, border: '2px solid #222',
-                }} />
+                cursor: onOpenProfile ? 'pointer' : 'default',
+              }}
+                onClick={() => onOpenProfile?.(u.uid, displayName)}
+              >
+                <Avatar src={u.photo} name={displayName} size={44} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 15, color: '#fff' }}>
-                    {u.fullName || u.name}
+                    {displayName}
                   </div>
-                  <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {u.email}
+                  <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#555' }}>
+                    {u.username ? '@' + u.username : toUsername(displayName)}
                   </div>
                 </div>
                 <button
-                  onClick={() => isFollowing ? unfollow(u.uid) : follow(u.uid)}
+                  onClick={e => { e.stopPropagation(); isFollowing ? unfollow(u.uid) : follow(u.uid); }}
                   style={{
                     padding: '6px 16px', borderRadius: 50, flexShrink: 0,
                     fontFamily: 'Barlow Condensed', fontWeight: 700,

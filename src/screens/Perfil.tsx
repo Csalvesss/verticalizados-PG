@@ -3,7 +3,17 @@ import { getAuth, signOut, updateProfile, deleteUser } from 'firebase/auth';
 import { doc, setDoc, deleteDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
-import type { CurrentUser, Screen, Post } from '../types';
+import { Avatar } from '../components/Avatar';
+import type { CurrentUser, Screen, Post, UserProfile } from '../types';
+
+function toUsername(name: string): string {
+  return '@' + (name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9.]/g, '');
+}
 
 const auth = getAuth();
 
@@ -13,6 +23,7 @@ interface Props {
   posts: Post[];
   uid: string;
   goTo: (sc: Screen) => void;
+  onOpenProfile?: (userId: string, userName: string) => void;
 }
 
 type Tab = 'posts' | 'curtidos';
@@ -23,25 +34,61 @@ export function PerfilScreen({
   posts,
   uid,
   goTo,
+  onOpenProfile,
 }: Props) {
   const [tab, setTab] = useState<Tab>('posts');
   const [followingCount, setFollowingCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
+  const [followListModal, setFollowListModal] = useState<'seguindo' | 'seguidores' | null>(null);
+  const [followListUsers, setFollowListUsers] = useState<UserProfile[]>([]);
+  const [followListLoading, setFollowListLoading] = useState(false);
+  const [savedUsername, setSavedUsername] = useState('');
 
   useEffect(() => {
-    // Following count
     getDoc(doc(db, 'follows', uid)).then(snap => {
       if (snap.exists()) setFollowingCount((snap.data().following || []).length);
     });
-    // Followers count
     getDocs(collection(db, 'follows')).then(snap => {
       let count = 0;
       snap.docs.forEach(d => { if ((d.data().following || []).includes(uid)) count++; });
       setFollowersCount(count);
     });
+    // Load custom username
+    getDoc(doc(db, 'users', uid)).then(snap => {
+      if (snap.exists() && snap.data().username) setSavedUsername(snap.data().username);
+    });
   }, [uid]);
+
+  const displayUsername = savedUsername ? '@' + savedUsername : toUsername(currentUser.fullName);
+
+  async function openFollowList(type: 'seguindo' | 'seguidores') {
+    setFollowListModal(type);
+    setFollowListLoading(true);
+    setFollowListUsers([]);
+    try {
+      let uids: string[] = [];
+      if (type === 'seguindo') {
+        const snap = await getDoc(doc(db, 'follows', uid));
+        uids = snap.exists() ? (snap.data().following || []) : [];
+      } else {
+        const snap = await getDocs(collection(db, 'follows'));
+        snap.docs.forEach(d => {
+          if ((d.data().following || []).includes(uid)) uids.push(d.id);
+        });
+      }
+      const profiles: UserProfile[] = [];
+      for (const id of uids) {
+        const p = await getDoc(doc(db, 'users', id));
+        if (p.exists()) profiles.push({ uid: id, ...p.data() } as UserProfile);
+      }
+      setFollowListUsers(profiles);
+    } finally {
+      setFollowListLoading(false);
+    }
+  }
   const [showEdit, setShowEdit] = useState(false);
   const [editName, setEditName] = useState(currentUser.fullName);
+  const [editUsername, setEditUsername] = useState('');
   const [editPhoto, setEditPhoto] = useState(currentUser.photo);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -101,10 +148,12 @@ export function PerfilScreen({
         // Only update displayName in Firebase Auth (photoURL has size limit)
         await updateProfile(user, { displayName: editName.trim() });
         // Save photo + name to Firestore (no size limit for photoData)
+        const cleanUsername = editUsername.trim().toLowerCase().replace(/[^a-z0-9._]/g, '');
         await setDoc(doc(db, 'users', uid), {
           fullName: editName.trim(),
           name: editName.trim().split(' ')[0],
           ...(editPhoto !== currentUser.photo ? { photoData: editPhoto } : {}),
+          ...(cleanUsername ? { username: cleanUsername } : {}),
         }, { merge: true });
       }
       setShowEdit(false);
@@ -152,12 +201,16 @@ export function PerfilScreen({
           </div>
           <div style={{ display: 'flex', gap: 20, flex: 1, justifyContent: 'center' }}>
             {[
-              { n: meusPosts.length, label: 'Posts' },
-              { n: followingCount, label: 'Seguindo' },
-              { n: followersCount, label: 'Seguidores' },
+              { n: meusPosts.length, label: 'Posts', clickable: false },
+              { n: followingCount, label: 'Seguindo', clickable: true, type: 'seguindo' as const },
+              { n: followersCount, label: 'Seguidores', clickable: true, type: 'seguidores' as const },
             ].map(item => (
-              <div key={item.label} style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 22, color: '#fff', lineHeight: 1.2 }}>{item.n}</div>
+              <div
+                key={item.label}
+                style={{ textAlign: 'center', cursor: item.clickable ? 'pointer' : 'default' }}
+                onClick={() => item.clickable && openFollowList(item.type!)}
+              >
+                <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 22, color: item.clickable ? '#F07830' : '#fff', lineHeight: 1.2 }}>{item.n}</div>
                 <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#71767b', marginTop: 1 }}>{item.label}</div>
               </div>
             ))}
@@ -166,7 +219,7 @@ export function PerfilScreen({
 
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff' }}>{currentUser.fullName}</div>
-          <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>{currentUser.email}</div>
+          <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>{displayUsername}</div>
         </div>
 
         <div style={{
@@ -195,7 +248,7 @@ export function PerfilScreen({
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           <button
-            onClick={() => { setEditName(currentUser.fullName); setEditPhoto(currentUser.photo); setSaveError(''); setShowEdit(true); }}
+            onClick={() => { setEditName(currentUser.fullName); setEditUsername(savedUsername); setEditPhoto(currentUser.photo); setSaveError(''); setShowEdit(true); }}
             style={{
               flex: 1, padding: '8px 16px', borderRadius: 8,
               border: '1px solid #2f3336', background: 'transparent',
@@ -302,6 +355,81 @@ export function PerfilScreen({
 
       <div style={{ height: 80 }} />
 
+      {/* Modal Seguindo / Seguidores */}
+      {followListModal && (
+        <div onClick={() => setFollowListModal(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+          zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#0d0d0d', borderRadius: '20px 20px 0 0',
+            width: '100%', maxWidth: 600, maxHeight: '70vh',
+            overflow: 'hidden', display: 'flex', flexDirection: 'column',
+            border: '1px solid #2f3336', borderBottom: 'none',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', padding: '14px 16px 12px',
+              borderBottom: '1px solid #1e1e1e',
+            }}>
+              <button onClick={() => setFollowListModal(null)} style={{
+                color: '#888', fontSize: 22, background: 'transparent',
+                border: 'none', cursor: 'pointer', lineHeight: 1, padding: '0 4px',
+              }}>×</button>
+              <span style={{
+                flex: 1, textAlign: 'center', fontWeight: 700, color: '#e7e9ea',
+                fontSize: 15, fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: 0.5,
+              }}>
+                {followListModal === 'seguindo' ? 'SEGUINDO' : 'SEGUIDORES'}
+              </span>
+              <div style={{ width: 28 }} />
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {followListLoading && (
+                <div style={{ padding: 32, textAlign: 'center', color: '#555', fontFamily: 'Barlow', fontSize: 14 }}>
+                  Carregando...
+                </div>
+              )}
+              {!followListLoading && followListUsers.length === 0 && (
+                <div style={{ padding: 32, textAlign: 'center', color: '#555', fontFamily: 'Barlow', fontSize: 14 }}>
+                  {followListModal === 'seguindo' ? 'Você não segue ninguém ainda.' : 'Ninguém te segue ainda.'}
+                </div>
+              )}
+              {followListUsers.map(u => {
+                const displayName = u.fullName || u.name || 'Membro';
+                return (
+                  <div key={u.uid}
+                    onClick={() => {
+                      setFollowListModal(null);
+                      onOpenProfile?.(u.uid, displayName);
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 16px', borderBottom: '1px solid #111',
+                      cursor: onOpenProfile ? 'pointer' : 'default',
+                    }}
+                  >
+                    <Avatar src={u.photo} name={displayName} size={40} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                        {displayName}
+                      </div>
+                      <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#555' }}>
+                        {toUsername(displayName)}
+                      </div>
+                    </div>
+                    {onOpenProfile && (
+                      <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, fill: '#555' }}>
+                        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                      </svg>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Editar Perfil */}
       {showEdit && (
         <div onClick={() => setShowEdit(false)} style={{
@@ -370,13 +498,39 @@ export function PerfilScreen({
               Toque na foto para alterar
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 16 }}>
               <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#666', marginBottom: 6 }}>Nome</div>
               <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Seu nome" style={{
                 width: '100%', background: '#1a1a1a', border: '1px solid #2f3336',
                 borderRadius: 10, padding: '10px 14px', fontFamily: 'Barlow',
                 fontSize: 15, color: '#fff', outline: 'none', boxSizing: 'border-box',
               }} />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#666', marginBottom: 6 }}>Nome de usuário</div>
+              <div style={{ position: 'relative' }}>
+                <span style={{
+                  position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                  fontFamily: 'Barlow', fontSize: 15, color: '#555', pointerEvents: 'none',
+                }}>@</span>
+                <input
+                  value={editUsername}
+                  onChange={e => {
+                    const val = e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 24);
+                    setEditUsername(val);
+                  }}
+                  placeholder={toUsername(editName).slice(1) || 'nomedousuario'}
+                  style={{
+                    width: '100%', background: '#1a1a1a', border: '1px solid #2f3336',
+                    borderRadius: 10, padding: '10px 14px 10px 28px', fontFamily: 'Barlow',
+                    fontSize: 15, color: '#fff', outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#444', marginTop: 5 }}>
+                Letras minúsculas, números, pontos e underscores. Máx. 24 caracteres.
+              </div>
             </div>
 
             {saveError && <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#f4212e', marginBottom: 12 }}>{saveError}</div>}

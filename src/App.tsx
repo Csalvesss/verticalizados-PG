@@ -262,6 +262,10 @@ function MainApp({ user }: { user: User }) {
             posts={posts}
             uid={user.uid}
             goTo={goTo}
+            onOpenProfile={(targetUid) => {
+              setProfileTarget(targetUid);
+              goTo('userPerfil');
+            }}
           />
         )}
 
@@ -274,7 +278,14 @@ function MainApp({ user }: { user: User }) {
         )}
 
         {screen === 'buscar' && (
-          <BuscarScreen uid={user.uid} goTo={goTo} />
+          <BuscarScreen
+            uid={user.uid}
+            goTo={goTo}
+            onOpenProfile={(targetUid) => {
+              setProfileTarget(targetUid);
+              goTo('userPerfil');
+            }}
+          />
         )}
 
         {screen === 'jogandoEmComunhao' && (
