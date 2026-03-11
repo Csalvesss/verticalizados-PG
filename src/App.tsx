@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDocs, where } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
 
@@ -52,23 +52,50 @@ export default function App() {
 // ── MAIN APP (dados globais + roteamento) ─────────────────────────────────────
 function MainApp({ user }: { user: User }) {
   const isAdmin = user.email === ADMIN_EMAIL;
+  const baseName = user.displayName?.split(' ')[0] || 'Membro';
+  const baseFullName = user.displayName || 'Membro';
+  const basePhoto = user.photoURL || 'https://i.pravatar.cc/150?img=12';
+  const baseEmail = user.email || '';
+
+  // Track uploaded photo from Firestore
+  const [firestorePhoto, setFirestorePhoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Save/update user profile for search
+    setDoc(doc(db, 'users', user.uid), {
+      name: baseName,
+      fullName: baseFullName,
+      photo: basePhoto,
+      email: baseEmail,
+    }, { merge: true });
+
+    // Listen for photoData from Firestore (uploaded via profile edit)
+    const uns = onSnapshot(doc(db, 'users', user.uid), snap => {
+      const data = snap.data();
+      if (data?.photoData) setFirestorePhoto(data.photoData);
+    });
+
+    // Auto-register as member for prayer draw
+    (async () => {
+      if (baseName && baseName !== 'Membro') {
+        const snap = await getDocs(query(collection(db, 'membros'), where('nome', '==', baseName)));
+        if (snap.empty) {
+          await addDoc(collection(db, 'membros'), { nome: baseName });
+        }
+      }
+    })();
+
+    return () => uns();
+  }, [user.uid, baseFullName, basePhoto, baseEmail, baseName]);
+
+  // Use Firestore photo if available (uploaded), otherwise Firebase Auth photo
   const currentUser: CurrentUser = {
     uid: user.uid,
-    name: user.displayName?.split(' ')[0] || 'Membro',
-    fullName: user.displayName || 'Membro',
-    photo: user.photoURL || 'https://i.pravatar.cc/150?img=12',
-    email: user.email || '',
+    name: baseName,
+    fullName: baseFullName,
+    photo: firestorePhoto || basePhoto,
+    email: baseEmail,
   };
-
-  // Save user profile to Firestore for search
-  useEffect(() => {
-    setDoc(doc(db, 'users', user.uid), {
-      name: currentUser.name,
-      fullName: currentUser.fullName,
-      photo: currentUser.photo,
-      email: currentUser.email,
-    }, { merge: true });
-  }, [user.uid, currentUser.fullName, currentUser.photo, currentUser.email]);
 
   const [screen, setScreen] = useState<Screen>(() => {
     const saved = window.localStorage.getItem('pg:screen') as Screen | null;
