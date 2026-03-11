@@ -77,7 +77,7 @@ export function PostCard({
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         {/* Left: avatar */}
         <div style={{ flexShrink: 0 }}>
-          <Avatar src={resolvedPhoto} size={40} />
+          <Avatar src={resolvedPhoto} name={post.user} size={40} />
         </div>
 
         {/* Right: all content */}
@@ -248,7 +248,17 @@ export function PostCard({
               {Ico.repost()}
             </button>
 
-            <button className="threads-action-btn">
+            <button
+              className="threads-action-btn"
+              onClick={() => {
+                const shareText = `${post.user}: ${post.text || ''}`.trim();
+                if (navigator.share) {
+                  navigator.share({ title: 'Verticalizados', text: shareText }).catch(() => {});
+                } else {
+                  navigator.clipboard?.writeText(shareText).catch(() => {});
+                }
+              }}
+            >
               {Ico.send()}
             </button>
           </div>
@@ -281,7 +291,7 @@ export function PostCard({
             <div style={{ marginTop: 10 }}>
               {post.comments.map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-                  <Avatar src={c.photo} size={28} />
+                  <Avatar src={c.photo} name={c.user} size={28} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{
                       fontWeight: 700,

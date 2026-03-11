@@ -8,6 +8,7 @@ import { GLOBAL_CSS, s } from './styles';
 import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio } from './types';
 
 import { LoginScreen } from './components/LoginScreen';
+import { SetupPerfil } from './components/SetupPerfil';
 import { BottomNav } from './components/BottomNav';
 import { AdminPanel } from './components/AdminPanel';
 
@@ -55,25 +56,35 @@ function MainApp({ user }: { user: User }) {
   const isAdmin = user.email === ADMIN_EMAIL;
   const baseName = user.displayName?.split(' ')[0] || 'Membro';
   const baseFullName = user.displayName || 'Membro';
-  const basePhoto = user.photoURL || 'https://i.pravatar.cc/150?img=12';
+  const basePhoto = user.photoURL || null;
   const baseEmail = user.email || '';
 
   // Track uploaded photo from Firestore
   const [firestorePhoto, setFirestorePhoto] = useState<string | null>(null);
+  const [needsSetup, setNeedsSetup] = useState(false);
+  const [setupChecked, setSetupChecked] = useState(!!user.photoURL); // Google users skip setup
 
   useEffect(() => {
-    // Save/update user profile for search
-    setDoc(doc(db, 'users', user.uid), {
-      name: baseName,
-      fullName: baseFullName,
-      photo: basePhoto,
-      email: baseEmail,
-    }, { merge: true });
+    // Save/update user profile for search (only if setup is already complete or Google user)
+    if (user.photoURL) {
+      setDoc(doc(db, 'users', user.uid), {
+        name: baseName,
+        fullName: baseFullName,
+        photo: basePhoto,
+        email: baseEmail,
+        setupComplete: true,
+      }, { merge: true });
+    }
 
     // Listen for photoData from Firestore (uploaded via profile edit)
     const uns = onSnapshot(doc(db, 'users', user.uid), snap => {
       const data = snap.data();
       if (data?.photoData) setFirestorePhoto(data.photoData);
+      if (!user.photoURL) {
+        const done = !!data?.setupComplete || !!data?.photoData;
+        setNeedsSetup(!done);
+        setSetupChecked(true);
+      }
     });
 
     // Auto-register as member for prayer draw
@@ -94,7 +105,7 @@ function MainApp({ user }: { user: User }) {
     uid: user.uid,
     name: baseName,
     fullName: baseFullName,
-    photo: firestorePhoto || basePhoto,
+    photo: firestorePhoto || basePhoto || '',
     email: baseEmail,
   };
 
@@ -166,6 +177,9 @@ function MainApp({ user }: { user: User }) {
   const confirmacoesProximo = eventos[0]
     ? confirmacoes.filter(c => c.eventoId === eventos[0].id)
     : [];
+
+  if (!setupChecked) return <Splash />;
+  if (needsSetup) return <SetupPerfil user={user} onDone={() => setNeedsSetup(false)} />;
 
   return (
     <UserPhotosProvider>
