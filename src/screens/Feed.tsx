@@ -10,6 +10,9 @@ import {
   serverTimestamp,
   getDoc,
   setDoc,
+  query,
+  where,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
@@ -38,6 +41,7 @@ export function FeedScreen({
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [repostingOn, setRepostingOn] = useState<Post | null>(null);
   const [following, setFollowing] = useState<string[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Load following list from Firestore
   useEffect(() => {
@@ -48,6 +52,31 @@ export function FeedScreen({
       }
     });
   }, [uid]);
+
+  // Listen for unread notifications
+  useEffect(() => {
+    const q = query(
+      collection(db, 'notifications'),
+      where('toUserId', '==', uid),
+      where('read', '==', false),
+    );
+    const uns = onSnapshot(q, snap => setUnreadCount(snap.size));
+    return () => uns();
+  }, [uid]);
+
+  async function sendNotification(toUserId: string, type: 'like' | 'comment' | 'repost', postText: string) {
+    if (toUserId === uid) return; // Don't notify yourself
+    await addDoc(collection(db, 'notifications'), {
+      toUserId,
+      fromUserId: uid,
+      fromUserName: currentUser.name,
+      fromUserPhoto: currentUser.photo,
+      type,
+      postText: postText.slice(0, 100),
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+  }
 
   const follow = async (targetUserId: string) => {
     const ref = doc(db, 'follows', uid);
@@ -81,12 +110,17 @@ export function FeedScreen({
   };
 
   const curtir = async (p: Post) => {
+    const alreadyLiked = p.likes?.includes(uid);
     await updateDoc(doc(db, 'posts', p.id), {
-      likes: p.likes?.includes(uid) ? arrayRemove(uid) : arrayUnion(uid),
+      likes: alreadyLiked ? arrayRemove(uid) : arrayUnion(uid),
     });
+    if (!alreadyLiked) {
+      sendNotification(p.userId, 'like', p.text);
+    }
   };
 
   const comentar = async (id: string, text: string) => {
+    const post = posts.find(p => p.id === id);
     await updateDoc(doc(db, 'posts', id), {
       comments: arrayUnion({
         user: currentUser.name,
@@ -96,6 +130,9 @@ export function FeedScreen({
         time: new Date().toISOString(),
       }),
     });
+    if (post) {
+      sendNotification(post.userId, 'comment', post.text);
+    }
     setCommentingOn(null);
   };
 
@@ -117,6 +154,7 @@ export function FeedScreen({
         userEmail: post.userEmail || '',
       },
     });
+    sendNotification(post.userId, 'repost', post.text);
     setRepostingOn(null);
   };
 
@@ -142,7 +180,7 @@ export function FeedScreen({
       background: '#000',
       width: '100%',
     }}>
-      {/* ── Sticky header ── */}
+      {/* Sticky header */}
       <div style={{
         position: 'sticky',
         top: 0,
@@ -194,11 +232,43 @@ export function FeedScreen({
               color: '#e7e9ea',
               lineHeight: 1,
             }}>
-              PGWHITTER
+              FEED
             </span>
           </div>
 
-          <div style={{ width: 34 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button
+              onClick={() => goTo('buscar')}
+              style={{
+                padding: 6, background: 'transparent', border: 'none',
+                cursor: 'pointer', borderRadius: '50%', display: 'flex',
+              }}
+            >
+              {Ico.search('#71767b')}
+            </button>
+            <button
+              onClick={() => goTo('notificacoes')}
+              style={{
+                padding: 6, background: 'transparent', border: 'none',
+                cursor: 'pointer', borderRadius: '50%', display: 'flex',
+                position: 'relative',
+              }}
+            >
+              {Ico.bell(unreadCount > 0 ? '#F07830' : '#71767b')}
+              {unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: 2, right: 2,
+                  background: '#F07830', color: '#fff',
+                  borderRadius: 99, minWidth: 16, height: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontFamily: 'Barlow Condensed', fontWeight: 700,
+                  border: '2px solid #000',
+                }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -241,12 +311,12 @@ export function FeedScreen({
         </div>
       </div>
 
-      {/* ── Composer (only on Para você tab) ── */}
+      {/* Composer (only on Para você tab) */}
       {tab === 'para-voce' && (
         <Composer userPhoto={currentUser.photo} onPost={postar} />
       )}
 
-      {/* ── Seguindo empty state ── */}
+      {/* Seguindo empty state */}
       {tab === 'seguindo' && following.length === 0 && !loading && (
         <div style={{
           padding: '60px 32px',
@@ -260,13 +330,24 @@ export function FeedScreen({
           <div style={{ fontWeight: 700, color: '#888', marginBottom: 8, fontSize: 17 }}>
             Você ainda não segue ninguém
           </div>
-          <div style={{ color: '#444' }}>
-            Toque em "..." em qualquer post e escolha seguir o usuário para ver os posts aqui.
+          <div style={{ color: '#444', marginBottom: 16 }}>
+            Busque membros do PG e comece a seguir.
           </div>
+          <button
+            onClick={() => goTo('buscar')}
+            style={{
+              padding: '10px 24px', borderRadius: 50,
+              background: '#F07830', border: 'none', color: '#fff',
+              fontFamily: 'Barlow Condensed', fontWeight: 700,
+              fontSize: 13, letterSpacing: 1, cursor: 'pointer',
+            }}
+          >
+            BUSCAR MEMBROS
+          </button>
         </div>
       )}
 
-      {/* ── Seguindo: posts from followed users but none yet ── */}
+      {/* Seguindo: posts from followed users but none yet */}
       {tab === 'seguindo' && following.length > 0 && feedPosts.length === 0 && !loading && (
         <div style={{
           padding: '60px 32px',
@@ -286,7 +367,7 @@ export function FeedScreen({
         </div>
       )}
 
-      {/* ── Timeline ── */}
+      {/* Timeline */}
       {(tab === 'para-voce' || (tab === 'seguindo' && following.length > 0)) && (
         <Timeline
           posts={feedPosts}
@@ -306,7 +387,7 @@ export function FeedScreen({
         />
       )}
 
-      {/* ── Repost modal ── */}
+      {/* Repost modal */}
       {repostingOn && (
         <div
           onClick={() => setRepostingOn(null)}
