@@ -10,6 +10,7 @@ interface Props {
   isAdmin: boolean;
   currentUser: CurrentUser;
   following: string[];
+  adminEmails: string[];
   commentingOn: string | null;
   onLike: (post: Post) => void;
   onComment: (postId: string) => void;
@@ -18,6 +19,7 @@ interface Props {
   onSubmitComment: (postId: string, text: string) => void;
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
+  onOpenProfile?: (userId: string, userName: string) => void;
 }
 
 export function Timeline({
@@ -27,6 +29,7 @@ export function Timeline({
   isAdmin,
   currentUser,
   following,
+  adminEmails,
   commentingOn,
   onLike,
   onComment,
@@ -35,6 +38,7 @@ export function Timeline({
   onSubmitComment,
   onFollow,
   onUnfollow,
+  onOpenProfile,
 }: Props) {
   if (loading) {
     return (
@@ -61,12 +65,14 @@ export function Timeline({
             uid={uid}
             isAdmin={isAdmin}
             following={following}
+            adminEmails={adminEmails}
             onLike={() => onLike(post)}
             onComment={() => onComment(post.id)}
             onRepost={() => onRepost(post)}
             onDelete={() => onDelete(post.id)}
             onFollow={onFollow}
             onUnfollow={onUnfollow}
+            onOpenProfile={onOpenProfile}
           />
 
           {commentingOn === post.id && (

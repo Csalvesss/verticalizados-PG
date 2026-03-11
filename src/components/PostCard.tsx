@@ -11,12 +11,14 @@ interface Props {
   uid: string;
   isAdmin: boolean;
   following: string[];
+  adminEmails: string[];
   onLike: () => void;
   onComment: () => void;
   onRepost: () => void;
   onDelete: () => void;
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
+  onOpenProfile?: (userId: string, userName: string) => void;
 }
 
 const verifiedBadge = (
@@ -30,12 +32,14 @@ export function PostCard({
   uid,
   isAdmin,
   following,
+  adminEmails,
   onLike,
   onComment,
   onRepost,
   onDelete,
   onFollow,
   onUnfollow,
+  onOpenProfile,
 }: Props) {
   const [showComments, setShowComments] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,7 +47,7 @@ export function PostCard({
 
   const isOwner = post.userId === uid;
   const liked = post.likes?.includes(uid);
-  const isVerified = post.userEmail === ADMIN_EMAIL;
+  const isVerified = adminEmails.includes(post.userEmail || '') || post.userEmail === ADMIN_EMAIL;
   const likesCount = post.likes?.length || 0;
   const commentsCount = post.comments?.length || 0;
   const hasComments = commentsCount > 0;
@@ -76,7 +80,10 @@ export function PostCard({
       {/* Two-column layout: avatar | content */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         {/* Left: avatar */}
-        <div style={{ flexShrink: 0 }}>
+        <div
+          style={{ flexShrink: 0, cursor: onOpenProfile ? 'pointer' : 'default' }}
+          onClick={() => onOpenProfile?.(post.userId, post.user)}
+        >
           <Avatar src={resolvedPhoto} name={post.user} size={40} />
         </div>
 
@@ -85,15 +92,17 @@ export function PostCard({
           {/* Header: name + time + action button */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-              <span style={{
-                fontWeight: 700,
-                color: '#e7e9ea',
-                fontSize: 14,
-                fontFamily: 'Barlow, sans-serif',
-                lineHeight: 1.3,
-              }}>
+              <button
+                onClick={() => onOpenProfile?.(post.userId, post.user)}
+                style={{
+                  fontWeight: 700, color: '#e7e9ea', fontSize: 14,
+                  fontFamily: 'Barlow, sans-serif', lineHeight: 1.3,
+                  background: 'none', border: 'none', padding: 0,
+                  cursor: onOpenProfile ? 'pointer' : 'default',
+                }}
+              >
                 {post.user}
-              </span>
+              </button>
               {isVerified && verifiedBadge}
               <span style={{
                 color: '#555',

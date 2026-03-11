@@ -12,7 +12,8 @@ export type Screen =
   | 'comunhao'
   | 'notificacoes'
   | 'buscar'
-  | 'jogandoEmComunhao';
+  | 'jogandoEmComunhao'
+  | 'userPerfil';
 
 export interface CurrentUser {
   uid: string;
