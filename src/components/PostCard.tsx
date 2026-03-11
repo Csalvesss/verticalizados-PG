@@ -4,6 +4,7 @@ import { tempoRelativo, ADMIN_EMAIL } from '../constants';
 import type { Post } from '../types';
 import { Avatar } from './Avatar';
 import { RepostBlock } from './RepostBlock';
+import { useUserPhoto } from '../contexts/UserPhotos';
 
 interface Props {
   post: Post;
@@ -38,6 +39,7 @@ export function PostCard({
 }: Props) {
   const [showComments, setShowComments] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const resolvedPhoto = useUserPhoto(post.userId, post.photo);
 
   const isOwner = post.userId === uid;
   const liked = post.likes?.includes(uid);
@@ -75,7 +77,7 @@ export function PostCard({
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         {/* Left: avatar */}
         <div style={{ flexShrink: 0 }}>
-          <Avatar src={post.photo} size={40} />
+          <Avatar src={resolvedPhoto} size={40} />
         </div>
 
         {/* Right: all content */}
