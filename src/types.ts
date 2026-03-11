@@ -8,7 +8,8 @@ export type Screen =
   | 'feed'
   | 'eventos'
   | 'perfil'
-  | 'admin';
+  | 'admin'
+  | 'comunhao';
 
 export interface CurrentUser {
   uid: string;

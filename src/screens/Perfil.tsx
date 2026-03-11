@@ -52,7 +52,7 @@ export function PerfilScreen({
       }
       setShowEdit(false);
       window.location.reload();
-    } catch (e) {
+    } catch (e: any) {
       setSaveError('Erro ao salvar: ' + (e?.message || 'tente novamente'));
     } finally {
       setSaving(false);
