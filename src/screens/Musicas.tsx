@@ -36,6 +36,42 @@ function parseLetra(letra: string) {
   return sections;
 }
 
+// For plain text without [tags]: group by blank lines, detect repeated blocks as chorus
+function parseLetraPlain(letra: string) {
+  const groups: string[][] = [];
+  let current: string[] = [];
+  for (const line of letra.split('\n')) {
+    if (line.trim() === '') {
+      if (current.length > 0) { groups.push(current); current = []; }
+    } else {
+      current.push(line);
+    }
+  }
+  if (current.length > 0) groups.push(current);
+
+  // Detect repeated groups → chorus
+  const groupTexts = groups.map(g => g.join('\n').trim());
+  const counts: Record<string, number> = {};
+  groupTexts.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
+  const chorusTexts = new Set(Object.keys(counts).filter(t => counts[t] > 1));
+
+  let verseNum = 1;
+  const seen = new Set<string>();
+  return groups.map((lines, i) => {
+    const text = groupTexts[i];
+    const isChorus = chorusTexts.has(text);
+    let label = '';
+    if (isChorus) {
+      label = seen.has(text) ? 'REFRÃO' : 'REFRÃO';
+      seen.add(text);
+    } else {
+      label = `VERSO ${verseNum}`;
+      verseNum++;
+    }
+    return { label, type: isChorus ? 'chorus' as const : 'verse' as const, lines };
+  });
+}
+
 export function MusicasScreen({
   songs,
   goTo,
@@ -120,16 +156,22 @@ export function MusicasScreen({
                     </div>
                   ))}
 
-                  {/* Fallback: plain letra without tags */}
-                  {!temSections && temLetra && !hasTags && (
-                    <div style={{ marginBottom: 20 }}>
-                      {(song.letra || '').split('\n').map((line, i) => (
-                        <div key={i} style={{ fontFamily: 'Barlow', fontSize: 15, lineHeight: 1.65, color: '#e7e9ea' }}>
+                  {/* Fallback: plain letra without tags → auto-detect sections */}
+                  {!temSections && temLetra && !hasTags && parseLetraPlain(song.letra!).map((sec, i) => (
+                    <div key={i} style={{
+                      marginBottom: 20,
+                      ...(sec.type === 'chorus' ? { background: 'rgba(240,120,48,0.1)', borderRadius: 12, padding: '16px', border: '1px solid rgba(240,120,48,0.1)' } : {}),
+                    }}>
+                      <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8, color: '#F07830' }}>
+                        {sec.label}
+                      </div>
+                      {sec.lines.map((line, j) => (
+                        <div key={j} style={{ fontFamily: 'Barlow', fontSize: 15, lineHeight: 1.6, fontWeight: sec.type === 'chorus' ? 600 : 400, color: '#e7e9ea' }}>
                           {line || '\u00A0'}
                         </div>
                       ))}
                     </div>
-                  )}
+                  ))}
 
                   {!temSections && !temLetra && (
                     <div style={{ fontFamily: 'Barlow', fontSize: 14, color: '#555', textAlign: 'center', padding: '20px 0' }}>

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { getAuth, signOut, updateProfile } from 'firebase/auth';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { Ico } from '../icons';
 import type { CurrentUser, Screen, Post, Sorteio } from '../types';
 
@@ -46,15 +46,39 @@ export function PerfilScreen({
     setUploading(true);
     setSaveError('');
     try {
-      const storageRef = ref(storage, `profile-photos/${uid}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setEditPhoto(url);
+      // Compress image client-side to avoid Firebase Storage rules issues
+      const dataUrl = await compressImage(file, 200, 0.75);
+      // Save compressed photo to Firestore (avoids Storage dependency)
+      await setDoc(doc(db, 'users', uid), { photoData: dataUrl }, { merge: true });
+      setEditPhoto(dataUrl);
     } catch (e: any) {
-      setSaveError('Erro ao enviar foto: ' + (e?.message || 'tente novamente'));
+      setSaveError('Erro ao processar foto: ' + (e?.message || 'tente novamente'));
     } finally {
       setUploading(false);
     }
+  }
+
+  function compressImage(file: File, maxSize: number, quality: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          if (w > h) { h = Math.round(maxSize * h / w); w = maxSize; }
+          else { w = Math.round(maxSize * w / h); h = maxSize; }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => reject(new Error('Imagem inválida'));
+        img.src = ev.target!.result as string;
+      };
+      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+      reader.readAsDataURL(file);
+    });
   }
 
   async function salvarPerfil() {
