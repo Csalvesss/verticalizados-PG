@@ -7,11 +7,22 @@ import { RepostBlock } from './RepostBlock';
 import { useUserPhoto, useUserName } from '../contexts/UserPhotos';
 import { ShareCard } from './ShareCard';
 
-function ReplyRow({ r }: { r: Reply }) {
+function ReplyRow({
+  r,
+  uid,
+  isAdmin,
+  onDelete,
+}: {
+  r: Reply;
+  uid: string;
+  isAdmin: boolean;
+  onDelete: () => void;
+}) {
   const resolvedPhoto = useUserPhoto(r.userId, r.photo);
   const resolvedName = useUserName(r.userId, r.user);
+  const canDelete = r.userId === uid || isAdmin;
   return (
-    <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingLeft: 36 }}>
+    <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingLeft: 36, alignItems: 'flex-start' }}>
       <Avatar src={resolvedPhoto} name={resolvedName} size={22} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={{ fontWeight: 700, fontSize: 12, color: '#e7e9ea', fontFamily: 'Barlow, sans-serif' }}>{resolvedName} </span>
@@ -19,6 +30,17 @@ function ReplyRow({ r }: { r: Reply }) {
           {r.text}
         </span>
       </div>
+      {canDelete && (
+        <button
+          onClick={onDelete}
+          style={{
+            flexShrink: 0, background: 'none', border: 'none',
+            cursor: 'pointer', padding: '2px 4px', color: '#333',
+          }}
+        >
+          {Ico.trash()}
+        </button>
+      )}
     </div>
   );
 }
@@ -26,11 +48,17 @@ function ReplyRow({ r }: { r: Reply }) {
 function CommentRow({
   c,
   currentUserPhoto,
+  uid,
+  isAdmin,
   onReply,
+  onDeleteReply,
 }: {
   c: Comment;
   currentUserPhoto: string;
+  uid: string;
+  isAdmin: boolean;
   onReply: (commentId: string, text: string) => void;
+  onDeleteReply: (commentId: string, replyId: string) => void;
 }) {
   const resolvedPhoto = useUserPhoto(c.userId, c.photo);
   const resolvedName = useUserName(c.userId, c.user);
@@ -71,7 +99,15 @@ function CommentRow({
       </div>
 
       {/* Existing replies */}
-      {(c.replies || []).map((r, i) => <ReplyRow key={r.id || i} r={r} />)}
+      {(c.replies || []).map((r, i) => (
+        <ReplyRow
+          key={r.id || i}
+          r={r}
+          uid={uid}
+          isAdmin={isAdmin}
+          onDelete={() => onDeleteReply(c.id || c.time, r.id)}
+        />
+      ))}
 
       {/* Inline reply input */}
       {replyOpen && (
@@ -90,7 +126,7 @@ function CommentRow({
               placeholder="Responder..."
               style={{
                 flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#e7e9ea',
+                fontFamily: 'Barlow, sans-serif', fontSize: 16, color: '#e7e9ea',
               }}
             />
             <button
@@ -122,6 +158,7 @@ interface Props {
   onRepost: () => void;
   onDelete: () => void;
   onCommentReply: (commentId: string, text: string) => void;
+  onDeleteReply: (commentId: string, replyId: string) => void;
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
   onOpenProfile?: (userId: string, userName: string) => void;
@@ -144,6 +181,7 @@ export function PostCard({
   onRepost,
   onDelete,
   onCommentReply,
+  onDeleteReply,
   onFollow,
   onUnfollow,
   onOpenProfile,
@@ -405,7 +443,10 @@ export function PostCard({
                   key={c.id || i}
                   c={c}
                   currentUserPhoto={resolvedPhoto}
+                  uid={uid}
+                  isAdmin={isAdmin}
                   onReply={onCommentReply}
+                  onDeleteReply={onDeleteReply}
                 />
               ))}
             </div>
