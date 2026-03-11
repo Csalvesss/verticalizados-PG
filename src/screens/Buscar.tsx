@@ -140,7 +140,7 @@ export function BuscarScreen({
                     {displayName}
                   </div>
                   <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#555' }}>
-                    {toUsername(displayName)}
+                    {u.username ? '@' + u.username : toUsername(displayName)}
                   </div>
                 </div>
                 <button

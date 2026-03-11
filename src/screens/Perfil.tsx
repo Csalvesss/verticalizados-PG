@@ -42,6 +42,7 @@ export function PerfilScreen({
   const [followListModal, setFollowListModal] = useState<'seguindo' | 'seguidores' | null>(null);
   const [followListUsers, setFollowListUsers] = useState<UserProfile[]>([]);
   const [followListLoading, setFollowListLoading] = useState(false);
+  const [savedUsername, setSavedUsername] = useState('');
 
   useEffect(() => {
     getDoc(doc(db, 'follows', uid)).then(snap => {
@@ -52,7 +53,13 @@ export function PerfilScreen({
       snap.docs.forEach(d => { if ((d.data().following || []).includes(uid)) count++; });
       setFollowersCount(count);
     });
+    // Load custom username
+    getDoc(doc(db, 'users', uid)).then(snap => {
+      if (snap.exists() && snap.data().username) setSavedUsername(snap.data().username);
+    });
   }, [uid]);
+
+  const displayUsername = savedUsername ? '@' + savedUsername : toUsername(currentUser.fullName);
 
   async function openFollowList(type: 'seguindo' | 'seguidores') {
     setFollowListModal(type);
@@ -81,6 +88,7 @@ export function PerfilScreen({
   }
   const [showEdit, setShowEdit] = useState(false);
   const [editName, setEditName] = useState(currentUser.fullName);
+  const [editUsername, setEditUsername] = useState('');
   const [editPhoto, setEditPhoto] = useState(currentUser.photo);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -140,10 +148,12 @@ export function PerfilScreen({
         // Only update displayName in Firebase Auth (photoURL has size limit)
         await updateProfile(user, { displayName: editName.trim() });
         // Save photo + name to Firestore (no size limit for photoData)
+        const cleanUsername = editUsername.trim().toLowerCase().replace(/[^a-z0-9._]/g, '');
         await setDoc(doc(db, 'users', uid), {
           fullName: editName.trim(),
           name: editName.trim().split(' ')[0],
           ...(editPhoto !== currentUser.photo ? { photoData: editPhoto } : {}),
+          ...(cleanUsername ? { username: cleanUsername } : {}),
         }, { merge: true });
       }
       setShowEdit(false);
@@ -209,7 +219,7 @@ export function PerfilScreen({
 
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff' }}>{currentUser.fullName}</div>
-          <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>{toUsername(currentUser.fullName)}</div>
+          <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>{displayUsername}</div>
         </div>
 
         <div style={{
@@ -238,7 +248,7 @@ export function PerfilScreen({
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           <button
-            onClick={() => { setEditName(currentUser.fullName); setEditPhoto(currentUser.photo); setSaveError(''); setShowEdit(true); }}
+            onClick={() => { setEditName(currentUser.fullName); setEditUsername(savedUsername); setEditPhoto(currentUser.photo); setSaveError(''); setShowEdit(true); }}
             style={{
               flex: 1, padding: '8px 16px', borderRadius: 8,
               border: '1px solid #2f3336', background: 'transparent',
@@ -488,13 +498,39 @@ export function PerfilScreen({
               Toque na foto para alterar
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 16 }}>
               <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#666', marginBottom: 6 }}>Nome</div>
               <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Seu nome" style={{
                 width: '100%', background: '#1a1a1a', border: '1px solid #2f3336',
                 borderRadius: 10, padding: '10px 14px', fontFamily: 'Barlow',
                 fontSize: 15, color: '#fff', outline: 'none', boxSizing: 'border-box',
               }} />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#666', marginBottom: 6 }}>Nome de usuário</div>
+              <div style={{ position: 'relative' }}>
+                <span style={{
+                  position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                  fontFamily: 'Barlow', fontSize: 15, color: '#555', pointerEvents: 'none',
+                }}>@</span>
+                <input
+                  value={editUsername}
+                  onChange={e => {
+                    const val = e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 24);
+                    setEditUsername(val);
+                  }}
+                  placeholder={toUsername(editName).slice(1) || 'nomedousuario'}
+                  style={{
+                    width: '100%', background: '#1a1a1a', border: '1px solid #2f3336',
+                    borderRadius: 10, padding: '10px 14px 10px 28px', fontFamily: 'Barlow',
+                    fontSize: 15, color: '#fff', outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#444', marginTop: 5 }}>
+                Letras minúsculas, números, pontos e underscores. Máx. 24 caracteres.
+              </div>
             </div>
 
             {saveError && <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#f4212e', marginBottom: 12 }}>{saveError}</div>}
