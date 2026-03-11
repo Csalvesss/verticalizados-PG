@@ -18,6 +18,7 @@ interface Props {
   onDelete: (postId: string) => void;
   onSubmitComment: (postId: string, text: string) => void;
   onCommentReply: (postId: string, commentId: string, text: string) => void;
+  onDeleteReply: (postId: string, commentId: string, replyId: string) => void;
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
   onOpenProfile?: (userId: string, userName: string) => void;
@@ -38,6 +39,7 @@ export function Timeline({
   onDelete,
   onSubmitComment,
   onCommentReply,
+  onDeleteReply,
   onFollow,
   onUnfollow,
   onOpenProfile,
@@ -73,6 +75,7 @@ export function Timeline({
             onRepost={() => onRepost(post)}
             onDelete={() => onDelete(post.id)}
             onCommentReply={(commentId, text) => onCommentReply(post.id, commentId, text)}
+            onDeleteReply={(commentId, replyId) => onDeleteReply(post.id, commentId, replyId)}
             onFollow={onFollow}
             onUnfollow={onUnfollow}
             onOpenProfile={onOpenProfile}

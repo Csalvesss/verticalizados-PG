@@ -132,7 +132,7 @@ export function Composer({
             border: 'none',
             outline: 'none',
             color: '#e7e9ea',
-            fontSize: 15,
+            fontSize: 16,
             fontFamily: 'Barlow, sans-serif',
             resize: 'none',
             padding: '8px 0 4px',

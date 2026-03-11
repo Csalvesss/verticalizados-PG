@@ -198,6 +198,19 @@ export function FeedScreen({
     setRepostingOn(null);
   };
 
+  const deleteReply = async (postId: string, commentId: string, replyId: string) => {
+    const postRef = doc(db, 'posts', postId);
+    const snap = await getDoc(postRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const comments = [...(data.comments || [])];
+    const idx = comments.findIndex((c: any) => c.id === commentId);
+    if (idx === -1) return;
+    const replies = (comments[idx].replies || []).filter((r: any) => r.id !== replyId);
+    comments[idx] = { ...comments[idx], replies };
+    await updateDoc(postRef, { comments });
+  };
+
   const deletar = async (id: string) => {
     if (!window.confirm('Apagar post?')) return;
     await deleteDoc(doc(db, 'posts', id));
@@ -424,6 +437,7 @@ export function FeedScreen({
           onDelete={deletar}
           onSubmitComment={comentar}
           onCommentReply={replyToComment}
+          onDeleteReply={deleteReply}
           onFollow={follow}
           onUnfollow={unfollow}
           onOpenProfile={onOpenProfile}
