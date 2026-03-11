@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
 
@@ -19,6 +19,8 @@ import { FeedScreen } from './screens/Feed';
 import { EventosScreen } from './screens/Eventos';
 import { PerfilScreen } from './screens/Perfil';
 import { ComunhaoScreen } from './screens/Comunhao';
+import { NotificacoesScreen } from './screens/Notificacoes';
+import { BuscarScreen } from './screens/Buscar';
 
 const auth = getAuth();
 
@@ -57,6 +59,16 @@ function MainApp({ user }: { user: User }) {
     photo: user.photoURL || 'https://i.pravatar.cc/150?img=12',
     email: user.email || '',
   };
+
+  // Save user profile to Firestore for search
+  useEffect(() => {
+    setDoc(doc(db, 'users', user.uid), {
+      name: currentUser.name,
+      fullName: currentUser.fullName,
+      photo: currentUser.photo,
+      email: currentUser.email,
+    }, { merge: true });
+  }, [user.uid, currentUser.fullName, currentUser.photo, currentUser.email]);
 
   const [screen, setScreen] = useState<Screen>(() => {
     const saved = window.localStorage.getItem('pg:screen') as Screen | null;
@@ -197,6 +209,14 @@ function MainApp({ user }: { user: User }) {
 
         {screen === 'comunhao' && (
           <ComunhaoScreen currentUser={currentUser} isAdmin={isAdmin} uid={user.uid} goTo={goTo} />
+        )}
+
+        {screen === 'notificacoes' && (
+          <NotificacoesScreen uid={user.uid} goTo={goTo} />
+        )}
+
+        {screen === 'buscar' && (
+          <BuscarScreen uid={user.uid} goTo={goTo} />
         )}
 
         {screen === 'admin' && isAdmin && (

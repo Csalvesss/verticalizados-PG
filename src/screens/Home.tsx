@@ -31,7 +31,7 @@ export function HomeScreen({
     { icon: Ico.music, label: 'Músicas', sub: `${songsCount} músicas`, sc: 'musicas' },
     { icon: Ico.guitar, label: 'Cifras', sub: 'Para tocar', sc: 'cifras' },
     { icon: Ico.pray, label: 'Oração', sub: 'Sorteio semanal', sc: 'oracao' },
-    { icon: Ico.feed, label: 'PGWHITTER', sub: `${postsCount} posts`, sc: 'feed' },
+    { icon: Ico.feed, label: 'Feed', sub: `${postsCount} posts`, sc: 'feed' },
     { icon: Ico.event, label: 'Eventos', sub: `${confirmacoesCount} confirmados`, sc: 'eventos' },
   ];
 

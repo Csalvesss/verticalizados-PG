@@ -9,7 +9,9 @@ export type Screen =
   | 'eventos'
   | 'perfil'
   | 'admin'
-  | 'comunhao';
+  | 'comunhao'
+  | 'notificacoes'
+  | 'buscar';
 
 export interface CurrentUser {
   uid: string;
@@ -94,4 +96,24 @@ export interface Sorteio {
   sorteado: string;
   historico: string[];
   semana: string;
+}
+
+export interface Notificacao {
+  id: string;
+  toUserId: string;
+  fromUserId: string;
+  fromUserName: string;
+  fromUserPhoto: string;
+  type: 'like' | 'comment' | 'repost';
+  postText: string;
+  read: boolean;
+  createdAt: import('firebase/firestore').Timestamp | null;
+}
+
+export interface UserProfile {
+  uid: string;
+  name: string;
+  fullName: string;
+  photo: string;
+  email: string;
 }
