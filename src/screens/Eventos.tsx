@@ -4,7 +4,27 @@ import { db } from '../firebase';
 import { Ico } from '../icons';
 import { s } from '../styles';
 import { LANCHES } from '../constants';
+import { useUserPhoto, useUserName } from '../contexts/UserPhotos';
 import type { Evento, Confirmacao, CurrentUser, Screen } from '../types';
+
+function ConfirmacaoRow({ c, isLast }: { c: Confirmacao; isLast: boolean }) {
+  const resolvedPhoto = useUserPhoto(c.userId, c.userPhoto);
+  const resolvedName = useUserName(c.userId, c.userName);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: isLast ? 'none' : '1px solid #2f3336' }}>
+      <img src={resolvedPhoto} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} alt="" />
+      <div style={{ flex: 1 }}>
+        <div style={{ fontFamily: 'Barlow', fontWeight: 700, fontSize: 15, color: '#fff' }}>
+          {resolvedName}
+          {c.lanche && <span style={{ color: '#F07830', fontWeight: 500, fontSize: 13 }}> · {c.lanche}</span>}
+        </div>
+        <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#71767b', marginTop: 1 }}>
+          Confirmado às {c.hora}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   eventos: Evento[];
@@ -218,62 +238,7 @@ export function EventosScreen({
 
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {lista.map((c, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '12px 0',
-                      borderBottom:
-                        i < lista.length - 1 ? '1px solid #2f3336' : 'none',
-                    }}
-                  >
-                    <img
-                      src={c.userPhoto}
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                      }}
-                      alt=""
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          fontFamily: 'Barlow',
-                          fontWeight: 700,
-                          fontSize: 15,
-                          color: '#fff',
-                        }}
-                      >
-                        {c.userName}
-                        {c.lanche && (
-                          <span
-                            style={{
-                              color: '#F07830',
-                              fontWeight: 500,
-                              fontSize: 13,
-                            }}
-                          >
-                            {' '}
-                            · {c.lanche}
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        style={{
-                          fontFamily: 'Barlow',
-                          fontSize: 12,
-                          color: '#71767b',
-                          marginTop: 1,
-                        }}
-                      >
-                        Confirmado às {c.hora}
-                      </div>
-                    </div>
-                  </div>
+                  <ConfirmacaoRow key={i} c={c} isLast={i === lista.length - 1} />
                 ))}
                 {lista.length === 0 && (
                   <div
