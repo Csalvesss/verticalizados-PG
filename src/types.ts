@@ -55,12 +55,23 @@ export interface Evento {
   local: string;
 }
 
-export interface Comment {
+export interface Reply {
+  id: string;
   user: string;
   userId: string;
   photo: string;
   text: string;
   time: string;
+}
+
+export interface Comment {
+  id?: string;
+  user: string;
+  userId: string;
+  photo: string;
+  text: string;
+  time: string;
+  replies?: Reply[];
 }
 
 export interface RepostOf {
@@ -106,8 +117,10 @@ export interface Notificacao {
   fromUserId: string;
   fromUserName: string;
   fromUserPhoto: string;
-  type: 'like' | 'comment' | 'repost';
+  type: 'like' | 'comment' | 'repost' | 'reply';
   postText: string;
+  postId?: string;
+  postImageUrl?: string;
   read: boolean;
   createdAt: import('firebase/firestore').Timestamp | null;
 }
