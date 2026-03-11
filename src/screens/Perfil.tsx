@@ -97,7 +97,6 @@ export function PerfilScreen({
           ...(editPhoto !== currentUser.photo ? { photoData: editPhoto } : {}),
         }, { merge: true });
       }
-      }
       setShowEdit(false);
       window.location.reload();
     } catch (e: any) {
