@@ -156,7 +156,7 @@ export function FeedScreen({
     if (!snap.exists()) return;
     const data = snap.data();
     const comments = [...(data.comments || [])];
-    const idx = comments.findIndex((c: any) => c.id === commentId);
+    const idx = comments.findIndex((c: any) => c.id === commentId || c.time === commentId);
     if (idx === -1) return;
     const reply = {
       id: Date.now().toString() + Math.random().toString(36).slice(2),
@@ -204,7 +204,7 @@ export function FeedScreen({
     if (!snap.exists()) return;
     const data = snap.data();
     const comments = [...(data.comments || [])];
-    const idx = comments.findIndex((c: any) => c.id === commentId);
+    const idx = comments.findIndex((c: any) => c.id === commentId || c.time === commentId);
     if (idx === -1) return;
     const replies = (comments[idx].replies || []).filter((r: any) => r.id !== replyId);
     comments[idx] = { ...comments[idx], replies };
