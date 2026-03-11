@@ -5,6 +5,7 @@ import type { Post, Comment } from '../types';
 import { Avatar } from './Avatar';
 import { RepostBlock } from './RepostBlock';
 import { useUserPhoto, useUserName } from '../contexts/UserPhotos';
+import { ShareCard } from './ShareCard';
 
 function CommentRow({ c }: { c: Comment }) {
   const resolvedPhoto = useUserPhoto(c.userId, c.photo);
@@ -59,6 +60,7 @@ export function PostCard({
 }: Props) {
   const [showComments, setShowComments] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const resolvedPhoto = useUserPhoto(post.userId, post.photo);
   const resolvedName = useUserName(post.userId, post.user);
 
@@ -276,14 +278,7 @@ export function PostCard({
 
             <button
               className="threads-action-btn"
-              onClick={() => {
-                const shareText = `${resolvedName}: ${post.text || ''}`.trim();
-                if (navigator.share) {
-                  navigator.share({ title: 'Verticalizados', text: shareText }).catch(() => {});
-                } else {
-                  navigator.clipboard?.writeText(shareText).catch(() => {});
-                }
-              }}
+              onClick={() => setShowShare(true)}
             >
               {Ico.send()}
             </button>
@@ -320,6 +315,15 @@ export function PostCard({
           )}
         </div>
       </div>
+
+      {showShare && (
+        <ShareCard
+          post={post}
+          authorName={resolvedName}
+          authorPhoto={resolvedPhoto}
+          onClose={() => setShowShare(false)}
+        />
+      )}
 
       <style>{`
         .postcard-del-btn:hover { background: rgba(249,24,128,0.12) !important; color: #f91880 !important; }
