@@ -47,9 +47,6 @@ const IcoBook = ({ size = 28, color = '#F07830' }) => (
   </svg>
 );
 
-const LevelDot = ({ color }: { color: string }) => (
-  <div style={{ width: 14, height: 14, borderRadius: '50%', background: color, flexShrink: 0 }} />
-);
 
 interface Props { currentUser: CurrentUser; goTo: (sc: Screen) => void; }
 
@@ -244,7 +241,7 @@ export function JogandoEmComunhaoScreen({ currentUser, goTo }: Props) {
             ].map(s => (
               <div key={s.label} style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: 14, padding: '16px 14px', textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Bebas Neue', fontSize: 34, color: s.accent, lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, color: '#555', letterSpacing: 2, marginTop: 4 }}>{s.label}</div>
+                <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, color: '#888', letterSpacing: 2, marginTop: 4 }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -449,7 +446,7 @@ export function JogandoEmComunhaoScreen({ currentUser, goTo }: Props) {
         </button>
         <div style={{ flex: 1, marginLeft: 4 }}>
           <div style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: '#fff', letterSpacing: 3, lineHeight: 1 }}>JOGANDO EM COMUNHÃO</div>
-          <div style={{ fontFamily: 'Barlow Condensed', fontSize: 11, color: '#555', letterSpacing: 3 }}>QUIZ BÍBLICO</div>
+          <div style={{ fontFamily: 'Barlow Condensed', fontSize: 11, color: '#777', letterSpacing: 3 }}>QUIZ BÍBLICO</div>
         </div>
         <button onClick={() => { setShowRanking(true); loadRanking(); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '4px 8px' }}>
           <IcoTrophy size={22} color="#F07830" />
@@ -465,7 +462,7 @@ export function JogandoEmComunhaoScreen({ currentUser, goTo }: Props) {
           </div>
           <div>
             <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 15, color: '#e7e9ea', marginBottom: 3 }}>Quiz Bíblico</div>
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555', lineHeight: 1.4 }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#888', lineHeight: 1.4 }}>
               Escolha o nível e teste seus conhecimentos. Pontos acumulam no ranking.
             </div>
           </div>
@@ -481,59 +478,73 @@ export function JogandoEmComunhaoScreen({ currentUser, goTo }: Props) {
               <div style={{ flexShrink: 0 }}>{s.icon}</div>
               <div>
                 <div style={{ fontFamily: 'Bebas Neue', fontSize: 26, color: '#F07830', lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontFamily: 'Barlow Condensed', fontSize: 9, color: '#555', letterSpacing: 2, marginTop: 1 }}>{s.label}</div>
+                <div style={{ fontFamily: 'Barlow Condensed', fontSize: 9, color: '#888', letterSpacing: 2, marginTop: 1 }}>{s.label}</div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Level buttons */}
-        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 11, color: '#555', letterSpacing: 3, marginBottom: 10 }}>ESCOLHA O NÍVEL</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 11, color: '#666', letterSpacing: 3, marginBottom: 12 }}>ESCOLHA O NÍVEL</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {([
-            { n: 'iniciante' as Nivel, desc: '25 perguntas — Histórias e personagens bíblicos' },
-            { n: 'intermediario' as Nivel, desc: '25 perguntas — Doutrinas e profecias' },
-            { n: 'avancado' as Nivel, desc: '25 perguntas — Teologia profunda e profecias' },
-            { n: 'aleatorio' as Nivel, desc: 'Mistura todos os 75 temas' },
+            { n: 'iniciante' as Nivel, desc: 'Histórias e personagens bíblicos' },
+            { n: 'intermediario' as Nivel, desc: 'Doutrinas adventistas e profecias' },
+            { n: 'avancado' as Nivel, desc: 'Teologia profunda e profecias' },
+            { n: 'aleatorio' as Nivel, desc: 'Todos os 75 temas embaralhados' },
           ]).map(({ n, desc }) => (
             <button
               key={n}
               onClick={() => iniciar(n)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '16px 16px', borderRadius: 16,
-                background: '#0d0d0d', border: '1px solid #1e1e1e',
+                display: 'flex', alignItems: 'center', gap: 0,
+                padding: 0, borderRadius: 16, overflow: 'hidden',
+                background: '#0d0d0d', border: '1px solid #222',
                 cursor: 'pointer', width: '100%', textAlign: 'left',
               }}
             >
-              {n === 'aleatorio'
-                ? <div style={{ width: 14, height: 14, borderRadius: 4, background: '#F07830', flexShrink: 0 }} />
-                : <LevelDot color={COR[n]} />
-              }
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 15, color: '#e7e9ea' }}>
-                  {LABEL[n]}
-                  <span style={{ fontFamily: 'Barlow Condensed', fontSize: 12, color: '#F07830', marginLeft: 8, letterSpacing: 0.5 }}>×{MULT[n]}</span>
+              {/* Color accent bar */}
+              <div style={{ width: 4, alignSelf: 'stretch', background: COR[n], flexShrink: 0, borderRadius: '0' }} />
+
+              {/* Content */}
+              <div style={{ flex: 1, padding: '16px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                    <span style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 16, color: '#fff' }}>
+                      {LABEL[n]}
+                    </span>
+                    <span style={{
+                      fontFamily: 'Bebas Neue', fontSize: 13, letterSpacing: 1,
+                      color: COR[n], background: `${COR[n]}20`,
+                      border: `1px solid ${COR[n]}50`,
+                      padding: '1px 8px', borderRadius: 99,
+                    }}>
+                      ×{MULT[n]}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#888' }}>{desc}</div>
                 </div>
-                <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555', marginTop: 2 }}>{desc}</div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6" /></svg>
               </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
             </button>
           ))}
         </div>
 
         {/* Rules */}
         <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 14, padding: '14px 16px' }}>
-          <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, color: '#555', letterSpacing: 3, marginBottom: 12 }}>COMO PONTUAR</div>
+          <div style={{ fontFamily: 'Barlow Condensed', fontSize: 11, color: '#666', letterSpacing: 3, marginBottom: 14 }}>COMO PONTUAR</div>
           {[
-            ['Resposta correta', '10 pts × multiplicador'],
-            ['Responder em menos de 10s', '+5 pts bônus'],
-            ['3 acertos seguidos', '+15 pts bônus'],
-            ['Erro ou tempo esgotado', 'Sequência volta a 0'],
-          ].map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>{k}</span>
-              <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#e7e9ea', fontWeight: 600 }}>{v}</span>
+            { desc: 'Resposta correta', val: '10 pts × multiplicador', color: '#22c55e' },
+            { desc: 'Responder em menos de 10s', val: '+5 pts bônus', color: '#F07830' },
+            { desc: '3 acertos seguidos', val: '+15 pts bônus', color: '#eab308' },
+            { desc: 'Erro ou tempo esgotado', val: 'Sequência vai a 0', color: '#ef4444' },
+          ].map(({ desc, val, color }) => (
+            <div key={desc} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 3, height: 16, borderRadius: 99, background: color, flexShrink: 0 }} />
+                <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#bbb' }}>{desc}</span>
+              </div>
+              <span style={{ fontFamily: 'Barlow Condensed', fontSize: 13, color: '#fff', fontWeight: 700, letterSpacing: 0.5 }}>{val}</span>
             </div>
           ))}
         </div>
