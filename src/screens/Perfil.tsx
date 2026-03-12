@@ -18,7 +18,7 @@ function toUsername(name: string): string {
 const auth = getAuth();
 
 const IcoPin = () => (
-  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
     <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
   </svg>
 );
@@ -107,6 +107,7 @@ export function PerfilScreen({
   }
 
   const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editName, setEditName] = useState(currentUser.fullName);
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
@@ -120,7 +121,6 @@ export function PerfilScreen({
   const meusPosts = posts.filter(p => p.userId === uid);
   const curtidos = posts.filter(p => p.likes?.includes(uid));
 
-  // Pinned post always first in posts tab
   const pinnedPost = pinnedPostId ? meusPosts.find(p => p.id === pinnedPostId) : undefined;
   const otherPosts = meusPosts.filter(p => p.id !== pinnedPostId);
   const sortedMyPosts = pinnedPost ? [pinnedPost, ...otherPosts] : meusPosts;
@@ -171,14 +171,13 @@ export function PerfilScreen({
       if (user) {
         await updateProfile(user, { displayName: editName.trim() });
         const cleanUsername = editUsername.trim().toLowerCase().replace(/[^a-z0-9._]/g, '');
-        const cleanLink = editLink.trim();
         await setDoc(doc(db, 'users', uid), {
           fullName: editName.trim(),
           name: editName.trim().split(' ')[0],
           ...(editPhoto !== currentUser.photo ? { photoData: editPhoto } : {}),
           ...(cleanUsername ? { username: cleanUsername } : {}),
           bio: editBio.trim(),
-          link: cleanLink,
+          link: editLink.trim(),
         }, { merge: true });
       }
       setBio(editBio.trim());
@@ -219,11 +218,8 @@ export function PerfilScreen({
           border: 'none', cursor: 'pointer', display: 'flex', marginRight: 10,
         }}>{Ico.back()}</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: 0.3, lineHeight: 1.1 }}>
+          <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: 0.3 }}>
             {currentUser.fullName}
-          </div>
-          <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>
-            {meusPosts.length} post{meusPosts.length !== 1 ? 's' : ''}
           </div>
         </div>
         {isAdmin && (
@@ -238,31 +234,43 @@ export function PerfilScreen({
         }}>{Ico.logout()}</button>
       </div>
 
-      {/* Profile info */}
-      <div style={{ padding: '20px 20px 0' }}>
+      {/* ── Profile Card ── */}
+      <div style={{ padding: '24px 20px 0' }}>
 
-        {/* Name + avatar row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ flex: 1, paddingRight: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
-              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 22, color: '#fff', letterSpacing: 0.2 }}>
+        {/* Row: info left + avatar right */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+
+          {/* Left: name, username, bio, link, badge */}
+          <div style={{ flex: 1, paddingRight: 20 }}>
+            {/* Name */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+              <span style={{
+                fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
+                fontSize: 24, color: '#fff', letterSpacing: 0.2, lineHeight: 1.1,
+              }}>
                 {currentUser.fullName}
               </span>
               {isAdmin && (
-                <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, fill: '#F07830', flexShrink: 0 }}>
+                <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: '#F07830', flexShrink: 0 }}>
                   <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.71 4.2L6.8 12.46l1.41-1.42 2.26 2.26 4.8-5.23 1.47 1.35-6.2 6.78z" />
                 </svg>
               )}
             </div>
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#F07830', marginBottom: bio ? 8 : 10 }}>
+
+            {/* Username */}
+            <div style={{
+              fontFamily: 'Barlow, sans-serif', fontSize: 14,
+              color: '#71767b', marginBottom: bio ? 12 : 12,
+            }}>
               {displayUsername}
             </div>
 
             {/* Bio */}
             {bio && (
               <div style={{
-                fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#e7e9ea',
-                lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                fontFamily: 'Barlow, sans-serif', fontSize: 14.5, color: '#e7e9ea',
+                lineHeight: 1.55, marginBottom: 10,
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
               }}>
                 {bio}
               </div>
@@ -275,67 +283,74 @@ export function PerfilScreen({
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#F07830',
-                  textDecoration: 'none', marginBottom: 10,
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  fontFamily: 'Barlow, sans-serif', fontSize: 13.5, color: '#F07830',
+                  textDecoration: 'none', marginBottom: 12,
                 }}
               >
                 <IcoLink />
-                <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(240,120,48,0.4)' }}>
+                <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(240,120,48,0.5)' }}>
                   {link.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
                 </span>
               </a>
             )}
 
-            {!bio && !link && (
-              <div style={{ marginBottom: 10 }} />
-            )}
-
             {/* Group badge */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'rgba(240,120,48,0.1)', border: '1px solid rgba(240,120,48,0.2)',
-              borderRadius: 20, padding: '3px 10px', marginBottom: 14,
+              background: 'rgba(240,120,48,0.08)', border: '1px solid rgba(240,120,48,0.18)',
+              borderRadius: 20, padding: '4px 10px',
             }}>
-              <div style={{ width: 7, height: 7, background: '#F07830', borderRadius: '50%', flexShrink: 0 }} />
+              <div style={{ width: 6, height: 6, background: '#F07830', borderRadius: '50%', flexShrink: 0 }} />
               <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 10, letterSpacing: 1.2, color: '#F07830' }}>
                 VERTICALIZADOS · MJA ESPLANADA
               </span>
             </div>
           </div>
-          {/* Avatar */}
+
+          {/* Right: Avatar */}
           <div style={{
-            width: 76, height: 76, borderRadius: '50%', padding: 3, flexShrink: 0,
+            width: 84, height: 84, borderRadius: '50%', padding: 3, flexShrink: 0,
             background: 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)',
           }}>
             <img src={currentUser.photo} alt="" style={{
               width: '100%', height: '100%', borderRadius: '50%',
-              objectFit: 'cover', border: '2.5px solid #000', display: 'block',
+              objectFit: 'cover', border: '3px solid #000', display: 'block',
             }} />
           </div>
         </div>
 
-        {/* Followers stats */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
+        {/* Followers / Following row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
           <button
             onClick={() => openFollowList('seguidores')}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+            style={{ background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'baseline', gap: 5 }}
           >
-            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>{followersCount} </span>
-            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#71767b' }}>seguidores</span>
+            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff' }}>
+              {followersCount}
+            </span>
+            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#555' }}>
+              seguidores
+            </span>
           </button>
-          <span style={{ color: '#2f3336', fontSize: 14 }}>·</span>
+
+          <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#2f3336' }} />
+
           <button
             onClick={() => openFollowList('seguindo')}
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+            style={{ background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'baseline', gap: 5 }}
           >
-            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>{followingCount} </span>
-            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#71767b' }}>seguindo</span>
+            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff' }}>
+              {followingCount}
+            </span>
+            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#555' }}>
+              seguindo
+            </span>
           </button>
         </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
           <button
             onClick={() => {
               setEditName(currentUser.fullName);
@@ -347,50 +362,36 @@ export function PerfilScreen({
               setShowEdit(true);
             }}
             style={{
-              flex: 1, padding: '9px 16px', borderRadius: 10,
-              border: '1px solid #333', background: 'transparent',
+              flex: 1, padding: '10px 16px', borderRadius: 12,
+              border: '1px solid #2f2f2f', background: 'transparent',
               color: '#e7e9ea', fontFamily: 'Barlow Condensed, sans-serif',
-              fontWeight: 700, fontSize: 13, letterSpacing: 0.5, cursor: 'pointer',
+              fontWeight: 700, fontSize: 14, letterSpacing: 0.5, cursor: 'pointer',
+              transition: 'background 0.15s',
             }}
-          >Editar perfil</button>
+          >
+            Editar perfil
+          </button>
           {isAdmin && (
-            <button onClick={() => goTo('admin')} title="Painel Admin" style={{
-              padding: '9px 12px', borderRadius: 10, border: '1px solid #2f2510',
-              background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center',
-            }}>{Ico.admin('#F07830')}</button>
+            <button
+              onClick={() => goTo('admin')}
+              title="Painel Admin"
+              style={{
+                padding: '10px 14px', borderRadius: 12,
+                border: '1px solid rgba(240,120,48,0.25)',
+                background: 'rgba(240,120,48,0.06)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+              }}
+            >
+              {Ico.admin('#F07830')}
+            </button>
           )}
         </div>
-
-        <button
-          onClick={async () => {
-            if (!window.confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.')) return;
-            if (!window.confirm('ÚLTIMA CHANCE: Todos os seus dados serão apagados permanentemente.')) return;
-            try {
-              const user = auth.currentUser;
-              if (user) {
-                const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', uid)));
-                await Promise.all(postsSnap.docs.map(d => deleteDoc(d.ref)));
-                await deleteDoc(doc(db, 'follows', uid)).catch(() => {});
-                await deleteDoc(doc(db, 'users', uid));
-                localStorage.removeItem(`pg_setup_${uid}`);
-                await deleteUser(user);
-              }
-            } catch (e: any) {
-              alert('Erro ao excluir conta: ' + (e?.message || 'Faça login novamente e tente de novo.'));
-            }
-          }}
-          style={{
-            width: '100%', padding: '9px', borderRadius: 10,
-            border: '1px solid #1a0000', background: 'transparent',
-            color: '#551111', fontFamily: 'Barlow, sans-serif',
-            fontWeight: 500, fontSize: 11, cursor: 'pointer', marginBottom: 20,
-          }}
-        >Excluir minha conta</button>
       </div>
 
       {/* Tab bar */}
       <div style={{
-        display: 'flex', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a',
+        display: 'flex',
+        borderBottom: '1px solid #1a1a1a',
         position: 'sticky', top: 49, background: '#000', zIndex: 40,
       }}>
         {([
@@ -398,17 +399,17 @@ export function PerfilScreen({
           { id: 'curtidos' as Tab, label: 'Curtidos' },
         ]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
-            flex: 1, padding: '13px 0', background: 'transparent', border: 'none',
+            flex: 1, padding: '14px 0', background: 'transparent', border: 'none',
             cursor: 'pointer', position: 'relative',
-            fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
-            fontSize: 13, letterSpacing: 1,
+            fontFamily: 'Barlow, sans-serif', fontWeight: tab === t.id ? 700 : 400,
+            fontSize: 15,
             color: tab === t.id ? '#fff' : '#555', transition: 'color 0.2s',
           }}>
             {t.label}
             {tab === t.id && (
               <span style={{
                 position: 'absolute', bottom: 0, left: '50%',
-                transform: 'translateX(-50%)', width: 36, height: 2.5,
+                transform: 'translateX(-50%)', width: 40, height: 2.5,
                 background: '#F07830', display: 'block', borderRadius: 99,
               }} />
             )}
@@ -416,9 +417,9 @@ export function PerfilScreen({
         ))}
       </div>
 
-      {/* Posts feed (Threads-style list) */}
+      {/* Posts list */}
       {gridPosts.length === 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 16px', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 16px', gap: 10 }}>
           <div style={{ fontSize: 36 }}>📷</div>
           <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 16, fontWeight: 700, color: '#444', letterSpacing: 0.5 }}>
             {tab === 'posts' ? 'Nenhum post ainda' : 'Nenhuma curtida ainda'}
@@ -432,19 +433,17 @@ export function PerfilScreen({
             return (
               <div key={post.id} style={{ borderBottom: '1px solid #111', padding: '14px 16px' }}>
 
-                {/* Pin indicator */}
                 {isPinned && (
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 5,
                     paddingBottom: 8, paddingLeft: 46,
-                    fontSize: 12, fontWeight: 600, color: '#555', fontFamily: 'Barlow, sans-serif',
+                    fontSize: 12, color: '#555', fontFamily: 'Barlow, sans-serif',
                   }}>
                     <IcoPin />
                     <span>Post fixado</span>
                   </div>
                 )}
 
-                {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: '50%', flexShrink: 0, padding: 2,
@@ -467,28 +466,27 @@ export function PerfilScreen({
                     </div>
                   </div>
 
-                  {/* Pin/Unpin button — only for own posts tab */}
                   {tab === 'posts' && isMyPost && (
                     <button
                       onClick={() => togglePin(post.id)}
-                      title={isPinned ? 'Desafixar do perfil' : 'Fixar no perfil'}
+                      title={isPinned ? 'Desafixar' : 'Fixar no perfil'}
                       style={{
                         background: isPinned ? 'rgba(240,120,48,0.12)' : 'transparent',
-                        border: isPinned ? '1px solid rgba(240,120,48,0.3)' : '1px solid #222',
-                        borderRadius: 20, padding: '4px 10px', cursor: 'pointer',
+                        border: `1px solid ${isPinned ? 'rgba(240,120,48,0.35)' : '#2a2a2a'}`,
+                        borderRadius: 20, padding: '5px 11px', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: 5,
                         color: isPinned ? '#F07830' : '#555',
-                        fontFamily: 'Barlow, sans-serif', fontSize: 12,
-                        flexShrink: 0,
+                        fontFamily: 'Barlow, sans-serif', fontSize: 12, flexShrink: 0,
                       }}
                     >
                       <IcoPin />
-                      <span>{isPinned ? 'Fixado' : 'Fixar'}</span>
+                      <span style={{ fontWeight: isPinned ? 700 : 400 }}>
+                        {isPinned ? 'Fixado' : 'Fixar'}
+                      </span>
                     </button>
                   )}
                 </div>
 
-                {/* Text */}
                 {post.text && (
                   <div style={{
                     fontFamily: 'Barlow, sans-serif', fontSize: 15, color: '#e7e9ea',
@@ -499,14 +497,12 @@ export function PerfilScreen({
                   </div>
                 )}
 
-                {/* Image */}
                 {post.imageUrl && !post.repostOf && (
                   <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #1a1a1a' }}>
                     <img src={post.imageUrl} alt="" style={{ width: '100%', maxHeight: 380, objectFit: 'cover', display: 'block' }} />
                   </div>
                 )}
 
-                {/* Stats */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
                   {(post.likes?.length ?? 0) > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
@@ -597,30 +593,38 @@ export function PerfilScreen({
       {/* Modal Editar Perfil */}
       {showEdit && (
         <div onClick={() => setShowEdit(false)} style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
           zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }}>
           <div onClick={e => e.stopPropagation()} style={{
             background: '#0f0f0f', borderRadius: '20px 20px 0 0',
-            padding: '24px 20px 40px', width: '100%', maxWidth: 480,
+            padding: '20px 20px 0', width: '100%', maxWidth: 480,
             border: '1px solid #222', borderBottom: 'none',
-            maxHeight: '92vh', overflowY: 'auto',
+            maxHeight: '94vh', overflowY: 'auto', paddingBottom: 40,
           }}>
-            <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#F07830', marginBottom: 20 }}>
-              EDITAR PERFIL
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 22 }}>
+              <button onClick={() => setShowEdit(false)} style={{
+                color: '#888', fontSize: 22, background: 'transparent',
+                border: 'none', cursor: 'pointer', lineHeight: 1, padding: '0 4px', marginRight: 8,
+              }}>×</button>
+              <span style={{ fontFamily: 'Barlow Condensed', fontSize: 16, fontWeight: 700, letterSpacing: 1, color: '#fff' }}>
+                EDITAR PERFIL
+              </span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+            {/* Photo */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
               <div
                 onClick={() => fileInputRef.current?.click()}
-                style={{ width: 72, height: 72, borderRadius: '50%', padding: 3, background: 'linear-gradient(135deg, #F07830, #D4621A)', cursor: 'pointer', position: 'relative' }}
+                style={{ width: 80, height: 80, borderRadius: '50%', padding: 3, background: 'linear-gradient(135deg, #F07830, #D4621A)', cursor: 'pointer', position: 'relative' }}
               >
                 <img
                   src={editPhoto || currentUser.photo} alt=""
                   onError={e => { (e.target as HTMLImageElement).src = currentUser.photo; }}
-                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '2px solid #0f0f0f', display: 'block', opacity: uploading ? 0.5 : 1 }}
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '3px solid #0f0f0f', display: 'block', opacity: uploading ? 0.5 : 1 }}
                 />
-                <div style={{ position: 'absolute', bottom: -2, right: -2, background: '#F07830', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0f0f0f' }}>
+                <div style={{ position: 'absolute', bottom: -2, right: -2, background: '#F07830', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0f0f0f' }}>
                   {Ico.camera('#fff')}
                 </div>
                 {uploading && (
@@ -633,58 +637,59 @@ export function PerfilScreen({
                 onChange={e => { const file = e.target.files?.[0]; if (file) handlePhotoUpload(file); }}
               />
             </div>
-            <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#444', textAlign: 'center', marginBottom: 18 }}>
-              Toque na foto para alterar
+            <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#444', textAlign: 'center', marginBottom: 20 }}>
+              Toque para alterar a foto
             </div>
 
+            {/* Name */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 5, letterSpacing: 0.5 }}>NOME</div>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 6, letterSpacing: 0.8, textTransform: 'uppercase' }}>Nome</div>
               <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Seu nome" style={{
-                width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a',
-                borderRadius: 10, padding: '11px 14px', fontFamily: 'Barlow',
+                width: '100%', background: '#161616', border: '1px solid #2a2a2a',
+                borderRadius: 12, padding: '12px 14px', fontFamily: 'Barlow',
                 fontSize: 15, color: '#fff', outline: 'none', boxSizing: 'border-box',
               }} />
             </div>
 
+            {/* Username */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 5, letterSpacing: 0.5 }}>NOME DE USUÁRIO</div>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 6, letterSpacing: 0.8, textTransform: 'uppercase' }}>Nome de usuário</div>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontFamily: 'Barlow', fontSize: 15, color: '#555', pointerEvents: 'none' }}>@</span>
                 <input
                   value={editUsername}
                   onChange={e => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 24))}
                   placeholder={toUsername(editName).slice(1) || 'nomedousuario'}
-                  style={{ width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '11px 14px 11px 28px', fontFamily: 'Barlow', fontSize: 15, color: '#fff', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', background: '#161616', border: '1px solid #2a2a2a', borderRadius: 12, padding: '12px 14px 12px 28px', fontFamily: 'Barlow', fontSize: 15, color: '#fff', outline: 'none', boxSizing: 'border-box' }}
                 />
-              </div>
-              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#333', marginTop: 4 }}>
-                Letras minúsculas, números, pontos e underscores. Máx. 24 caracteres.
               </div>
             </div>
 
+            {/* Bio */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 5, letterSpacing: 0.5 }}>BIO</div>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 6, letterSpacing: 0.8, textTransform: 'uppercase' }}>Bio</div>
               <textarea
                 value={editBio}
                 onChange={e => setEditBio(e.target.value.slice(0, 160))}
                 placeholder="Escreva algo sobre você..."
                 rows={3}
                 style={{
-                  width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a',
-                  borderRadius: 10, padding: '11px 14px', fontFamily: 'Barlow',
+                  width: '100%', background: '#161616', border: '1px solid #2a2a2a',
+                  borderRadius: 12, padding: '12px 14px', fontFamily: 'Barlow',
                   fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box',
                   resize: 'none', lineHeight: 1.5,
                 }}
               />
-              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#333', marginTop: 2, textAlign: 'right' }}>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#333', marginTop: 3, textAlign: 'right' }}>
                 {editBio.length}/160
               </div>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 5, letterSpacing: 0.5 }}>LINK</div>
+            {/* Link */}
+            <div style={{ marginBottom: 22 }}>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 6, letterSpacing: 0.8, textTransform: 'uppercase' }}>Link</div>
               <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', color: '#555', pointerEvents: 'none' }}>
+                <span style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: '#555', pointerEvents: 'none' }}>
                   <IcoLink />
                 </span>
                 <input
@@ -692,29 +697,78 @@ export function PerfilScreen({
                   onChange={e => setEditLink(e.target.value.slice(0, 100))}
                   placeholder="seusite.com"
                   style={{
-                    width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a',
-                    borderRadius: 10, padding: '11px 14px 11px 32px', fontFamily: 'Barlow',
+                    width: '100%', background: '#161616', border: '1px solid #2a2a2a',
+                    borderRadius: 12, padding: '12px 14px 12px 34px', fontFamily: 'Barlow',
                     fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box',
                   }}
                 />
               </div>
             </div>
 
-            {saveError && <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#f4212e', marginBottom: 12 }}>{saveError}</div>}
+            {saveError && <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#f4212e', marginBottom: 14 }}>{saveError}</div>}
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowEdit(false)} style={{
-                flex: 1, background: 'transparent', border: '1px solid #2a2a2a', color: '#666',
-                borderRadius: 50, padding: '12px', fontFamily: 'Barlow Condensed',
-                fontWeight: 700, fontSize: 13, cursor: 'pointer', letterSpacing: 1,
-              }}>CANCELAR</button>
-              <button onClick={salvarPerfil} disabled={saving || uploading || !editName.trim()} style={{
-                flex: 2, background: editName.trim() && !uploading ? '#F07830' : '#2a1a0a',
+            {/* Save */}
+            <button
+              onClick={salvarPerfil}
+              disabled={saving || uploading || !editName.trim()}
+              style={{
+                width: '100%', background: editName.trim() && !uploading ? '#F07830' : '#2a1a0a',
                 border: 'none', color: editName.trim() && !uploading ? '#fff' : '#7a5a3a',
-                borderRadius: 50, padding: '12px', fontFamily: 'Barlow Condensed',
-                fontWeight: 700, fontSize: 13, cursor: saving ? 'default' : 'pointer', letterSpacing: 1,
-              }}>{saving ? 'SALVANDO...' : uploading ? 'ENVIANDO FOTO...' : 'SALVAR'}</button>
-            </div>
+                borderRadius: 50, padding: '14px', fontFamily: 'Barlow Condensed',
+                fontWeight: 700, fontSize: 14, cursor: saving ? 'default' : 'pointer',
+                letterSpacing: 1, marginBottom: 12,
+              }}
+            >
+              {saving ? 'SALVANDO...' : uploading ? 'ENVIANDO FOTO...' : 'SALVAR'}
+            </button>
+
+            {/* Danger zone */}
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  width: '100%', padding: '12px', borderRadius: 50,
+                  border: '1px solid #2a0000', background: 'transparent',
+                  color: '#5a1a1a', fontFamily: 'Barlow', fontSize: 12,
+                  cursor: 'pointer', marginBottom: 4,
+                }}
+              >
+                Excluir minha conta
+              </button>
+            ) : (
+              <div style={{
+                border: '1px solid #3a0000', borderRadius: 12, padding: '14px',
+                marginBottom: 4, background: 'rgba(200,0,0,0.04)',
+              }}>
+                <div style={{ fontFamily: 'Barlow', fontSize: 13, color: '#cc3333', marginBottom: 12, textAlign: 'center' }}>
+                  Esta ação é permanente e irreversível.
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    style={{ flex: 1, padding: '10px', borderRadius: 50, border: '1px solid #333', background: 'transparent', color: '#888', fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12, cursor: 'pointer', letterSpacing: 1 }}
+                  >CANCELAR</button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const user = auth.currentUser;
+                        if (user) {
+                          const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', uid)));
+                          await Promise.all(postsSnap.docs.map(d => deleteDoc(d.ref)));
+                          await deleteDoc(doc(db, 'follows', uid)).catch(() => {});
+                          await deleteDoc(doc(db, 'users', uid));
+                          localStorage.removeItem(`pg_setup_${uid}`);
+                          await deleteUser(user);
+                        }
+                      } catch (e: any) {
+                        alert('Erro ao excluir conta: ' + (e?.message || 'Faça login novamente e tente de novo.'));
+                      }
+                    }}
+                    style={{ flex: 1, padding: '10px', borderRadius: 50, border: 'none', background: '#cc2200', color: '#fff', fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12, cursor: 'pointer', letterSpacing: 1 }}
+                  >EXCLUIR CONTA</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

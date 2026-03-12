@@ -286,6 +286,7 @@ interface Props {
   isAdmin: boolean;
   following: string[];
   adminEmails: string[];
+  pinnedFeedPostId?: string;
   onLike: () => void;
   onComment: () => void;
   onRepost: () => void;
@@ -298,6 +299,7 @@ interface Props {
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
   onOpenProfile?: (userId: string, userName: string) => void;
+  onPinFeed?: (postId: string) => void;
 }
 
 const verifiedBadge = (
@@ -313,6 +315,7 @@ export function PostCard({
   isAdmin,
   following,
   adminEmails,
+  pinnedFeedPostId,
   onLike,
   onComment,
   onRepost,
@@ -325,6 +328,7 @@ export function PostCard({
   onFollow,
   onUnfollow,
   onOpenProfile,
+  onPinFeed,
 }: Props) {
   const [showComments, setShowComments] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -365,6 +369,7 @@ export function PostCard({
   const commentsCount = post.comments?.length || 0;
   const hasComments = commentsCount > 0;
   const isFollowing = following.includes(post.userId);
+  const isPinnedInFeed = pinnedFeedPostId === post.id;
 
   const postSheetItems = [
     ...(isOwner || isAdmin ? [
@@ -385,7 +390,11 @@ export function PostCard({
       onClick: () => {},
     },
     ...(isAdmin ? [
-      { label: 'Fixar no topo do feed', icon: <IcoPin />, onClick: () => {} },
+      {
+        label: isPinnedInFeed ? 'Desafixar do topo do feed' : 'Fixar no topo do feed',
+        icon: <IcoPin />,
+        onClick: () => onPinFeed?.(post.id),
+      },
     ] : []),
     ...(!isOwner ? [
       {
@@ -406,6 +415,18 @@ export function PostCard({
       background: '#000',
       padding: '12px 16px',
     }}>
+      {/* Pinned feed indicator */}
+      {isPinnedInFeed && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          paddingBottom: 8, paddingLeft: 52,
+          fontSize: 12, fontWeight: 600, color: '#F07830', fontFamily: 'Barlow, sans-serif',
+        }}>
+          <IcoPin />
+          <span>Post fixado no feed</span>
+        </div>
+      )}
+
       {/* Repost indicator */}
       {post.repostOf && (
         <div style={{
