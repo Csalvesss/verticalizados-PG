@@ -9,16 +9,16 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 
-/** iOS PWA standalone não compartilha cookies com Safari.
- *  signInWithPopup abre janela separada sem contas salvas.
- *  signInWithRedirect mantém o mesmo WKWebView e funciona corretamente. */
-function isIOSStandalone(): boolean {
+function isStandalone(): boolean {
   const nav = navigator as Navigator & { standalone?: boolean };
-  return nav.standalone === true;
+  if (nav.standalone === true) return true; // iOS PWA
+  if (window.matchMedia('(display-mode: standalone)').matches) return true; // Android PWA
+  return false;
 }
 
+/** Login com Google — usa redirect no standalone (iOS/Android), popup no browser */
 export async function signInWithGoogle() {
-  if (isIOSStandalone()) {
+  if (isStandalone()) {
     await signInWithRedirect(auth, googleProvider);
     return null; // resultado tratado por getRedirectResultOnLoad()
   }
@@ -26,8 +26,13 @@ export async function signInWithGoogle() {
   return result.user;
 }
 
+/** Forçar redirect explicitamente (usado pela LoginScreen no standalone) */
+export async function signInWithGoogleRedirect() {
+  await signInWithRedirect(auth, googleProvider);
+}
+
 /** Chame uma vez no carregamento do app para capturar o resultado
- *  do signInWithRedirect (iOS PWA). onAuthStateChanged dispara na sequência. */
+ *  do signInWithRedirect (iOS/Android PWA). onAuthStateChanged dispara na sequência. */
 export async function getRedirectResultOnLoad() {
   try {
     const result = await getRedirectResult(auth);
