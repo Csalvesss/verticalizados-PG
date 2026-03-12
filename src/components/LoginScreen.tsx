@@ -42,6 +42,8 @@ export function LoginScreen() {
     }
   };
 
+  const isIosStandalone = !!(navigator as any).standalone;
+
   const handleGoogle = async () => {
     setLoading(true);
     setErro('');
@@ -278,6 +280,57 @@ export function LoginScreen() {
           </svg>
           Entrar com Gmail
         </button>
+
+        {/* iOS standalone hint */}
+        {isIosStandalone && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{
+              background: 'rgba(240,120,48,0.08)',
+              border: '1px solid rgba(240,120,48,0.2)',
+              borderRadius: 12,
+              padding: '12px 14px',
+              display: 'flex',
+              gap: 10,
+              alignItems: 'flex-start',
+            }}>
+              <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
+              <div>
+                <div style={{ fontFamily: 'Barlow', fontWeight: 700, fontSize: 13, color: '#F07830', marginBottom: 4 }}>
+                  Primeira vez com Google?
+                </div>
+                <div style={{ fontFamily: 'Barlow', fontSize: 13, color: '#999', lineHeight: 1.5 }}>
+                  Entre pelo Safari uma vez. Depois, o app vai te reconhecer automaticamente.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => window.open('https://verticalizados-pg.netlify.app', '_blank')}
+              style={{
+                width: '100%',
+                marginTop: 10,
+                padding: '12px',
+                borderRadius: 999,
+                background: 'transparent',
+                border: '1px solid rgba(240,120,48,0.4)',
+                color: '#F07830',
+                fontFamily: 'Barlow Condensed',
+                fontWeight: 700,
+                fontSize: 14,
+                letterSpacing: 0.5,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="#F07830">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+              </svg>
+              Abrir no Safari para login com Google
+            </button>
+          </div>
+        )}
       </div>
 
       <div
