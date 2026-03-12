@@ -16,9 +16,12 @@ interface Props {
   onComment: (postId: string) => void;
   onRepost: (post: Post) => void;
   onDelete: (postId: string) => void;
+  onEditPost: (postId: string, newText: string) => void;
   onSubmitComment: (postId: string, text: string) => void;
   onCommentReply: (postId: string, commentId: string, text: string) => void;
   onDeleteReply: (postId: string, commentId: string, replyId: string) => void;
+  onDeleteComment: (postId: string, commentId: string) => void;
+  onEditComment: (postId: string, commentId: string, newText: string) => void;
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
   onOpenProfile?: (userId: string, userName: string) => void;
@@ -37,9 +40,12 @@ export function Timeline({
   onComment,
   onRepost,
   onDelete,
+  onEditPost,
   onSubmitComment,
   onCommentReply,
   onDeleteReply,
+  onDeleteComment,
+  onEditComment,
   onFollow,
   onUnfollow,
   onOpenProfile,
@@ -74,8 +80,11 @@ export function Timeline({
             onComment={() => onComment(post.id)}
             onRepost={() => onRepost(post)}
             onDelete={() => onDelete(post.id)}
+            onEditPost={(newText) => onEditPost(post.id, newText)}
             onCommentReply={(commentId, text) => onCommentReply(post.id, commentId, text)}
             onDeleteReply={(commentId, replyId) => onDeleteReply(post.id, commentId, replyId)}
+            onDeleteComment={(commentId) => onDeleteComment(post.id, commentId)}
+            onEditComment={(commentId, newText) => onEditComment(post.id, commentId, newText)}
             onFollow={onFollow}
             onUnfollow={onUnfollow}
             onOpenProfile={onOpenProfile}
