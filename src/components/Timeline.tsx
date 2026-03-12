@@ -12,6 +12,7 @@ interface Props {
   following: string[];
   adminEmails: string[];
   commentingOn: string | null;
+  pinnedFeedPostId?: string;
   onLike: (post: Post) => void;
   onComment: (postId: string) => void;
   onRepost: (post: Post) => void;
@@ -25,6 +26,7 @@ interface Props {
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
   onOpenProfile?: (userId: string, userName: string) => void;
+  onPinFeed?: (postId: string) => void;
 }
 
 export function Timeline({
@@ -36,6 +38,7 @@ export function Timeline({
   following,
   adminEmails,
   commentingOn,
+  pinnedFeedPostId,
   onLike,
   onComment,
   onRepost,
@@ -49,6 +52,7 @@ export function Timeline({
   onFollow,
   onUnfollow,
   onOpenProfile,
+  onPinFeed,
 }: Props) {
   if (loading) {
     return (
@@ -76,6 +80,7 @@ export function Timeline({
             isAdmin={isAdmin}
             following={following}
             adminEmails={adminEmails}
+            pinnedFeedPostId={pinnedFeedPostId}
             onLike={() => onLike(post)}
             onComment={() => onComment(post.id)}
             onRepost={() => onRepost(post)}
@@ -88,6 +93,7 @@ export function Timeline({
             onFollow={onFollow}
             onUnfollow={onUnfollow}
             onOpenProfile={onOpenProfile}
+            onPinFeed={onPinFeed}
           />
 
           {commentingOn === post.id && (

@@ -14,6 +14,7 @@ import {
   where,
   onSnapshot,
 } from 'firebase/firestore';
+
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
@@ -46,6 +47,7 @@ export function FeedScreen({
   const [repostingOn, setRepostingOn] = useState<Post | null>(null);
   const [following, setFollowing] = useState<string[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pinnedFeedPostId, setPinnedFeedPostId] = useState('');
 
   // Load following list from Firestore
   useEffect(() => {
@@ -56,6 +58,14 @@ export function FeedScreen({
       }
     });
   }, [uid]);
+
+  // Listen for pinned feed post
+  useEffect(() => {
+    const uns = onSnapshot(doc(db, 'config', 'pinned'), snap => {
+      setPinnedFeedPostId(snap.exists() ? (snap.data().postId || '') : '');
+    });
+    return () => uns();
+  }, []);
 
   // Listen for unread notifications
   useEffect(() => {
@@ -246,10 +256,20 @@ export function FeedScreen({
     setCommentingOn(commentingOn === postId ? null : postId);
   };
 
-  // Filter posts for "Seguindo" tab
-  const feedPosts = tab === 'seguindo'
+  const pinFeedPost = async (postId: string) => {
+    const newId = pinnedFeedPostId === postId ? '' : postId;
+    await setDoc(doc(db, 'config', 'pinned'), { postId: newId });
+  };
+
+  // Filter posts for "Seguindo" tab, then put pinned post first
+  const basePosts = tab === 'seguindo'
     ? posts.filter(p => following.includes(p.userId))
     : posts;
+
+  const pinnedPost = pinnedFeedPostId ? basePosts.find(p => p.id === pinnedFeedPostId) : undefined;
+  const feedPosts = pinnedPost
+    ? [pinnedPost, ...basePosts.filter(p => p.id !== pinnedFeedPostId)]
+    : basePosts;
 
   return (
     <div style={{
@@ -457,6 +477,7 @@ export function FeedScreen({
           following={following}
           adminEmails={adminEmails}
           commentingOn={commentingOn}
+          pinnedFeedPostId={pinnedFeedPostId}
           onLike={curtir}
           onComment={handleComment}
           onRepost={setRepostingOn}
@@ -470,6 +491,7 @@ export function FeedScreen({
           onFollow={follow}
           onUnfollow={unfollow}
           onOpenProfile={onOpenProfile}
+          onPinFeed={pinFeedPost}
         />
       )}
 
