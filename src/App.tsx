@@ -75,7 +75,9 @@ function MainApp({ user }: { user: User }) {
   // Track uploaded photo from Firestore
   const [firestorePhoto, setFirestorePhoto] = useState<string | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
-  const [setupChecked, setSetupChecked] = useState(false);
+  // Cache setup state in localStorage to avoid flashing SetupPerfil on pull-to-refresh
+  const SETUP_KEY = `pg_setup_${user.uid}`;
+  const [setupChecked, setSetupChecked] = useState(() => !!localStorage.getItem(SETUP_KEY));
 
   useEffect(() => {
     // Save basic profile info for search (without marking setup as complete)
@@ -94,7 +96,9 @@ function MainApp({ user }: { user: User }) {
       if (data?.photoData) setFirestorePhoto(data.photoData);
       // All users (including Google) must complete setup with a username
       const done = !!data?.setupComplete || !!data?.username;
-      setNeedsSetup(!done);
+      if (done) localStorage.setItem(SETUP_KEY, '1');
+      // Only redirect to setup if Firestore confirms it's not done (never from cache-empty)
+      setNeedsSetup(!done && !localStorage.getItem(SETUP_KEY));
       setSetupChecked(true);
     });
 

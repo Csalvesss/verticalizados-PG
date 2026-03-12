@@ -286,6 +286,8 @@ export function PerfilScreen({
                 await deleteDoc(doc(db, 'follows', uid)).catch(() => {});
                 // Delete user document
                 await deleteDoc(doc(db, 'users', uid));
+                // Clear setup cache
+                localStorage.removeItem(`pg_setup_${uid}`);
                 // Delete Firebase Auth user
                 await deleteUser(user);
               }
