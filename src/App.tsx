@@ -7,6 +7,7 @@ import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './consta
 import { GLOBAL_CSS, s } from './styles';
 import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio } from './types';
 
+import { getRedirectResultOnLoad } from './services/authService';
 import { LoginScreen } from './components/LoginScreen';
 import { SetupPerfil } from './components/SetupPerfil';
 import { BottomNav } from './components/BottomNav';
@@ -46,6 +47,11 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    // Captura resultado do signInWithRedirect (iOS PWA standalone)
+    // Deve ser chamado antes de onAuthStateChanged para garantir que o
+    // token seja processado e o listener dispare com o usuário autenticado.
+    getRedirectResultOnLoad();
+
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setAuthLoading(false); });
     return () => unsub();
   }, []);
