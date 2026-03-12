@@ -75,17 +75,16 @@ function MainApp({ user }: { user: User }) {
   // Track uploaded photo from Firestore
   const [firestorePhoto, setFirestorePhoto] = useState<string | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
-  const [setupChecked, setSetupChecked] = useState(!!user.photoURL); // Google users skip setup
+  const [setupChecked, setSetupChecked] = useState(false);
 
   useEffect(() => {
-    // Save/update user profile for search (only if setup is already complete or Google user)
+    // Save basic profile info for search (without marking setup as complete)
     if (user.photoURL) {
       setDoc(doc(db, 'users', user.uid), {
         name: baseName,
         fullName: baseFullName,
         photo: basePhoto,
         email: baseEmail,
-        setupComplete: true,
       }, { merge: true });
     }
 
@@ -93,11 +92,10 @@ function MainApp({ user }: { user: User }) {
     const uns = onSnapshot(doc(db, 'users', user.uid), snap => {
       const data = snap.data();
       if (data?.photoData) setFirestorePhoto(data.photoData);
-      if (!user.photoURL) {
-        const done = !!data?.setupComplete || !!data?.photoData;
-        setNeedsSetup(!done);
-        setSetupChecked(true);
-      }
+      // All users (including Google) must complete setup with a username
+      const done = !!data?.setupComplete || !!data?.username;
+      setNeedsSetup(!done);
+      setSetupChecked(true);
     });
 
     // Auto-register as member for prayer draw

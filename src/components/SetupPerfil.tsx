@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
+import { useState, useRef, useEffect } from 'react';
+import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { updateProfile, type User } from 'firebase/auth';
 import { db } from '../firebase';
 
@@ -28,11 +28,41 @@ async function compressImage(dataUrl: string): Promise<string> {
 
 export function SetupPerfil({ user, onDone }: Props) {
   const [photo, setPhoto] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameOk, setUsernameOk] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const name = user.displayName || 'Membro';
   const initial = name.charAt(0).toUpperCase();
+
+  // Debounced username uniqueness check
+  useEffect(() => {
+    if (username.length < 3) {
+      setUsernameOk(false);
+      return;
+    }
+    setChecking(true);
+    setUsernameError('');
+    const timer = setTimeout(async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'users'), where('username', '==', username)));
+        if (!snap.empty) {
+          setUsernameError('Este nome já está em uso');
+          setUsernameOk(false);
+        } else {
+          setUsernameOk(true);
+        }
+      } catch {
+        setUsernameError('Erro ao verificar');
+      } finally {
+        setChecking(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [username]);
 
   const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,7 +75,10 @@ export function SetupPerfil({ user, onDone }: Props) {
     reader.readAsDataURL(file);
   };
 
+  const canSave = usernameOk && !checking && !saving;
+
   const salvar = async () => {
+    if (!canSave) return;
     setSaving(true);
     const uid = user.uid;
     const baseName = name.split(' ')[0];
@@ -53,7 +86,9 @@ export function SetupPerfil({ user, onDone }: Props) {
       fullName: name,
       name: baseName,
       email: user.email || '',
+      username,
       ...(photo ? { photoData: photo } : {}),
+      ...(user.photoURL && !photo ? { photo: user.photoURL } : {}),
       setupComplete: true,
     }, { merge: true });
     if (photo) {
@@ -102,7 +137,7 @@ export function SetupPerfil({ user, onDone }: Props) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 24,
+        gap: 20,
       }}>
         {/* Photo picker */}
         <div style={{ textAlign: 'center' }}>
@@ -125,6 +160,8 @@ export function SetupPerfil({ user, onDone }: Props) {
           >
             {photo ? (
               <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : user.photoURL ? (
+              <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <span style={{
                 fontFamily: 'Barlow, sans-serif',
@@ -136,7 +173,6 @@ export function SetupPerfil({ user, onDone }: Props) {
                 {initial}
               </span>
             )}
-
             {/* camera overlay */}
             <div style={{
               position: 'absolute',
@@ -190,47 +226,85 @@ export function SetupPerfil({ user, onDone }: Props) {
           </div>
         </div>
 
-        {/* Buttons */}
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Username input */}
+        <div style={{ width: '100%' }}>
+          <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 11, color: '#555', marginBottom: 6, letterSpacing: 0.5 }}>
+            NOME DE USUÁRIO <span style={{ color: '#F07830' }}>*</span>
+          </div>
+          <div style={{ position: 'relative' }}>
+            <span style={{
+              position: 'absolute', left: 14, top: '50%',
+              transform: 'translateY(-50%)',
+              fontFamily: 'Barlow, sans-serif', fontSize: 15, color: '#555',
+              pointerEvents: 'none',
+            }}>@</span>
+            <input
+              value={username}
+              onChange={e => {
+                const clean = e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 24);
+                setUsername(clean);
+                setUsernameOk(false);
+                setUsernameError('');
+              }}
+              placeholder="nomedousuario"
+              style={{
+                width: '100%',
+                background: '#1a1a1a',
+                border: `1px solid ${usernameOk ? '#2ea043' : usernameError ? '#f4212e' : '#2a2a2a'}`,
+                borderRadius: 10,
+                padding: '11px 40px 11px 28px',
+                fontFamily: 'Barlow, sans-serif',
+                fontSize: 15,
+                color: '#fff',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+              {checking && <span style={{ color: '#555', fontSize: 11, fontFamily: 'Barlow' }}>...</span>}
+              {!checking && usernameOk && (
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#2ea043"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              )}
+              {!checking && usernameError && (
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#f4212e"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              )}
+            </div>
+          </div>
+          {usernameError && (
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#f4212e', marginTop: 4 }}>
+              {usernameError}
+            </div>
+          )}
+          {!usernameError && username.length > 0 && username.length < 3 && (
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555', marginTop: 4 }}>
+              Mínimo 3 caracteres
+            </div>
+          )}
+          <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 11, color: '#333', marginTop: 4 }}>
+            Letras minúsculas, números, pontos e underscores. Máx. 24 caracteres.
+          </div>
+        </div>
+
+        {/* Button */}
+        <div style={{ width: '100%' }}>
           <button
             onClick={salvar}
-            disabled={saving}
+            disabled={!canSave}
             style={{
               width: '100%',
               padding: '14px',
               borderRadius: 999,
-              background: saving ? '#333' : '#F07830',
-              color: '#fff',
+              background: canSave ? '#F07830' : '#2a1a0a',
+              color: canSave ? '#fff' : '#7a5a3a',
               fontFamily: 'Barlow, sans-serif',
               fontWeight: 700,
               fontSize: 15,
               border: 'none',
-              cursor: saving ? 'default' : 'pointer',
+              cursor: canSave ? 'pointer' : 'default',
             }}
           >
             {saving ? 'Salvando...' : 'Continuar'}
           </button>
-
-          {!photo && (
-            <button
-              onClick={salvar}
-              disabled={saving}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: 999,
-                background: 'transparent',
-                color: '#555',
-                fontFamily: 'Barlow, sans-serif',
-                fontWeight: 600,
-                fontSize: 14,
-                border: 'none',
-                cursor: saving ? 'default' : 'pointer',
-              }}
-            >
-              Pular por agora
-            </button>
-          )}
         </div>
       </div>
     </div>
