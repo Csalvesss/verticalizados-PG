@@ -66,8 +66,10 @@ function groupNotifs(notifs: Notificacao[]): Array<{ key: string; notifs: Notifi
 
 export function NotificacoesScreen({ uid, goTo }: { uid: string; goTo: (sc: Screen) => void }) {
   const [notifs, setNotifs] = useState<Notificacao[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const q = query(
       collection(db, 'notifications'),
       where('toUserId', '==', uid),
@@ -75,6 +77,7 @@ export function NotificacoesScreen({ uid, goTo }: { uid: string; goTo: (sc: Scre
     );
     const uns = onSnapshot(q, snap => {
       setNotifs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notificacao)));
+      setLoading(false);
     });
     return () => uns();
   }, [uid]);
@@ -188,7 +191,19 @@ export function NotificacoesScreen({ uid, goTo }: { uid: string; goTo: (sc: Scre
         }}>Atividade</span>
       </div>
 
-      {notifs.length === 0 ? (
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingTop: 8 }}>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px' }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#1a1a1a', flexShrink: 0 }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ height: 13, borderRadius: 6, background: '#1a1a1a', width: '60%' }} />
+                <div style={{ height: 11, borderRadius: 6, background: '#111', width: '40%' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : notifs.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 16px', gap: 12 }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg viewBox="0 0 24 24" width="28" height="28" fill="#333">
