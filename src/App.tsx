@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDocs, where } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
+import { checkGoogleRedirectResult } from './services/authService';
 
 import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './constants';
 import { GLOBAL_CSS, s } from './styles';
@@ -44,6 +45,8 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    // Handle Google redirect result first (iOS/Android standalone PWA)
+    checkGoogleRedirectResult().catch(() => null);
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setAuthLoading(false); });
     return () => unsub();
   }, []);
