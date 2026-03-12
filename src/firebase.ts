@@ -1,6 +1,6 @@
 // Inicializa Firebase App, Firestore, Auth e Storage
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, indexedDBLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore, serverTimestamp } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -24,3 +24,9 @@ export const timestamp = serverTimestamp;
 
 // compatibilidade retroativa
 export const provider = googleProvider;
+
+// Força persistência via IndexedDB — mais durável em PWA/standalone iOS/Android.
+// IndexedDB persiste mesmo quando o app é suspenso pelo sistema operacional.
+setPersistence(auth, indexedDBLocalPersistence).catch(() => {
+  // fallback silencioso — o auth ainda funciona com localStorage padrão
+});
