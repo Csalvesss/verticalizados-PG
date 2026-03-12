@@ -384,8 +384,8 @@ export function PostCard({
       icon: <IcoSave />,
       onClick: () => {},
     },
-    ...(isOwner || isAdmin ? [
-      { label: 'Fixar no perfil', icon: <IcoPin />, onClick: () => {} },
+    ...(isAdmin ? [
+      { label: 'Fixar no topo do feed', icon: <IcoPin />, onClick: () => {} },
     ] : []),
     ...(!isOwner ? [
       {

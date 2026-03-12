@@ -75,10 +75,17 @@ export function NotificacoesScreen({ uid, goTo }: { uid: string; goTo: (sc: Scre
       where('toUserId', '==', uid),
       orderBy('createdAt', 'desc'),
     );
-    const uns = onSnapshot(q, snap => {
-      setNotifs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notificacao)));
-      setLoading(false);
-    });
+    const uns = onSnapshot(
+      q,
+      snap => {
+        setNotifs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Notificacao)));
+        setLoading(false);
+      },
+      _err => {
+        // Firestore index missing or permission error — just show empty state
+        setLoading(false);
+      },
+    );
     return () => uns();
   }, [uid]);
 
