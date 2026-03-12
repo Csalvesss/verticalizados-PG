@@ -1,5 +1,7 @@
 import { usePWAInstallContext } from '../contexts/PWAInstall';
 
+
+
 function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -22,7 +24,7 @@ function AppLogo({ size = 48 }: { size?: number }) {
 }
 
 export function PWAInstallPrompt() {
-  const { showIOSModal, dismissIOSModal } = usePWAInstallContext();
+  const { showIOSModal, dismissIOSModal, confirmIOSAdded } = usePWAInstallContext();
 
   if (!showIOSModal) return null;
 
@@ -156,10 +158,26 @@ export function PWAInstallPrompt() {
           <style>{`@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }`}</style>
         </div>
 
+        {/* Botão principal: confirma que adicionou */}
+        <button
+          onClick={confirmIOSAdded}
+          style={{
+            width: '100%', padding: '13px',
+            borderRadius: 50, border: 'none',
+            background: '#F07830', color: '#fff',
+            fontFamily: 'Barlow Condensed, sans-serif',
+            fontWeight: 700, fontSize: 14, letterSpacing: 1, cursor: 'pointer',
+            marginBottom: 8,
+          }}
+        >
+          JÁ ADICIONEI ✓
+        </button>
+
+        {/* Botão secundário */}
         <button
           onClick={dismissIOSModal}
           style={{
-            width: '100%', padding: '13px',
+            width: '100%', padding: '11px',
             borderRadius: 50, border: '1px solid #2a2a2a',
             background: 'transparent', color: '#555',
             fontFamily: 'Barlow Condensed, sans-serif',

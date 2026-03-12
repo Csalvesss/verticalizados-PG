@@ -41,8 +41,8 @@ export function HomeScreen({
   confirmacoesCount,
   proximoEvento,
 }: Props) {
-  const { canInstallAndroid, isIOS, isStandalone, triggerInstall, openIOSModal } = usePWAInstallContext();
-  const showInstallCard = !isStandalone && (canInstallAndroid || isIOS);
+  const { canInstallAndroid, isIOS, isStandalone, iosAdded, triggerInstall, openIOSModal } = usePWAInstallContext();
+  const showInstallCard = !isStandalone && (canInstallAndroid || (isIOS && !iosAdded));
 
   const MENU_ITEMS = [
     { icon: Ico.music, label: 'Músicas', sub: `${songsCount} músicas`, sc: 'musicas' },

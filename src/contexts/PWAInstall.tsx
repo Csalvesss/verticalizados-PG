@@ -10,9 +10,11 @@ interface PWAInstallContextValue {
   isIOS: boolean;
   isStandalone: boolean;
   showIOSModal: boolean;
+  iosAdded: boolean;
   triggerInstall: () => Promise<void>;
   openIOSModal: () => void;
   dismissIOSModal: () => void;
+  confirmIOSAdded: () => void;
 }
 
 const PWAInstallContext = createContext<PWAInstallContextValue | null>(null);
@@ -20,6 +22,9 @@ const PWAInstallContext = createContext<PWAInstallContextValue | null>(null);
 export function PWAInstallProvider({ children }: { children: ReactNode }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [iosAdded, setIosAdded] = useState(
+    () => localStorage.getItem('pwa-ios-added') === '1'
+  );
 
   const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
   const isStandalone =
@@ -53,7 +58,12 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
 
   const dismissIOSModal = () => {
     setShowIOSModal(false);
-    sessionStorage.setItem('pwa-ios-dismissed', '1');
+  };
+
+  const confirmIOSAdded = () => {
+    setShowIOSModal(false);
+    setIosAdded(true);
+    localStorage.setItem('pwa-ios-added', '1');
   };
 
   return (
@@ -62,9 +72,11 @@ export function PWAInstallProvider({ children }: { children: ReactNode }) {
       isIOS,
       isStandalone,
       showIOSModal,
+      iosAdded,
       triggerInstall,
       openIOSModal,
       dismissIOSModal,
+      confirmIOSAdded,
     }}>
       {children}
     </PWAInstallContext.Provider>
