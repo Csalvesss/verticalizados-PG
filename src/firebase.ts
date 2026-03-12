@@ -1,6 +1,11 @@
 // Inicializa Firebase App, Firestore, Auth e Storage
 import { initializeApp } from 'firebase/app';
-import { initializeAuth, indexedDBLocalPersistence, GoogleAuthProvider } from 'firebase/auth';
+import {
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserPopupRedirectResolver,
+  GoogleAuthProvider,
+} from 'firebase/auth';
 import { getFirestore, serverTimestamp } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -17,9 +22,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // initializeAuth com IndexedDB desde o início — não setPersistence depois.
-// Isso garante que iOS 16.4+ compartilhe a sessão entre Safari e PWA standalone.
+// Garante que iOS 16.4+ compartilhe a sessão entre Safari e PWA standalone.
+// browserPopupRedirectResolver é necessário para signInWithPopup/Redirect funcionar.
 export const auth = initializeAuth(app, {
   persistence: indexedDBLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver,
 });
 
 export const db = getFirestore(app);
