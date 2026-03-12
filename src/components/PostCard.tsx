@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { Ico } from '../icons';
 import { tempoRelativo, ADMIN_EMAIL } from '../constants';
 import type { Post, Comment, Reply } from '../types';
@@ -329,6 +331,30 @@ export function PostCard({
   const [showShare, setShowShare] = useState(false);
   const [editingPost, setEditingPost] = useState(false);
   const [editPostText, setEditPostText] = useState(post.text);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+  const [likers, setLikers] = useState<Array<{ uid: string; name: string; photo: string; username?: string }>>([]);
+  const [likersLoading, setLikersLoading] = useState(false);
+
+  async function loadLikers() {
+    if (!post.likes?.length) return;
+    setLikersLoading(true);
+    setLikers([]);
+    try {
+      const snaps = await Promise.all(post.likes.map(id => getDoc(doc(db, 'users', id))));
+      setLikers(
+        snaps
+          .map((snap, i) => snap.exists() ? {
+            uid: post.likes[i],
+            name: snap.data().fullName || snap.data().name || 'Membro',
+            photo: snap.data().photoData || snap.data().photo || '',
+            username: snap.data().username,
+          } : null)
+          .filter(Boolean) as Array<{ uid: string; name: string; photo: string; username?: string }>
+      );
+    } finally {
+      setLikersLoading(false);
+    }
+  }
   const resolvedPhoto = useUserPhoto(post.userId, post.photo);
   const resolvedName = useUserName(post.userId, post.user);
 
@@ -487,8 +513,15 @@ export function PostCard({
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginTop: 4 }}>
             <button onClick={onLike} className={`threads-action-btn${liked ? ' liked' : ''}`}>
               {Ico.heart(!!liked)}
-              {likesCount > 0 && <span className="action-count">{likesCount}</span>}
             </button>
+            {likesCount > 0 && (
+              <button
+                onClick={() => { loadLikers(); setShowLikesModal(true); }}
+                className={`like-count-btn${liked ? ' liked' : ''}`}
+              >
+                {likesCount}
+              </button>
+            )}
             <button onClick={onComment} className="threads-action-btn">
               {Ico.comment()}
               {commentsCount > 0 && <span className="action-count">{commentsCount}</span>}
@@ -549,6 +582,64 @@ export function PostCard({
         <ActionSheet items={postSheetItems} onClose={() => setSheetOpen(false)} />
       )}
 
+      {/* Likes modal */}
+      {showLikesModal && (
+        <div onClick={() => setShowLikesModal(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
+          zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#0d0d0d', borderRadius: '20px 20px 0 0',
+            width: '100%', maxWidth: 600, maxHeight: '70vh',
+            overflow: 'hidden', display: 'flex', flexDirection: 'column',
+            border: '1px solid #222', borderBottom: 'none',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '14px 16px 12px', borderBottom: '1px solid #1a1a1a' }}>
+              <button onClick={() => setShowLikesModal(false)} style={{
+                color: '#666', fontSize: 22, background: 'transparent',
+                border: 'none', cursor: 'pointer', lineHeight: 1, padding: '0 4px',
+              }}>×</button>
+              <span style={{
+                flex: 1, textAlign: 'center', fontWeight: 700, color: '#e7e9ea',
+                fontSize: 14, fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: 1,
+              }}>CURTIDAS</span>
+              <div style={{ width: 28 }} />
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {likersLoading && (
+                <div style={{ padding: 32, textAlign: 'center', color: '#555', fontFamily: 'Barlow', fontSize: 14 }}>Carregando...</div>
+              )}
+              {!likersLoading && likers.length === 0 && (
+                <div style={{ padding: 32, textAlign: 'center', color: '#555', fontFamily: 'Barlow', fontSize: 14 }}>Ninguém curtiu ainda.</div>
+              )}
+              {likers.map(u => (
+                <div key={u.uid}
+                  onClick={() => { setShowLikesModal(false); onOpenProfile?.(u.uid, u.name); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 16px', borderBottom: '1px solid #111',
+                    cursor: onOpenProfile ? 'pointer' : 'default',
+                  }}
+                >
+                  <Avatar src={u.photo} name={u.name} size={40} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 15, color: '#fff' }}>{u.name}</div>
+                    {u.username && (
+                      <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#555' }}>@{u.username}</div>
+                    )}
+                  </div>
+                  {onOpenProfile && (
+                    <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, fill: '#444' }}>
+                      <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .threads-action-btn {
           display: flex; align-items: center; gap: 5px;
@@ -559,10 +650,13 @@ export function PostCard({
         .threads-action-btn:hover { background: rgba(255,255,255,0.06); }
         .threads-action-btn:active { transform: scale(0.88); }
         .threads-action-btn.liked svg { fill: #F07830; stroke: #F07830; }
-        .action-count {
-          font-size: 13px; font-family: 'Barlow', sans-serif; color: #888; line-height: 1;
+        .like-count-btn {
+          font-size: 13px; font-family: 'Barlow', sans-serif; color: #888;
+          background: none; border: none; cursor: pointer; padding: 6px 4px;
+          line-height: 1; margin-left: -4px; border-radius: 4px;
         }
-        .threads-action-btn.liked .action-count { color: #F07830; }
+        .like-count-btn:hover { text-decoration: underline; }
+        .like-count-btn.liked { color: #F07830; }
       `}</style>
     </div>
   );

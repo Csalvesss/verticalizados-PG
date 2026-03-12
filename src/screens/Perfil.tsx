@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { getAuth, signOut, updateProfile, deleteUser } from 'firebase/auth';
-import { doc, setDoc, deleteDoc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { Avatar } from '../components/Avatar';
@@ -279,7 +279,14 @@ export function PerfilScreen({
             try {
               const user = auth.currentUser;
               if (user) {
+                // Delete all user's posts
+                const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', uid)));
+                await Promise.all(postsSnap.docs.map(d => deleteDoc(d.ref)));
+                // Delete follows document
+                await deleteDoc(doc(db, 'follows', uid)).catch(() => {});
+                // Delete user document
                 await deleteDoc(doc(db, 'users', uid));
+                // Delete Firebase Auth user
                 await deleteUser(user);
               }
             } catch (e: any) {
