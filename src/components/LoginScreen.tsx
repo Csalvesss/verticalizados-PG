@@ -3,71 +3,116 @@ import { signInWithGoogle, registerWithEmail, loginWithEmail } from '../services
 
 const APP_URL = 'https://verticalizados-pg.netlify.app';
 
-function IosStandaloneHint() {
+// Full-screen shown when user opens the app as PWA (standalone) and has no session
+function IosStandaloneScreen() {
   const [copied, setCopied] = useState(false);
 
-  function copyLink() {
+  async function openInSafari() {
+    // navigator.share shows the iOS native share sheet → user picks "Open in Safari"
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: APP_URL, title: 'Verticalizados' });
+        return;
+      } catch {
+        // user dismissed or share not available, fall through to copy
+      }
+    }
+    // Fallback: copy to clipboard
     navigator.clipboard.writeText(APP_URL).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setTimeout(() => setCopied(false), 3000);
     });
   }
 
   return (
-    <div style={{ marginTop: 14 }}>
-      <div style={{
-        background: 'rgba(240,120,48,0.08)',
-        border: '1px solid rgba(240,120,48,0.25)',
-        borderRadius: 14,
-        padding: '14px',
-      }}>
-        <div style={{ fontFamily: 'Barlow', fontWeight: 700, fontSize: 13, color: '#F07830', marginBottom: 8 }}>
-          Para entrar com Google siga estes passos:
-        </div>
-        {[
-          'Copie o link abaixo',
-          'Abra o Safari manualmente',
-          'Cole o link e acesse',
-          'Faça login com Google',
-          'Volte ao app — já vai estar logado ✓',
-        ].map((step, i) => (
-          <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 6, alignItems: 'flex-start' }}>
-            <div style={{
-              width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(240,120,48,0.2)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 11, color: '#F07830',
-            }}>{i + 1}</div>
-            <span style={{ fontFamily: 'Barlow', fontSize: 13, color: '#aaa', lineHeight: 1.4 }}>{step}</span>
-          </div>
-        ))}
+    <div style={{
+      background: '#000', minHeight: '100vh',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '32px 28px', textAlign: 'center',
+    }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@700&family=Barlow:wght@400;500;600;700&display=swap');`}</style>
 
-        {/* URL + copy */}
-        <div style={{
-          marginTop: 12, display: 'flex', alignItems: 'center', gap: 8,
-          background: '#111', borderRadius: 10, padding: '10px 12px',
-          border: '1px solid #2a2a2a',
-        }}>
-          <span style={{
-            flex: 1, fontFamily: 'Barlow', fontSize: 12, color: '#666',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {APP_URL}
-          </span>
-          <button
-            onClick={copyLink}
-            style={{
-              flexShrink: 0, background: copied ? '#1a3a1a' : '#1a1a1a',
-              border: `1px solid ${copied ? '#2a5a2a' : '#333'}`,
-              borderRadius: 8, padding: '5px 10px', cursor: 'pointer',
-              fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12,
-              color: copied ? '#4caf50' : '#F07830', letterSpacing: 0.5,
-              transition: 'all 0.2s',
-            }}
-          >
-            {copied ? 'COPIADO ✓' : 'COPIAR'}
-          </button>
-        </div>
+      {/* Logo */}
+      <div style={{
+        width: 72, height: 72, background: '#F07830', borderRadius: 18,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: 20, boxShadow: '0 12px 40px rgba(240,120,48,0.35)',
+      }}>
+        <svg width="40" height="44" viewBox="0 0 48 52" fill="none">
+          <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
+          <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
+          <rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff" />
+          <rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff" />
+        </svg>
+      </div>
+
+      <div style={{ fontFamily: 'Bebas Neue', fontSize: 32, color: '#fff', letterSpacing: 4, marginBottom: 4 }}>
+        VERTICALIZADOS
+      </div>
+      <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#444', marginBottom: 48 }}>
+        MJA ESPLANADA
+      </div>
+
+      {/* Safari icon */}
+      <div style={{
+        width: 64, height: 64, borderRadius: 16, marginBottom: 20,
+        background: 'linear-gradient(135deg, #1a6bcc, #0051a3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 8px 24px rgba(0,80,163,0.4)',
+      }}>
+        {/* Safari compass icon */}
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#fff" strokeWidth="1.5"/>
+          <path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" fill="#fff"/>
+          <circle cx="12" cy="12" r="1.5" fill="#1a6bcc"/>
+        </svg>
+      </div>
+
+      <div style={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 22, color: '#fff', marginBottom: 10, letterSpacing: 0.5 }}>
+        Abra no Safari para entrar
+      </div>
+      <div style={{ fontFamily: 'Barlow', fontSize: 14, color: '#666', lineHeight: 1.6, marginBottom: 36, maxWidth: 280 }}>
+        O login com Google precisa do Safari. Depois de entrar uma vez, o app vai te reconhecer automaticamente.
+      </div>
+
+      {/* Main button */}
+      <button
+        onClick={openInSafari}
+        style={{
+          width: '100%', maxWidth: 320,
+          padding: '16px', borderRadius: 999,
+          background: '#F07830', border: 'none', color: '#fff',
+          fontFamily: 'Barlow Condensed', fontWeight: 700,
+          fontSize: 16, letterSpacing: 1, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          boxShadow: '0 8px 24px rgba(240,120,48,0.4)',
+          marginBottom: 14,
+        }}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff">
+          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+        </svg>
+        ABRIR NO SAFARI
+      </button>
+
+      {/* Copy fallback */}
+      <button
+        onClick={() => navigator.clipboard.writeText(APP_URL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); })}
+        style={{
+          width: '100%', maxWidth: 320,
+          padding: '13px', borderRadius: 999,
+          background: 'transparent', border: '1px solid #222', color: copied ? '#4caf50' : '#555',
+          fontFamily: 'Barlow Condensed', fontWeight: 700,
+          fontSize: 14, letterSpacing: 0.5, cursor: 'pointer',
+          transition: 'all 0.2s',
+        }}
+      >
+        {copied ? 'LINK COPIADO ✓' : 'COPIAR LINK'}
+      </button>
+
+      <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#333', marginTop: 28, lineHeight: 1.5 }}>
+        Após entrar no Safari, feche e reabra o app.
       </div>
     </div>
   );
@@ -76,6 +121,11 @@ function IosStandaloneHint() {
 type Mode = 'login' | 'register';
 
 export function LoginScreen() {
+  // iOS standalone (PWA added to home screen) — Google popup is blocked, show dedicated screen
+  if ((navigator as any).standalone === true) {
+    return <IosStandaloneScreen />;
+  }
+
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -113,8 +163,6 @@ export function LoginScreen() {
       setLoading(false);
     }
   };
-
-  const isIosStandalone = !!(navigator as any).standalone;
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -353,8 +401,6 @@ export function LoginScreen() {
           Entrar com Gmail
         </button>
 
-        {/* iOS standalone hint */}
-        {isIosStandalone && <IosStandaloneHint />}
       </div>
 
       <div
