@@ -198,6 +198,32 @@ export function FeedScreen({
     setRepostingOn(null);
   };
 
+  const editPost = async (postId: string, newText: string) => {
+    if (!newText.trim()) return;
+    await updateDoc(doc(db, 'posts', postId), { text: newText.trim() });
+  };
+
+  const deleteComment = async (postId: string, commentId: string) => {
+    const postRef = doc(db, 'posts', postId);
+    const snap = await getDoc(postRef);
+    if (!snap.exists()) return;
+    const comments = (snap.data().comments || []).filter(
+      (c: any) => c.id !== commentId && c.time !== commentId,
+    );
+    await updateDoc(postRef, { comments });
+  };
+
+  const editComment = async (postId: string, commentId: string, newText: string) => {
+    const postRef = doc(db, 'posts', postId);
+    const snap = await getDoc(postRef);
+    if (!snap.exists()) return;
+    const comments = [...(snap.data().comments || [])];
+    const idx = comments.findIndex((c: any) => c.id === commentId || c.time === commentId);
+    if (idx === -1) return;
+    comments[idx] = { ...comments[idx], text: newText };
+    await updateDoc(postRef, { comments });
+  };
+
   const deleteReply = async (postId: string, commentId: string, replyId: string) => {
     const postRef = doc(db, 'posts', postId);
     const snap = await getDoc(postRef);
@@ -435,9 +461,12 @@ export function FeedScreen({
           onComment={handleComment}
           onRepost={setRepostingOn}
           onDelete={deletar}
+          onEditPost={editPost}
           onSubmitComment={comentar}
           onCommentReply={replyToComment}
           onDeleteReply={deleteReply}
+          onDeleteComment={deleteComment}
+          onEditComment={editComment}
           onFollow={follow}
           onUnfollow={unfollow}
           onOpenProfile={onOpenProfile}
