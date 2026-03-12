@@ -132,4 +132,7 @@ export interface UserProfile {
   photo: string;
   email: string;
   username?: string;
+  bio?: string;
+  link?: string;
+  pinnedPostId?: string;
 }

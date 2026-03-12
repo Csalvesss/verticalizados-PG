@@ -23,6 +23,18 @@ const verifiedBadge = (
   </svg>
 );
 
+const IcoPin = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+  </svg>
+);
+
+const IcoLink = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+  </svg>
+);
+
 interface Props {
   targetUserId: string;
   currentUid: string;
@@ -48,6 +60,9 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
     photo: string;
     email: string;
     username?: string;
+    bio?: string;
+    link?: string;
+    pinnedPostId?: string;
   } | null>(null);
   const [followingCount, setFollowingCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
@@ -59,6 +74,12 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
 
   const userPosts = posts.filter((p) => p.userId === targetUserId);
   const isOwnProfile = targetUserId === currentUid;
+
+  // Sort posts with pinned first
+  const pinnedPostId = profile?.pinnedPostId || '';
+  const pinnedPost = pinnedPostId ? userPosts.find(p => p.id === pinnedPostId) : undefined;
+  const otherPosts = userPosts.filter(p => p.id !== pinnedPostId);
+  const sortedPosts = pinnedPost ? [pinnedPost, ...otherPosts] : userPosts;
 
   useEffect(() => {
     setLoading(true);
@@ -76,6 +97,9 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
           photo: d.photoData || d.photo || '',
           email: d.email || '',
           username: d.username || '',
+          bio: d.bio || '',
+          link: d.link || '',
+          pinnedPostId: d.pinnedPostId || '',
         });
       }
       if (followingSnap.exists()) {
@@ -136,6 +160,13 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
     }
   }
 
+  function normalizeLink(raw: string): string {
+    const trimmed = raw.trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return 'https://' + trimmed;
+  }
+
   const isVerified = profile ? adminEmails.includes(profile.email) : false;
   const displayUsername = profile?.username
     ? '@' + profile.username
@@ -174,7 +205,7 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
 
       <div style={{ padding: '20px 20px 0' }}>
         {/* Name + avatar row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ flex: 1, paddingRight: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
               <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 22, color: '#fff', letterSpacing: 0.2 }}>
@@ -182,9 +213,43 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
               </span>
               {isVerified && verifiedBadge}
             </div>
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#F07830', marginBottom: 10 }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#F07830', marginBottom: profile?.bio ? 8 : 10 }}>
               {displayUsername}
             </div>
+
+            {/* Bio */}
+            {profile?.bio && (
+              <div style={{
+                fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#e7e9ea',
+                lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              }}>
+                {profile.bio}
+              </div>
+            )}
+
+            {/* Link */}
+            {profile?.link && (
+              <a
+                href={normalizeLink(profile.link)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#F07830',
+                  textDecoration: 'none', marginBottom: 10,
+                }}
+              >
+                <IcoLink />
+                <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(240,120,48,0.4)' }}>
+                  {profile.link.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
+                </span>
+              </a>
+            )}
+
+            {!profile?.bio && !profile?.link && (
+              <div style={{ marginBottom: 10 }} />
+            )}
+
             {/* Group badge */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -272,7 +337,7 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
       </div>
 
       {/* Posts feed (Threads-style list) */}
-      {userPosts.length === 0 ? (
+      {sortedPosts.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 16px', gap: 10 }}>
           <div style={{ fontSize: 36 }}>📷</div>
           <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 16, fontWeight: 700, color: '#444', letterSpacing: 0.5 }}>
@@ -281,69 +346,85 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
         </div>
       ) : (
         <div>
-          {userPosts.map((post) => (
-            <div key={post.id} style={{ borderBottom: '1px solid #111', padding: '14px 16px' }}>
-              {/* Post header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0, padding: 2,
-                  background: 'linear-gradient(135deg, #F07830, #D4621A)',
-                }}>
-                  <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid #000' }}>
-                    <Avatar src={profile?.photo || ''} name={profile?.name || '?'} size={32} />
-                  </div>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
-                      {profile?.fullName || profile?.name || 'Membro'}
-                    </span>
-                    {isVerified && verifiedBadge}
-                  </div>
-                  <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>
-                    {post.createdAt ? (() => {
-                      const d = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt as any);
-                      return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
-                    })() : ''}
-                  </div>
-                </div>
-              </div>
+          {sortedPosts.map((post) => {
+            const isPinned = post.id === pinnedPostId;
+            return (
+              <div key={post.id} style={{ borderBottom: '1px solid #111', padding: '14px 16px' }}>
 
-              {/* Post text */}
-              {post.text && (
-                <div style={{
-                  fontFamily: 'Barlow, sans-serif', fontSize: 15, color: '#e7e9ea',
-                  lineHeight: 1.55, marginBottom: post.imageUrl ? 10 : 0,
-                  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                }}>
-                  {post.text}
-                </div>
-              )}
-
-              {/* Post image */}
-              {post.imageUrl && !post.repostOf && (
-                <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #1a1a1a' }}>
-                  <img src={post.imageUrl} alt="" style={{ width: '100%', maxHeight: 380, objectFit: 'cover', display: 'block' }} />
-                </div>
-              )}
-
-              {/* Stats */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
-                {(post.likes?.length ?? 0) > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="#F07830"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                    <span style={{ color: '#F07830' }}>{post.likes!.length}</span>
+                {/* Pin indicator */}
+                {isPinned && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    paddingBottom: 8, paddingLeft: 46,
+                    fontSize: 12, fontWeight: 600, color: '#555', fontFamily: 'Barlow, sans-serif',
+                  }}>
+                    <IcoPin />
+                    <span>Post fixado</span>
                   </div>
                 )}
-                {(post.comments?.length ?? 0) > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="#555"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01z"/></svg>
-                    {post.comments!.length}
+
+                {/* Post header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0, padding: 2,
+                    background: 'linear-gradient(135deg, #F07830, #D4621A)',
+                  }}>
+                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid #000' }}>
+                      <Avatar src={profile?.photo || ''} name={profile?.name || '?'} size={32} />
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                        {profile?.fullName || profile?.name || 'Membro'}
+                      </span>
+                      {isVerified && verifiedBadge}
+                    </div>
+                    <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>
+                      {post.createdAt ? (() => {
+                        const d = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt as any);
+                        return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+                      })() : ''}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Post text */}
+                {post.text && (
+                  <div style={{
+                    fontFamily: 'Barlow, sans-serif', fontSize: 15, color: '#e7e9ea',
+                    lineHeight: 1.55, marginBottom: post.imageUrl ? 10 : 0,
+                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                  }}>
+                    {post.text}
                   </div>
                 )}
+
+                {/* Post image */}
+                {post.imageUrl && !post.repostOf && (
+                  <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #1a1a1a' }}>
+                    <img src={post.imageUrl} alt="" style={{ width: '100%', maxHeight: 380, objectFit: 'cover', display: 'block' }} />
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
+                  {(post.likes?.length ?? 0) > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="#F07830"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                      <span style={{ color: '#F07830' }}>{post.likes!.length}</span>
+                    </div>
+                  )}
+                  {(post.comments?.length ?? 0) > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="#555"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01z"/></svg>
+                      {post.comments!.length}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { getAuth, signOut, updateProfile, deleteUser } from 'firebase/auth';
-import { doc, setDoc, deleteDoc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, getDoc, getDocs, collection, query, where, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { Avatar } from '../components/Avatar';
@@ -16,6 +16,18 @@ function toUsername(name: string): string {
 }
 
 const auth = getAuth();
+
+const IcoPin = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+  </svg>
+);
+
+const IcoLink = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+  </svg>
+);
 
 interface Props {
   currentUser: CurrentUser;
@@ -43,6 +55,9 @@ export function PerfilScreen({
   const [followListUsers, setFollowListUsers] = useState<UserProfile[]>([]);
   const [followListLoading, setFollowListLoading] = useState(false);
   const [savedUsername, setSavedUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [link, setLink] = useState('');
+  const [pinnedPostId, setPinnedPostId] = useState('');
 
   useEffect(() => {
     getDoc(doc(db, 'follows', uid)).then(snap => {
@@ -54,7 +69,13 @@ export function PerfilScreen({
       setFollowersCount(count);
     });
     getDoc(doc(db, 'users', uid)).then(snap => {
-      if (snap.exists() && snap.data().username) setSavedUsername(snap.data().username);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.username) setSavedUsername(d.username);
+        if (d.bio) setBio(d.bio);
+        if (d.link) setLink(d.link);
+        if (d.pinnedPostId) setPinnedPostId(d.pinnedPostId);
+      }
     });
   }, [uid]);
 
@@ -88,6 +109,8 @@ export function PerfilScreen({
   const [showEdit, setShowEdit] = useState(false);
   const [editName, setEditName] = useState(currentUser.fullName);
   const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editLink, setEditLink] = useState('');
   const [editPhoto, setEditPhoto] = useState(currentUser.photo);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -96,7 +119,12 @@ export function PerfilScreen({
 
   const meusPosts = posts.filter(p => p.userId === uid);
   const curtidos = posts.filter(p => p.likes?.includes(uid));
-  const gridPosts = tab === 'posts' ? meusPosts : curtidos;
+
+  // Pinned post always first in posts tab
+  const pinnedPost = pinnedPostId ? meusPosts.find(p => p.id === pinnedPostId) : undefined;
+  const otherPosts = meusPosts.filter(p => p.id !== pinnedPostId);
+  const sortedMyPosts = pinnedPost ? [pinnedPost, ...otherPosts] : meusPosts;
+  const gridPosts = tab === 'posts' ? sortedMyPosts : curtidos;
 
   async function handlePhotoUpload(file: File) {
     setUploading(true);
@@ -143,13 +171,19 @@ export function PerfilScreen({
       if (user) {
         await updateProfile(user, { displayName: editName.trim() });
         const cleanUsername = editUsername.trim().toLowerCase().replace(/[^a-z0-9._]/g, '');
+        const cleanLink = editLink.trim();
         await setDoc(doc(db, 'users', uid), {
           fullName: editName.trim(),
           name: editName.trim().split(' ')[0],
           ...(editPhoto !== currentUser.photo ? { photoData: editPhoto } : {}),
           ...(cleanUsername ? { username: cleanUsername } : {}),
+          bio: editBio.trim(),
+          link: cleanLink,
         }, { merge: true });
       }
+      setBio(editBio.trim());
+      setLink(editLink.trim());
+      if (editUsername.trim()) setSavedUsername(editUsername.trim().toLowerCase().replace(/[^a-z0-9._]/g, ''));
       setShowEdit(false);
       window.location.reload();
     } catch (e: any) {
@@ -157,6 +191,19 @@ export function PerfilScreen({
     } finally {
       setSaving(false);
     }
+  }
+
+  async function togglePin(postId: string) {
+    const newPinned = pinnedPostId === postId ? '' : postId;
+    await updateDoc(doc(db, 'users', uid), { pinnedPostId: newPinned });
+    setPinnedPostId(newPinned);
+  }
+
+  function normalizeLink(raw: string): string {
+    const trimmed = raw.trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return 'https://' + trimmed;
   }
 
   return (
@@ -195,7 +242,7 @@ export function PerfilScreen({
       <div style={{ padding: '20px 20px 0' }}>
 
         {/* Name + avatar row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ flex: 1, paddingRight: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
               <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 22, color: '#fff', letterSpacing: 0.2 }}>
@@ -207,9 +254,43 @@ export function PerfilScreen({
                 </svg>
               )}
             </div>
-            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#F07830', marginBottom: 10 }}>
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#F07830', marginBottom: bio ? 8 : 10 }}>
               {displayUsername}
             </div>
+
+            {/* Bio */}
+            {bio && (
+              <div style={{
+                fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#e7e9ea',
+                lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              }}>
+                {bio}
+              </div>
+            )}
+
+            {/* Link */}
+            {link && (
+              <a
+                href={normalizeLink(link)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#F07830',
+                  textDecoration: 'none', marginBottom: 10,
+                }}
+              >
+                <IcoLink />
+                <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(240,120,48,0.4)' }}>
+                  {link.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
+                </span>
+              </a>
+            )}
+
+            {!bio && !link && (
+              <div style={{ marginBottom: 10 }} />
+            )}
+
             {/* Group badge */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -256,7 +337,15 @@ export function PerfilScreen({
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <button
-            onClick={() => { setEditName(currentUser.fullName); setEditUsername(savedUsername); setEditPhoto(currentUser.photo); setSaveError(''); setShowEdit(true); }}
+            onClick={() => {
+              setEditName(currentUser.fullName);
+              setEditUsername(savedUsername);
+              setEditBio(bio);
+              setEditLink(link);
+              setEditPhoto(currentUser.photo);
+              setSaveError('');
+              setShowEdit(true);
+            }}
             style={{
               flex: 1, padding: '9px 16px', borderRadius: 10,
               border: '1px solid #333', background: 'transparent',
@@ -279,16 +368,11 @@ export function PerfilScreen({
             try {
               const user = auth.currentUser;
               if (user) {
-                // Delete all user's posts
                 const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', uid)));
                 await Promise.all(postsSnap.docs.map(d => deleteDoc(d.ref)));
-                // Delete follows document
                 await deleteDoc(doc(db, 'follows', uid)).catch(() => {});
-                // Delete user document
                 await deleteDoc(doc(db, 'users', uid));
-                // Clear setup cache
                 localStorage.removeItem(`pg_setup_${uid}`);
-                // Delete Firebase Auth user
                 await deleteUser(user);
               }
             } catch (e: any) {
@@ -342,70 +426,104 @@ export function PerfilScreen({
         </div>
       ) : (
         <div>
-          {gridPosts.map(post => (
-            <div key={post.id} style={{
-              borderBottom: '1px solid #111',
-              padding: '14px 16px',
-            }}>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0, padding: 2,
-                  background: 'linear-gradient(135deg, #F07830, #D4621A)',
-                }}>
-                  <img src={currentUser.photo} alt="" style={{
-                    width: '100%', height: '100%', borderRadius: '50%',
-                    objectFit: 'cover', border: '2px solid #000', display: 'block',
-                  }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
-                    {currentUser.fullName}
-                  </div>
-                  <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>
-                    {post.createdAt ? (() => {
-                      const d = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt as any);
-                      return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
-                    })() : ''}
-                  </div>
-                </div>
-              </div>
+          {gridPosts.map(post => {
+            const isPinned = post.id === pinnedPostId;
+            const isMyPost = post.userId === uid;
+            return (
+              <div key={post.id} style={{ borderBottom: '1px solid #111', padding: '14px 16px' }}>
 
-              {/* Text */}
-              {post.text && (
-                <div style={{
-                  fontFamily: 'Barlow, sans-serif', fontSize: 15, color: '#e7e9ea',
-                  lineHeight: 1.55, marginBottom: post.imageUrl ? 10 : 0,
-                  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                }}>
-                  {post.text}
-                </div>
-              )}
-
-              {/* Image */}
-              {post.imageUrl && !post.repostOf && (
-                <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #1a1a1a' }}>
-                  <img src={post.imageUrl} alt="" style={{ width: '100%', maxHeight: 380, objectFit: 'cover', display: 'block' }} />
-                </div>
-              )}
-
-              {/* Stats */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
-                {(post.likes?.length ?? 0) > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="#F07830"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                    <span style={{ color: '#F07830' }}>{post.likes!.length}</span>
+                {/* Pin indicator */}
+                {isPinned && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    paddingBottom: 8, paddingLeft: 46,
+                    fontSize: 12, fontWeight: 600, color: '#555', fontFamily: 'Barlow, sans-serif',
+                  }}>
+                    <IcoPin />
+                    <span>Post fixado</span>
                   </div>
                 )}
-                {(post.comments?.length ?? 0) > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="#555"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01z"/></svg>
-                    {post.comments!.length}
+
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0, padding: 2,
+                    background: 'linear-gradient(135deg, #F07830, #D4621A)',
+                  }}>
+                    <img src={currentUser.photo} alt="" style={{
+                      width: '100%', height: '100%', borderRadius: '50%',
+                      objectFit: 'cover', border: '2px solid #000', display: 'block',
+                    }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                      {currentUser.fullName}
+                    </div>
+                    <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#555' }}>
+                      {post.createdAt ? (() => {
+                        const d = post.createdAt.toDate ? post.createdAt.toDate() : new Date(post.createdAt as any);
+                        return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+                      })() : ''}
+                    </div>
+                  </div>
+
+                  {/* Pin/Unpin button — only for own posts tab */}
+                  {tab === 'posts' && isMyPost && (
+                    <button
+                      onClick={() => togglePin(post.id)}
+                      title={isPinned ? 'Desafixar do perfil' : 'Fixar no perfil'}
+                      style={{
+                        background: isPinned ? 'rgba(240,120,48,0.12)' : 'transparent',
+                        border: isPinned ? '1px solid rgba(240,120,48,0.3)' : '1px solid #222',
+                        borderRadius: 20, padding: '4px 10px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        color: isPinned ? '#F07830' : '#555',
+                        fontFamily: 'Barlow, sans-serif', fontSize: 12,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <IcoPin />
+                      <span>{isPinned ? 'Fixado' : 'Fixar'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Text */}
+                {post.text && (
+                  <div style={{
+                    fontFamily: 'Barlow, sans-serif', fontSize: 15, color: '#e7e9ea',
+                    lineHeight: 1.55, marginBottom: post.imageUrl ? 10 : 0,
+                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                  }}>
+                    {post.text}
                   </div>
                 )}
+
+                {/* Image */}
+                {post.imageUrl && !post.repostOf && (
+                  <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #1a1a1a' }}>
+                    <img src={post.imageUrl} alt="" style={{ width: '100%', maxHeight: 380, objectFit: 'cover', display: 'block' }} />
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
+                  {(post.likes?.length ?? 0) > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="#F07830"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                      <span style={{ color: '#F07830' }}>{post.likes!.length}</span>
+                    </div>
+                  )}
+                  {(post.comments?.length ?? 0) > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#555' }}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="#555"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01z"/></svg>
+                      {post.comments!.length}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -486,6 +604,7 @@ export function PerfilScreen({
             background: '#0f0f0f', borderRadius: '20px 20px 0 0',
             padding: '24px 20px 40px', width: '100%', maxWidth: 480,
             border: '1px solid #222', borderBottom: 'none',
+            maxHeight: '92vh', overflowY: 'auto',
           }}>
             <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#F07830', marginBottom: 20 }}>
               EDITAR PERFIL
@@ -527,7 +646,7 @@ export function PerfilScreen({
               }} />
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 14 }}>
               <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 5, letterSpacing: 0.5 }}>NOME DE USUÁRIO</div>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontFamily: 'Barlow', fontSize: 15, color: '#555', pointerEvents: 'none' }}>@</span>
@@ -540,6 +659,44 @@ export function PerfilScreen({
               </div>
               <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#333', marginTop: 4 }}>
                 Letras minúsculas, números, pontos e underscores. Máx. 24 caracteres.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 5, letterSpacing: 0.5 }}>BIO</div>
+              <textarea
+                value={editBio}
+                onChange={e => setEditBio(e.target.value.slice(0, 160))}
+                placeholder="Escreva algo sobre você..."
+                rows={3}
+                style={{
+                  width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a',
+                  borderRadius: 10, padding: '11px 14px', fontFamily: 'Barlow',
+                  fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box',
+                  resize: 'none', lineHeight: 1.5,
+                }}
+              />
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#333', marginTop: 2, textAlign: 'right' }}>
+                {editBio.length}/160
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555', marginBottom: 5, letterSpacing: 0.5 }}>LINK</div>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', color: '#555', pointerEvents: 'none' }}>
+                  <IcoLink />
+                </span>
+                <input
+                  value={editLink}
+                  onChange={e => setEditLink(e.target.value.slice(0, 100))}
+                  placeholder="seusite.com"
+                  style={{
+                    width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a',
+                    borderRadius: 10, padding: '11px 14px 11px 32px', fontFamily: 'Barlow',
+                    fontSize: 14, color: '#fff', outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
               </div>
             </div>
 
