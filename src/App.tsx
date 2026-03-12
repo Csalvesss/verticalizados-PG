@@ -25,6 +25,7 @@ import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPerfilScreen } from './screens/UserPerfil';
 import { UserPhotosProvider } from './contexts/UserPhotos';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 
 const auth = getAuth();
 
@@ -317,6 +318,7 @@ function MainApp({ user }: { user: User }) {
       </div>
 
       <BottomNav screen={screen} goTo={goTo} userPhoto={currentUser.photo} />
+      <PWAInstallPrompt />
     </div>
     </UserPhotosProvider>
   );
