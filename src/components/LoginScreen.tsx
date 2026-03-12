@@ -1,6 +1,78 @@
 import { useState } from 'react';
 import { signInWithGoogle, registerWithEmail, loginWithEmail } from '../services/authService';
 
+const APP_URL = 'https://verticalizados-pg.netlify.app';
+
+function IosStandaloneHint() {
+  const [copied, setCopied] = useState(false);
+
+  function copyLink() {
+    navigator.clipboard.writeText(APP_URL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  }
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{
+        background: 'rgba(240,120,48,0.08)',
+        border: '1px solid rgba(240,120,48,0.25)',
+        borderRadius: 14,
+        padding: '14px',
+      }}>
+        <div style={{ fontFamily: 'Barlow', fontWeight: 700, fontSize: 13, color: '#F07830', marginBottom: 8 }}>
+          Para entrar com Google siga estes passos:
+        </div>
+        {[
+          'Copie o link abaixo',
+          'Abra o Safari manualmente',
+          'Cole o link e acesse',
+          'Faça login com Google',
+          'Volte ao app — já vai estar logado ✓',
+        ].map((step, i) => (
+          <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 6, alignItems: 'flex-start' }}>
+            <div style={{
+              width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(240,120,48,0.2)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 11, color: '#F07830',
+            }}>{i + 1}</div>
+            <span style={{ fontFamily: 'Barlow', fontSize: 13, color: '#aaa', lineHeight: 1.4 }}>{step}</span>
+          </div>
+        ))}
+
+        {/* URL + copy */}
+        <div style={{
+          marginTop: 12, display: 'flex', alignItems: 'center', gap: 8,
+          background: '#111', borderRadius: 10, padding: '10px 12px',
+          border: '1px solid #2a2a2a',
+        }}>
+          <span style={{
+            flex: 1, fontFamily: 'Barlow', fontSize: 12, color: '#666',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {APP_URL}
+          </span>
+          <button
+            onClick={copyLink}
+            style={{
+              flexShrink: 0, background: copied ? '#1a3a1a' : '#1a1a1a',
+              border: `1px solid ${copied ? '#2a5a2a' : '#333'}`,
+              borderRadius: 8, padding: '5px 10px', cursor: 'pointer',
+              fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12,
+              color: copied ? '#4caf50' : '#F07830', letterSpacing: 0.5,
+              transition: 'all 0.2s',
+            }}
+          >
+            {copied ? 'COPIADO ✓' : 'COPIAR'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type Mode = 'login' | 'register';
 
 export function LoginScreen() {
@@ -282,55 +354,7 @@ export function LoginScreen() {
         </button>
 
         {/* iOS standalone hint */}
-        {isIosStandalone && (
-          <div style={{ marginTop: 14 }}>
-            <div style={{
-              background: 'rgba(240,120,48,0.08)',
-              border: '1px solid rgba(240,120,48,0.2)',
-              borderRadius: 12,
-              padding: '12px 14px',
-              display: 'flex',
-              gap: 10,
-              alignItems: 'flex-start',
-            }}>
-              <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
-              <div>
-                <div style={{ fontFamily: 'Barlow', fontWeight: 700, fontSize: 13, color: '#F07830', marginBottom: 4 }}>
-                  Primeira vez com Google?
-                </div>
-                <div style={{ fontFamily: 'Barlow', fontSize: 13, color: '#999', lineHeight: 1.5 }}>
-                  Entre pelo Safari uma vez. Depois, o app vai te reconhecer automaticamente.
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => window.open('https://verticalizados-pg.netlify.app', '_blank')}
-              style={{
-                width: '100%',
-                marginTop: 10,
-                padding: '12px',
-                borderRadius: 999,
-                background: 'transparent',
-                border: '1px solid rgba(240,120,48,0.4)',
-                color: '#F07830',
-                fontFamily: 'Barlow Condensed',
-                fontWeight: 700,
-                fontSize: 14,
-                letterSpacing: 0.5,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="#F07830">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-              </svg>
-              Abrir no Safari para login com Google
-            </button>
-          </div>
-        )}
+        {isIosStandalone && <IosStandaloneHint />}
       </div>
 
       <div
