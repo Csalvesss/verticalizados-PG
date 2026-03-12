@@ -9,18 +9,31 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 
+function isStandalone(): boolean {
+  const nav = navigator as Navigator & { standalone?: boolean };
+  if (nav.standalone === true) return true; // iOS PWA
+  if (window.matchMedia('(display-mode: standalone)').matches) return true; // Android PWA
+  return false;
+}
+
+/** Login com Google — usa redirect no standalone (iOS/Android), popup no browser */
 export async function signInWithGoogle() {
+  if (isStandalone()) {
+    await signInWithRedirect(auth, googleProvider);
+    return null; // resultado tratado por getRedirectResultOnLoad()
+  }
   const result = await signInWithPopup(auth, googleProvider);
   return result.user;
 }
 
-/** Use inside standalone PWA (iOS/Android) where popups are blocked */
+/** Forçar redirect explicitamente (usado pela LoginScreen no standalone) */
 export async function signInWithGoogleRedirect() {
   await signInWithRedirect(auth, googleProvider);
 }
 
-/** Call once on app mount to capture the redirect result */
-export async function checkGoogleRedirectResult() {
+/** Chame uma vez no carregamento do app para capturar o resultado
+ *  do signInWithRedirect (iOS/Android PWA). onAuthStateChanged dispara na sequência. */
+export async function getRedirectResultOnLoad() {
   try {
     const result = await getRedirectResult(auth);
     return result?.user ?? null;

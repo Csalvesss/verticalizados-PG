@@ -1,14 +1,22 @@
 {
-  "name": "Verticalizados PG",
+  "name": "PG Verticalizados",
   "short_name": "Verticalizados",
-  "description": "App do grupo PG Verticalizados - MJA Esplanada",
+  "description": "Conectados verticalmente. Enraizados na Palavra. App do Pequeno Grupo Verticalizados — MJA Esplanada.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#F07830",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "lang": "pt-BR",
+  "categories": ["social", "lifestyle"],
   "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",

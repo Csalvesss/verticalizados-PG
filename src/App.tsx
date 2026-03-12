@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDocs, where } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
-import { checkGoogleRedirectResult } from './services/authService';
-
+import { getRedirectResultOnLoad } from './services/authService';
 import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './constants';
 import { GLOBAL_CSS, s } from './styles';
 import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio } from './types';
@@ -26,6 +25,8 @@ import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPerfilScreen } from './screens/UserPerfil';
 import { UserPhotosProvider } from './contexts/UserPhotos';
+import { PWAInstallProvider } from './contexts/PWAInstall';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 
 const auth = getAuth();
 
@@ -45,8 +46,10 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    // Handle Google redirect result first (iOS/Android standalone PWA)
-    checkGoogleRedirectResult().catch(() => null);
+    // Captura resultado do signInWithRedirect (iOS/Android PWA standalone)
+    // Deve ser chamado antes de onAuthStateChanged para garantir que o
+    // token seja processado e o listener dispare com o usuário autenticado.
+    getRedirectResultOnLoad();
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setAuthLoading(false); });
     return () => unsub();
   }, []);
@@ -197,6 +200,7 @@ function MainApp({ user }: { user: User }) {
   if (needsSetup) return <SetupPerfil user={user} onDone={() => setNeedsSetup(false)} />;
 
   return (
+    <PWAInstallProvider>
     <UserPhotosProvider>
     <div style={s.root}>
       <style>{GLOBAL_CSS}</style>
@@ -320,7 +324,9 @@ function MainApp({ user }: { user: User }) {
       </div>
 
       <BottomNav screen={screen} goTo={goTo} userPhoto={currentUser.photo} />
+      <PWAInstallPrompt />
     </div>
     </UserPhotosProvider>
+    </PWAInstallProvider>
   );
 }

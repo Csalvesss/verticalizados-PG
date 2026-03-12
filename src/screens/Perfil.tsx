@@ -75,11 +75,10 @@ export function PerfilScreen({
           if ((d.data().following || []).includes(uid)) uids.push(d.id);
         });
       }
-      const profiles: UserProfile[] = [];
-      for (const id of uids) {
-        const p = await getDoc(doc(db, 'users', id));
-        if (p.exists()) profiles.push({ uid: id, ...p.data() } as UserProfile);
-      }
+      const snaps = await Promise.all(uids.map(id => getDoc(doc(db, 'users', id))));
+      const profiles: UserProfile[] = snaps
+        .map((p, i) => p.exists() ? ({ uid: uids[i], ...p.data() } as UserProfile) : null)
+        .filter(Boolean) as UserProfile[];
       setFollowListUsers(profiles);
     } finally {
       setFollowListLoading(false);
@@ -186,6 +185,10 @@ export function PerfilScreen({
             border: 'none', cursor: 'pointer', display: 'flex',
           }}>{Ico.admin('#71767b')}</button>
         )}
+        <button onClick={() => signOut(auth)} title="Sair" style={{
+          padding: 8, borderRadius: '50%', background: 'transparent',
+          border: 'none', cursor: 'pointer', display: 'flex', color: '#555',
+        }}>{Ico.logout()}</button>
       </div>
 
       {/* Profile info */}
@@ -261,26 +264,13 @@ export function PerfilScreen({
               fontWeight: 700, fontSize: 13, letterSpacing: 0.5, cursor: 'pointer',
             }}
           >Editar perfil</button>
-          <button onClick={() => signOut(auth)} style={{
-            padding: '9px 14px', borderRadius: 10, border: '1px solid #2a1010',
-            background: 'transparent', color: '#f4212e',
-            fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13,
-            letterSpacing: 0.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
-          }}>{Ico.logout()} Sair</button>
+          {isAdmin && (
+            <button onClick={() => goTo('admin')} title="Painel Admin" style={{
+              padding: '9px 12px', borderRadius: 10, border: '1px solid #2f2510',
+              background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center',
+            }}>{Ico.admin('#F07830')}</button>
+          )}
         </div>
-
-        {isAdmin && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: '#111', border: '1px solid #2f2510',
-            borderRadius: 10, padding: '8px 12px', marginBottom: 12,
-          }}>
-            {Ico.admin('#F07830')}
-            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 12, letterSpacing: 1.2, color: '#F07830' }}>
-              ADMINISTRADOR
-            </span>
-          </div>
-        )}
 
         <button
           onClick={async () => {
