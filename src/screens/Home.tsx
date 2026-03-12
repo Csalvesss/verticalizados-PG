@@ -1,6 +1,7 @@
 import { Ico } from '../icons';
 import { s } from '../styles';
 import type { Screen, CurrentUser, Evento } from '../types';
+import { usePWAInstallContext } from '../contexts/PWAInstall';
 
 interface Props {
   currentUser: CurrentUser;
@@ -18,6 +19,19 @@ const ChevronRight = () => (
   </svg>
 );
 
+// Logo SVG do app
+function AppLogo({ size = 40 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="4 2 34 52" fill="none">
+      <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
+      <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
+      <rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff" />
+      <rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff" />
+      <path d="M26 42 L30 42 L30 50 L28 47 L26 50 Z" fill="#fff" />
+    </svg>
+  );
+}
+
 export function HomeScreen({
   currentUser,
   isAdmin,
@@ -27,6 +41,9 @@ export function HomeScreen({
   confirmacoesCount,
   proximoEvento,
 }: Props) {
+  const { canInstallAndroid, isIOS, isStandalone, triggerInstall, openIOSModal } = usePWAInstallContext();
+  const showInstallCard = !isStandalone && (canInstallAndroid || isIOS);
+
   const MENU_ITEMS = [
     { icon: Ico.music, label: 'Músicas', sub: `${songsCount} músicas`, sc: 'musicas' },
     { icon: Ico.guitar, label: 'Cifras', sub: 'Para tocar', sc: 'cifras' },
@@ -118,6 +135,70 @@ export function HomeScreen({
           </button>
         ))}
       </div>
+
+      {/* ── Card de instalação PWA ─────────────────────────── */}
+      {showInstallCard && (
+        <div style={{ margin: '16px 16px 0' }}>
+          <button
+            onClick={canInstallAndroid ? triggerInstall : openIOSModal}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              width: '100%', padding: '14px 16px',
+              background: 'rgba(240,120,48,0.06)',
+              border: '1px solid rgba(240,120,48,0.2)',
+              borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            {/* Logo */}
+            <div style={{
+              width: 48, height: 48, borderRadius: 12,
+              background: '#111', border: '1px solid #2a2a2a',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <AppLogo size={30} />
+            </div>
+
+            {/* Texto */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontFamily: 'Bebas Neue, sans-serif',
+                fontSize: 16, color: '#fff', letterSpacing: 2, lineHeight: 1,
+              }}>
+                PG VERTICALIZADOS
+              </div>
+              <div style={{
+                fontFamily: 'Barlow, sans-serif',
+                fontSize: 12, color: '#888', marginTop: 3, lineHeight: 1.3,
+              }}>
+                {canInstallAndroid
+                  ? 'Toque para instalar o app no seu celular'
+                  : 'Adicione à Tela de Início para acesso rápido'}
+              </div>
+            </div>
+
+            {/* Ícone instalar */}
+            <div style={{
+              width: 34, height: 34, borderRadius: 10,
+              background: '#F07830',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              {canInstallAndroid ? (
+                // Ícone download
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff">
+                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z" />
+                </svg>
+              ) : (
+                // Ícone compartilhar iOS
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8.684 8.316 12 5m0 0 3.316 3.316M12 5v11M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
+                </svg>
+              )}
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* ── Próximo evento ─────────────────────────────────── */}
       {proximoEvento && (

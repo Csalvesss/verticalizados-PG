@@ -25,6 +25,7 @@ import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPerfilScreen } from './screens/UserPerfil';
 import { UserPhotosProvider } from './contexts/UserPhotos';
+import { PWAInstallProvider } from './contexts/PWAInstall';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 
 const auth = getAuth();
@@ -195,6 +196,7 @@ function MainApp({ user }: { user: User }) {
   if (needsSetup) return <SetupPerfil user={user} onDone={() => setNeedsSetup(false)} />;
 
   return (
+    <PWAInstallProvider>
     <UserPhotosProvider>
     <div style={s.root}>
       <style>{GLOBAL_CSS}</style>
@@ -321,5 +323,6 @@ function MainApp({ user }: { user: User }) {
       <PWAInstallPrompt />
     </div>
     </UserPhotosProvider>
+    </PWAInstallProvider>
   );
 }
