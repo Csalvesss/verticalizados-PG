@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDocs, where } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
+import { auth } from './firebase';
 import { getRedirectResultOnLoad } from './services/authService';
+import { consumeInstallToken, hasInstallToken } from './hooks/useInstallTransfer';
 import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './constants';
 import { GLOBAL_CSS, s } from './styles';
 import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio } from './types';
@@ -28,8 +30,6 @@ import { UserPhotosProvider } from './contexts/UserPhotos';
 import { PWAInstallProvider } from './contexts/PWAInstall';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 
-const auth = getAuth();
-
 // ── SPLASH ───────────────────────────────────────────────────────────────────
 function Splash() {
   return (
@@ -46,10 +46,13 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    // Captura resultado do signInWithRedirect (iOS/Android PWA standalone)
-    // Deve ser chamado antes de onAuthStateChanged para garantir que o
-    // token seja processado e o listener dispare com o usuário autenticado.
+    // 1. Tenta consumir install token (?t= na URL) — login automático ao abrir PWA
+    if (hasInstallToken()) consumeInstallToken();
+
+    // 2. Captura resultado de signInWithRedirect (iOS/Android PWA standalone)
     getRedirectResultOnLoad();
+
+    // 3. Escuta mudanças de auth (inclui resultado dos passos acima)
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setAuthLoading(false); });
     return () => unsub();
   }, []);
@@ -200,7 +203,7 @@ function MainApp({ user }: { user: User }) {
   if (needsSetup) return <SetupPerfil user={user} onDone={() => setNeedsSetup(false)} />;
 
   return (
-    <PWAInstallProvider>
+    <PWAInstallProvider uid={user.uid}>
     <UserPhotosProvider>
     <div style={s.root}>
       <style>{GLOBAL_CSS}</style>

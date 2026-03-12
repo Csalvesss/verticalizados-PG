@@ -1,6 +1,6 @@
 // Inicializa Firebase App, Firestore, Auth e Storage
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, indexedDBLocalPersistence, setPersistence } from 'firebase/auth';
+import { initializeAuth, indexedDBLocalPersistence, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore, serverTimestamp } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -16,17 +16,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+// initializeAuth com IndexedDB desde o início — não setPersistence depois.
+// Isso garante que iOS 16.4+ compartilhe a sessão entre Safari e PWA standalone.
+export const auth = initializeAuth(app, {
+  persistence: indexedDBLocalPersistence,
+});
+
 export const db = getFirestore(app);
-export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 export const timestamp = serverTimestamp;
 
 // compatibilidade retroativa
 export const provider = googleProvider;
-
-// Força persistência via IndexedDB — mais durável em PWA/standalone iOS/Android.
-// IndexedDB persiste mesmo quando o app é suspenso pelo sistema operacional.
-setPersistence(auth, indexedDBLocalPersistence).catch(() => {
-  // fallback silencioso — o auth ainda funciona com localStorage padrão
-});
