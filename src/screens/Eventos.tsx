@@ -82,8 +82,8 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
   const lista = confirmacoes.filter(c => c.eventoId === prox?.id);
 
   const confirmar = async () => {
-    if (!prox) return;
-    await addDoc(collection(db, 'confirmacoes'), {
+    if (!prox || !selectedChurch) return;
+    await addDoc(collection(db, 'churches', selectedChurch.id, 'confirmacoes'), {
       userId: uid,
       userName: currentUser.name,
       userPhoto: currentUser.photo,

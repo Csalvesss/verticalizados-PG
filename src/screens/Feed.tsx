@@ -45,6 +45,8 @@ export function FeedScreen({
 }: Props) {
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
   const { selectedChurch } = useChurch();
+  const postRef = (id: string) => doc(db, 'churches', selectedChurch!.id, 'posts', id);
+  const postsCol = () => collection(db, 'churches', selectedChurch!.id, 'posts');
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [repostingOn, setRepostingOn] = useState<Post | null>(null);
   const [following, setFollowing] = useState<string[]>([]);
@@ -120,7 +122,7 @@ export function FeedScreen({
   };
 
   const postar = async (text: string, img: string | null) => {
-    await addDoc(collection(db, 'posts'), {
+    await addDoc(postsCol(), {
       user: currentUser.name,
       userId: uid,
       photo: currentUser.photo,
@@ -130,17 +132,12 @@ export function FeedScreen({
       comments: [],
       createdAt: serverTimestamp(),
       userEmail: currentUser.email,
-      ...(selectedChurch ? {
-        churchId: selectedChurch.id,
-        churchName: selectedChurch.name,
-        district: selectedChurch.district,
-      } : {}),
     });
   };
 
   const curtir = async (p: Post) => {
     const alreadyLiked = p.likes?.includes(uid);
-    await updateDoc(doc(db, 'posts', p.id), {
+    await updateDoc(postRef(p.id), {
       likes: alreadyLiked ? arrayRemove(uid) : arrayUnion(uid),
     });
     if (!alreadyLiked) {
@@ -150,7 +147,7 @@ export function FeedScreen({
 
   const comentar = async (id: string, text: string) => {
     const post = posts.find(p => p.id === id);
-    await updateDoc(doc(db, 'posts', id), {
+    await updateDoc(postRef(id), {
       comments: arrayUnion({
         id: Date.now().toString() + Math.random().toString(36).slice(2),
         user: currentUser.name,
@@ -168,7 +165,7 @@ export function FeedScreen({
   };
 
   const replyToComment = async (postId: string, commentId: string, replyText: string) => {
-    const postRef = doc(db, 'posts', postId);
+    const postRef = doc(db, 'churches', selectedChurch!.id, 'posts', postId);
     const snap = await getDoc(postRef);
     if (!snap.exists()) return;
     const data = snap.data();
@@ -194,7 +191,7 @@ export function FeedScreen({
   };
 
   const repostar = async (post: Post, text: string) => {
-    await addDoc(collection(db, 'posts'), {
+    await addDoc(postsCol(), {
       user: currentUser.name,
       userId: uid,
       photo: currentUser.photo,
@@ -217,11 +214,11 @@ export function FeedScreen({
 
   const editPost = async (postId: string, newText: string) => {
     if (!newText.trim()) return;
-    await updateDoc(doc(db, 'posts', postId), { text: newText.trim() });
+    await updateDoc(postRef(postId), { text: newText.trim() });
   };
 
   const deleteComment = async (postId: string, commentId: string) => {
-    const postRef = doc(db, 'posts', postId);
+    const postRef = doc(db, 'churches', selectedChurch!.id, 'posts', postId);
     const snap = await getDoc(postRef);
     if (!snap.exists()) return;
     const comments = (snap.data().comments || []).filter(
@@ -231,7 +228,7 @@ export function FeedScreen({
   };
 
   const editComment = async (postId: string, commentId: string, newText: string) => {
-    const postRef = doc(db, 'posts', postId);
+    const postRef = doc(db, 'churches', selectedChurch!.id, 'posts', postId);
     const snap = await getDoc(postRef);
     if (!snap.exists()) return;
     const comments = [...(snap.data().comments || [])];
@@ -242,7 +239,7 @@ export function FeedScreen({
   };
 
   const deleteReply = async (postId: string, commentId: string, replyId: string) => {
-    const postRef = doc(db, 'posts', postId);
+    const postRef = doc(db, 'churches', selectedChurch!.id, 'posts', postId);
     const snap = await getDoc(postRef);
     if (!snap.exists()) return;
     const data = snap.data();
@@ -256,7 +253,7 @@ export function FeedScreen({
 
   const deletar = async (id: string) => {
     if (!window.confirm('Apagar post?')) return;
-    await deleteDoc(doc(db, 'posts', id));
+    await deleteDoc(postRef(id));
   };
 
   const handleComment = (postId: string) => {
