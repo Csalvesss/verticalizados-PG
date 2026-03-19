@@ -20,7 +20,6 @@ import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
-import { useChurch } from '../contexts/ChurchContext';
 
 interface Props {
   posts: Post[];
@@ -44,9 +43,8 @@ export function FeedScreen({
   onOpenProfile,
 }: Props) {
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
-  const { selectedChurch } = useChurch();
-  const postRef = (id: string) => doc(db, 'churches', selectedChurch!.id, 'posts', id);
-  const postsCol = () => collection(db, 'churches', selectedChurch!.id, 'posts');
+  const postRef = (id: string) => doc(db, 'posts', id);
+  const postsCol = () => collection(db, 'posts');
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [repostingOn, setRepostingOn] = useState<Post | null>(null);
   const [following, setFollowing] = useState<string[]>([]);
@@ -165,7 +163,7 @@ export function FeedScreen({
   };
 
   const replyToComment = async (postId: string, commentId: string, replyText: string) => {
-    const postRef = doc(db, 'churches', selectedChurch!.id, 'posts', postId);
+    const postRef = doc(db, 'posts', postId);
     const snap = await getDoc(postRef);
     if (!snap.exists()) return;
     const data = snap.data();
@@ -218,7 +216,7 @@ export function FeedScreen({
   };
 
   const deleteComment = async (postId: string, commentId: string) => {
-    const postRef = doc(db, 'churches', selectedChurch!.id, 'posts', postId);
+    const postRef = doc(db, 'posts', postId);
     const snap = await getDoc(postRef);
     if (!snap.exists()) return;
     const comments = (snap.data().comments || []).filter(
@@ -228,7 +226,7 @@ export function FeedScreen({
   };
 
   const editComment = async (postId: string, commentId: string, newText: string) => {
-    const postRef = doc(db, 'churches', selectedChurch!.id, 'posts', postId);
+    const postRef = doc(db, 'posts', postId);
     const snap = await getDoc(postRef);
     if (!snap.exists()) return;
     const comments = [...(snap.data().comments || [])];
@@ -239,7 +237,7 @@ export function FeedScreen({
   };
 
   const deleteReply = async (postId: string, commentId: string, replyId: string) => {
-    const postRef = doc(db, 'churches', selectedChurch!.id, 'posts', postId);
+    const postRef = doc(db, 'posts', postId);
     const snap = await getDoc(postRef);
     if (!snap.exists()) return;
     const data = snap.data();

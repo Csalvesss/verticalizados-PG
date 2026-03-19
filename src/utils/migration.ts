@@ -12,7 +12,8 @@ export async function migrateGlobalDataToChurch(churchId: string) {
   if (localStorage.getItem(key)) return;
 
   try {
-    const cols = ['posts', 'songs', 'cifras', 'membros', 'confirmacoes', 'eventos'];
+    // Only migrate church-scoped collections (posts/sorteios stay global)
+    const cols = ['songs', 'cifras', 'membros', 'confirmacoes', 'eventos'];
 
     for (const col of cols) {
       const churchSnap = await getDocs(collection(db, 'churches', churchId, col));
@@ -21,15 +22,6 @@ export async function migrateGlobalDataToChurch(churchId: string) {
       const globalSnap = await getDocs(collection(db, col));
       for (const d of globalSnap.docs) {
         await setDoc(doc(db, 'churches', churchId, col, d.id), d.data());
-      }
-    }
-
-    // Migrate sorteios (subcollection of docs keyed by week)
-    const churchSorteios = await getDocs(collection(db, 'churches', churchId, 'sorteios'));
-    if (churchSorteios.size === 0) {
-      const globalSorteios = await getDocs(collection(db, 'sorteios'));
-      for (const d of globalSorteios.docs) {
-        await setDoc(doc(db, 'churches', churchId, 'sorteios', d.id), d.data());
       }
     }
 
