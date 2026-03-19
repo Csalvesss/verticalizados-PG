@@ -9,10 +9,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
 
-    // Igrejas: todos autenticados leem, só diretores/admins escrevem
+    // Igrejas: todos autenticados leem e criam (auto-seed), só diretores atualizam/deletam
     match /churches/{churchId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null &&
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
         in ['director', 'admin'];
 
