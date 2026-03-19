@@ -17,10 +17,12 @@ import {
 
 import { db } from '../firebase';
 import { Ico } from '../icons';
-import type { Post, CurrentUser, Screen } from '../types';
+import type { Post, Story, CurrentUser, Screen } from '../types';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
 import { StoriesBar } from '../components/StoriesBar';
+import { StoryCreator } from '../components/StoryCreator';
+import { StoryViewer } from '../components/StoryViewer';
 
 interface Props {
   posts: Post[];
@@ -51,6 +53,9 @@ export function FeedScreen({
   const [following, setFollowing] = useState<string[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pinnedFeedPostId, setPinnedFeedPostId] = useState('');
+  const [stories, setStories] = useState<Story[]>([]);
+  const [showStoryCreator, setShowStoryCreator] = useState(false);
+  const [viewingStoryUserId, setViewingStoryUserId] = useState<string | null>(null);
 
   // Load following list from Firestore
   useEffect(() => {
@@ -66,6 +71,18 @@ export function FeedScreen({
   useEffect(() => {
     const uns = onSnapshot(doc(db, 'config', 'pinned'), snap => {
       setPinnedFeedPostId(snap.exists() ? (snap.data().postId || '') : '');
+    });
+    return () => uns();
+  }, []);
+
+  // Listen for active stories (last 24h)
+  useEffect(() => {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const q = query(collection(db, 'stories'), where('createdAt', '>=', cutoff));
+    const uns = onSnapshot(q, snap => {
+      const list: Story[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as Story));
+      list.sort((a, b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0));
+      setStories(list);
     });
     return () => uns();
   }, []);
@@ -418,16 +435,11 @@ export function FeedScreen({
       {/* Stories bar (only on Para você tab) */}
       {tab === 'para-voce' && (
         <StoriesBar
-          posts={posts}
+          stories={stories}
           currentUser={currentUser}
-          onStoryPress={onOpenProfile ? (userId) => {
-            const post = posts.find(p => p.userId === userId);
-            onOpenProfile(userId, post?.user ?? '');
-          } : undefined}
-          onAddStory={() => {
-            document.getElementById('feed-composer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            document.getElementById('feed-composer-input')?.focus();
-          }}
+          activeUserId={viewingStoryUserId}
+          onStoryPress={(userId) => setViewingStoryUserId(userId)}
+          onAddStory={() => setShowStoryCreator(true)}
         />
       )}
 
@@ -638,6 +650,21 @@ export function FeedScreen({
       <style>{`
         .feed-back-btn:hover { background: rgba(240,120,48,0.1) !important; }
       `}</style>
+
+      {/* Story creator modal */}
+      {showStoryCreator && (
+        <StoryCreator currentUser={currentUser} onClose={() => setShowStoryCreator(false)} />
+      )}
+
+      {/* Story viewer */}
+      {viewingStoryUserId && stories.length > 0 && (
+        <StoryViewer
+          stories={stories}
+          startUserId={viewingStoryUserId}
+          currentUid={uid}
+          onClose={() => setViewingStoryUserId(null)}
+        />
+      )}
     </div>
   );
 }
