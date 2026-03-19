@@ -161,19 +161,20 @@ function MainApp({ user }: { user: User }) {
     if (selectedChurch) migrateGlobalDataToChurch(selectedChurch.id);
   }, [selectedChurch?.id]);
 
-  // ── Global data: feed + sorteio (visible to everyone) ───────────────────
+  // ── Global data: feed + sorteio por usuário ─────────────────────────────
   useEffect(() => {
     const unsPosts = onSnapshot(query(collection(db, 'posts'), orderBy('createdAt', 'desc')), snap => {
       setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Post)));
       setFeedLoading(false);
     });
 
-    const unsSorteio = onSnapshot(doc(db, 'sorteios', getWeekKey()), snap => {
+    // Sorteio is personal: each user has their own draw for the week
+    const unsSorteio = onSnapshot(doc(db, 'sorteios', `${user.uid}_${getWeekKey()}`), snap => {
       setSorteioSemana(snap.exists() ? (snap.data() as Sorteio) : null);
     });
 
     return () => { unsPosts(); unsSorteio(); };
-  }, []);
+  }, [user.uid]);
 
   // ── Church-scoped data: songs, cifras, membros, eventos, confirmacoes ────
   useEffect(() => {
