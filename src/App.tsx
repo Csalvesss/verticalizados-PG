@@ -88,6 +88,7 @@ function AuthedApp({ user }: { user: User }) {
 
 // ── MAIN APP (dados globais + roteamento) ─────────────────────────────────────
 function MainApp({ user }: { user: User }) {
+  const { selectedChurch } = useChurch();
   const [adminEmails, setAdminEmails] = useState<string[]>([ADMIN_EMAIL]);
   const isAdmin = adminEmails.includes(user.email || '') || user.email === ADMIN_EMAIL;
   const [profileTarget, setProfileTarget] = useState<string | null>(null);
@@ -182,10 +183,6 @@ function MainApp({ user }: { user: User }) {
       }
     });
 
-    const uns3 = onSnapshot(query(collection(db, 'eventos'), orderBy('data', 'desc')), snap => {
-      setEventos(snap.docs.map(d => ({ id: d.id, ...d.data() } as Evento)));
-    });
-
     const uns4 = onSnapshot(query(collection(db, 'posts'), orderBy('createdAt', 'desc')), snap => {
       setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Post)));
       setFeedLoading(false);
@@ -204,8 +201,18 @@ function MainApp({ user }: { user: User }) {
       setSorteioSemana(snap.exists() ? (snap.data() as Sorteio) : null);
     });
 
-    return () => { uns1(); uns2(); uns3(); uns4(); uns5(); uns6(); uns7(); };
+    return () => { uns1(); uns2(); uns4(); uns5(); uns6(); uns7(); };
   }, []);
+
+  // ── Eventos: scoped to the user's church ─────────────────────────────────
+  useEffect(() => {
+    if (!selectedChurch) { setEventos([]); return; }
+    const unsub = onSnapshot(
+      query(collection(db, 'churches', selectedChurch.id, 'eventos'), orderBy('data', 'desc')),
+      snap => setEventos(snap.docs.map(d => ({ id: d.id, ...d.data() } as Evento)))
+    );
+    return unsub;
+  }, [selectedChurch?.id]);
 
   const goTo = (sc: Screen) => setScreen(sc);
 

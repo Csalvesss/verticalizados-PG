@@ -1,5 +1,107 @@
 import { useState } from 'react';
 import { signInWithGoogleRedirect, registerWithEmail, loginWithEmail, signInWithGoogle } from '../services/authService';
+import { APV_CHURCHES } from '../screens/Onboarding';
+
+const STORAGE_KEY = 'sete_teen_church';
+
+function toSlug(name: string) {
+  return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+
+// ── Inline church picker ──────────────────────────────────────────────────────
+function ChurchPicker({
+  value, onChange, inputStyle,
+}: {
+  value: { name: string; district: string } | null;
+  onChange: (c: { name: string; district: string } | null) => void;
+  inputStyle: React.CSSProperties;
+}) {
+  const [search, setSearch] = useState(value ? value.name : '');
+  const [open, setOpen] = useState(false);
+
+  const filtered = search.trim().length >= 1
+    ? APV_CHURCHES.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.district.toLowerCase().includes(search.toLowerCase())
+      ).slice(0, 7)
+    : [];
+
+  function pick(c: { name: string; district: string }) {
+    setSearch(c.name);
+    setOpen(false);
+    onChange(c);
+  }
+
+  function handleInput(v: string) {
+    setSearch(v);
+    setOpen(true);
+    if (value && v !== value.name) onChange(null);
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <svg style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+          width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={value ? '#BA7517' : '#555'} strokeWidth="2" strokeLinecap="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <input
+          type="text"
+          placeholder="Buscar sua igreja..."
+          value={search}
+          onChange={e => handleInput(e.target.value)}
+          onFocus={() => setOpen(true)}
+          style={{
+            ...inputStyle,
+            paddingLeft: 38,
+            borderColor: value ? '#BA7517' : (inputStyle as any).borderColor,
+          }}
+          autoComplete="off"
+        />
+        {value && (
+          <svg style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BA7517" strokeWidth="2.5" strokeLinecap="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        )}
+      </div>
+      {open && filtered.length > 0 && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200,
+          background: '#1a1a1a', border: '1px solid #333', borderRadius: 12,
+          overflow: 'hidden', maxHeight: 220, overflowY: 'auto',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+        }}>
+          {filtered.map((c, i) => (
+            <button
+              key={c.name}
+              onMouseDown={() => pick(c)}
+              style={{
+                display: 'block', width: '100%', padding: '11px 14px',
+                background: 'transparent', border: 'none',
+                borderBottom: i < filtered.length - 1 ? '1px solid #222' : 'none',
+                color: '#e7e9ea', textAlign: 'left', cursor: 'pointer',
+                fontFamily: 'Barlow, sans-serif', fontSize: 14,
+              }}
+            >
+              {c.name}
+              <span style={{ color: '#555', fontSize: 12, marginLeft: 6 }}>— {c.district}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {value && (
+        <div style={{
+          marginTop: 6, fontFamily: 'Barlow, sans-serif', fontSize: 11, color: '#BA7517',
+          paddingLeft: 2,
+        }}>
+          Distrito: {value.district}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const APP_URL = 'https://verticalizados-pg.netlify.app'; // manter URL do deploy
 
@@ -41,6 +143,7 @@ function IosFirstAccessScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [selectedChurchLocal, setSelectedChurchLocal] = useState<{ name: string; district: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [copied, setCopied] = useState(false);
@@ -55,11 +158,18 @@ function IosFirstAccessScreen() {
   async function handleEmail() {
     if (!email.trim() || !password.trim()) { setErro('Preencha e-mail e senha.'); return; }
     if (mode === 'register' && !name.trim()) { setErro('Informe seu nome.'); return; }
+    if (mode === 'register' && !selectedChurchLocal) { setErro('Selecione sua igreja.'); return; }
     setLoading(true); setErro('');
     try {
-      if (mode === 'register') await registerWithEmail(email.trim(), password, name.trim());
-      else await loginWithEmail(email.trim(), password);
+      if (mode === 'register') {
+        const church = { id: toSlug(selectedChurchLocal!.name), name: selectedChurchLocal!.name, district: selectedChurchLocal!.district, directorUid: null };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(church));
+        await registerWithEmail(email.trim(), password, name.trim());
+      } else {
+        await loginWithEmail(email.trim(), password);
+      }
     } catch (e: any) {
+      if (mode === 'register') localStorage.removeItem(STORAGE_KEY);
       const c = e?.code || '';
       if (c === 'auth/user-not-found' || c === 'auth/wrong-password' || c === 'auth/invalid-credential') setErro('E-mail ou senha incorretos.');
       else if (c === 'auth/email-already-in-use') setErro('E-mail já cadastrado. Escolha "Já tenho conta".');
@@ -245,9 +355,16 @@ function IosFirstAccessScreen() {
               <input
                 type="password" placeholder="Senha" value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleEmail(); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && mode === 'email') handleEmail(); }}
                 style={inputStyle}
               />
+              {mode === 'register' && (
+                <ChurchPicker
+                  value={selectedChurchLocal}
+                  onChange={setSelectedChurchLocal}
+                  inputStyle={inputStyle}
+                />
+              )}
             </div>
 
             {erro && (
@@ -328,17 +445,26 @@ function BrowserLoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [selectedChurchLocal, setSelectedChurchLocal] = useState<{ name: string; district: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
 
   const handleEmail = async () => {
     if (!email.trim() || !password.trim()) { setErro('Preencha todos os campos.'); return; }
     if (mode === 'register' && !name.trim()) { setErro('Informe seu nome.'); return; }
+    if (mode === 'register' && !selectedChurchLocal) { setErro('Selecione sua igreja.'); return; }
     setLoading(true); setErro('');
     try {
-      if (mode === 'register') await registerWithEmail(email.trim(), password, name.trim());
-      else await loginWithEmail(email.trim(), password);
+      if (mode === 'register') {
+        // Save church to localStorage before auth state fires so ChurchProvider finds it
+        const church = { id: toSlug(selectedChurchLocal!.name), name: selectedChurchLocal!.name, district: selectedChurchLocal!.district, directorUid: null };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(church));
+        await registerWithEmail(email.trim(), password, name.trim());
+      } else {
+        await loginWithEmail(email.trim(), password);
+      }
     } catch (e: any) {
+      if (mode === 'register') localStorage.removeItem(STORAGE_KEY);
       const code = e?.code || '';
       if (code === 'auth/email-already-in-use') setErro('Este e-mail já está em uso.');
       else if (code === 'auth/invalid-email') setErro('E-mail inválido.');
@@ -423,8 +549,15 @@ function BrowserLoginScreen() {
             onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
           <input type="password" placeholder="Senha" value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleEmail(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && mode === 'login') handleEmail(); }}
             style={inputStyle} />
+          {mode === 'register' && (
+            <ChurchPicker
+              value={selectedChurchLocal}
+              onChange={setSelectedChurchLocal}
+              inputStyle={inputStyle}
+            />
+          )}
         </div>
 
         {erro && (
