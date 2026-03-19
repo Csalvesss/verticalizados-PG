@@ -1,7 +1,142 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useChurch, type Church } from '../contexts/ChurchContext';
+
+// ── Lista completa de igrejas da APV ─────────────────────────────────────────
+export const APV_CHURCHES: Array<{ name: string; district: string }> = [
+  // São José dos Campos
+  { name: "Altos de Santana", district: "São José dos Campos" },
+  { name: "São José dos Campos", district: "São José dos Campos" },
+  { name: "Santana", district: "São José dos Campos" },
+  { name: "Monteiro Lobato", district: "São José dos Campos" },
+  { name: "Bosque dos Eucaliptos", district: "São José dos Campos" },
+  { name: "Bairro dos Freitas", district: "São José dos Campos" },
+  { name: "Parque Novo Horizonte", district: "São José dos Campos" },
+  { name: "Cidade Soberana", district: "São José dos Campos" },
+  // Guaratinguetá
+  { name: "Guaratinguetá", district: "Guaratinguetá" },
+  { name: "Aparecida", district: "Guaratinguetá" },
+  { name: "Potim", district: "Guaratinguetá" },
+  { name: "Pedregulho", district: "Guaratinguetá" },
+  // Taubaté
+  { name: "Taubaté", district: "Taubaté" },
+  { name: "Terra Nova", district: "Taubaté" },
+  { name: "Gurilândia", district: "Taubaté" },
+  { name: "Redenção da Serra", district: "Taubaté" },
+  // Jacareí
+  { name: "Jacareí", district: "Jacareí" },
+  { name: "Jd. Paraíso", district: "Jacareí" },
+  { name: "Jd. Colonia", district: "Jacareí" },
+  { name: "Santa Branca", district: "Jacareí" },
+  // Caraguatatuba
+  { name: "Caraguatatuba", district: "Caraguatatuba" },
+  { name: "Massaguaçu", district: "Caraguatatuba" },
+  { name: "Morro do Algodão", district: "Caraguatatuba" },
+  { name: "Rio do Ouro", district: "Caraguatatuba" },
+  { name: "Tinga", district: "Caraguatatuba" },
+  // São Sebastião
+  { name: "São Sebastião", district: "São Sebastião" },
+  { name: "Ilhabela", district: "São Sebastião" },
+  { name: "Maresias", district: "São Sebastião" },
+  { name: "Mirante do Itatinga", district: "São Sebastião" },
+  // Ubatuba
+  { name: "Ubatuba", district: "Ubatuba" },
+  { name: "Ubatumirim", district: "Ubatuba" },
+  { name: "Maranduba", district: "Ubatuba" },
+  // Atibaia
+  { name: "Atibaia", district: "Atibaia" },
+  { name: "Bom Jesus dos Perdões", district: "Atibaia" },
+  { name: "Nazaré Paulista", district: "Atibaia" },
+  { name: "Piracaia", district: "Atibaia" },
+  // Bragança Paulista
+  { name: "Bragança Paulista", district: "Bragança Paulista" },
+  { name: "Jardim São Miguel", district: "Bragança Paulista" },
+  { name: "Tanque", district: "Bragança Paulista" },
+  { name: "Pedra Bela", district: "Bragança Paulista" },
+  // Cruzeiro
+  { name: "Cruzeiro", district: "Cruzeiro" },
+  { name: "Queluz", district: "Cruzeiro" },
+  // Lorena
+  { name: "Lorena", district: "Lorena" },
+  { name: "Piquete", district: "Lorena" },
+  { name: "Canas", district: "Lorena" },
+  // Guarulhos
+  { name: "Guarulhos", district: "Guarulhos" },
+  { name: "Gopoúva", district: "Guarulhos" },
+  { name: "Vila Augusta", district: "Guarulhos" },
+  { name: "Itapegica", district: "Guarulhos" },
+  // Mogi das Cruzes
+  { name: "Mogi das Cruzes", district: "Mogi das Cruzes" },
+  { name: "Nipônico", district: "Mogi das Cruzes" },
+  { name: "Taiaçupeba", district: "Mogi das Cruzes" },
+  // Ferraz de Vasconcelos
+  { name: "Ferraz de Vasconcelos", district: "Ferraz de Vasconcelos" },
+  { name: "Nove de Julho", district: "Ferraz de Vasconcelos" },
+  // Poá
+  { name: "Poá", district: "Poá" },
+  { name: "Arizona", district: "Poá" },
+  { name: "Calmon Viana", district: "Poá" },
+  // Suzano
+  { name: "Suzano", district: "Suzano" },
+  { name: "Jd. Leblon", district: "Suzano" },
+  // Aruja
+  { name: "Aruja", district: "Aruja" },
+  { name: "Mirante", district: "Aruja" },
+  { name: "Maria Rosa III", district: "Aruja" },
+  // Itaquaquecetuba
+  { name: "Itaquaquecetuba", district: "Itaquaquecetuba" },
+  { name: "Jd. do Vale", district: "Itaquaquecetuba" },
+  { name: "Monte Belo", district: "Itaquaquecetuba" },
+  // Campos do Jordão
+  { name: "Independência", district: "Campos do Jordão" },
+  { name: "Campos do Jordão", district: "Campos do Jordão" },
+  { name: "São Bento do Sapucaí", district: "Campos do Jordão" },
+  // Biritiba Mirim
+  { name: "Biritiba Mirim", district: "Biritiba Mirim" },
+  { name: "Salesópolis", district: "Biritiba Mirim" },
+  { name: "Cocuéra", district: "Biritiba Mirim" },
+  // Bananal
+  { name: "Bananal", district: "Bananal" },
+  { name: "Boa Esperança", district: "Bananal" },
+  { name: "Fazendinha", district: "Bananal" },
+  // Esperança
+  { name: "Esperança", district: "Esperança" },
+  { name: "Igarapés", district: "Esperança" },
+];
+
+function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
+// Popular o Firestore com as igrejas da APV (executa apenas uma vez)
+async function seedChurchesIfEmpty(): Promise<Church[]> {
+  const churchesRef = collection(db, 'churches');
+  const snap = await getDocs(churchesRef);
+  const existing = snap.docs.map(d => ({ id: d.id, ...d.data() } as Church));
+
+  if (existing.length > 0) return existing;
+
+  // Seed
+  const seeded: Church[] = [];
+  for (const c of APV_CHURCHES) {
+    const id = toSlug(c.name);
+    const church: Church = { id, name: c.name, district: c.district, directorUid: null };
+    await setDoc(doc(churchesRef, id), {
+      ...c,
+      associationId: 'APV',
+      directorUid: null,
+      createdAt: new Date(),
+    }, { merge: true });
+    seeded.push(church);
+  }
+  return seeded;
+}
 
 // ── Splash ────────────────────────────────────────────────────────────────────
 function SplashScreen() {
@@ -76,12 +211,7 @@ function SelectChurchScreen({ groups, search, onSearch, onPick, loading }: Selec
         </div>
 
         {/* Search */}
-        <div style={{
-          marginTop: 16,
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-        }}>
+        <div style={{ marginTop: 16, position: 'relative', display: 'flex', alignItems: 'center' }}>
           <svg style={{ position: 'absolute', left: 12, flexShrink: 0 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
@@ -212,11 +342,28 @@ export function OnboardingScreen({ onDone }: Props) {
   const { setSelectedChurch } = useChurch();
 
   useEffect(() => {
-    const q = query(collection(db, 'churches'), orderBy('district'), orderBy('name'));
-    getDocs(q).then(snap => {
-      setChurches(snap.docs.map(d => ({ id: d.id, ...d.data() } as Church)));
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    // Busca igrejas do Firestore; se vazio, popula automaticamente
+    seedChurchesIfEmpty()
+      .then(list => {
+        // Ordenar: primeiro por distrito, depois por nome
+        const sorted = [...list].sort((a, b) => {
+          const dc = a.district.localeCompare(b.district, 'pt-BR');
+          return dc !== 0 ? dc : a.name.localeCompare(b.name, 'pt-BR');
+        });
+        setChurches(sorted);
+        setLoading(false);
+      })
+      .catch(() => {
+        // Fallback: usar lista local se Firestore falhar
+        const local = APV_CHURCHES.map(c => ({
+          id: toSlug(c.name),
+          name: c.name,
+          district: c.district,
+          directorUid: null,
+        }));
+        setChurches(local);
+        setLoading(false);
+      });
 
     const t = setTimeout(() => setPhase('select'), 2000);
     return () => clearTimeout(t);
@@ -228,6 +375,7 @@ export function OnboardingScreen({ onDone }: Props) {
     c.district.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Agrupar por distrito mantendo a ordem de inserção
   const grouped = filtered.reduce<Record<string, Church[]>>((acc, c) => {
     if (!acc[c.district]) acc[c.district] = [];
     acc[c.district].push(c);
