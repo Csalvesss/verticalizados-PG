@@ -134,6 +134,7 @@ export interface Story {
   mediaUrl: string;
   caption?: string;
   createdAt: import('firebase/firestore').Timestamp | null;
+  expiresAt?: import('firebase/firestore').Timestamp | null;
   seenBy: string[];
 }
 
