@@ -26,16 +26,23 @@ import { NotificacoesScreen } from './screens/Notificacoes';
 import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPerfilScreen } from './screens/UserPerfil';
+import { OnboardingScreen } from './screens/Onboarding';
 import { UserPhotosProvider } from './contexts/UserPhotos';
 import { PWAInstallProvider } from './contexts/PWAInstall';
+import { ChurchProvider, useChurch } from './contexts/ChurchContext';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 
 // ── SPLASH ───────────────────────────────────────────────────────────────────
 function Splash() {
   return (
-    <div style={{ background: '#000', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ background: '#BA7517', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
       <style>{GLOBAL_CSS}</style>
-      <div style={{ fontFamily: 'Bebas Neue', fontSize: 28, color: '#F07830', letterSpacing: 4 }}>VERTICALIZADOS</div>
+      <div style={{ fontFamily: 'system-ui, sans-serif', fontWeight: 900, fontSize: 56, color: '#fff', letterSpacing: -2, lineHeight: 1 }}>
+        <span style={{ color: '#000' }}>7</span>Teen
+      </div>
+      <div style={{ fontFamily: 'system-ui, sans-serif', fontWeight: 600, fontSize: 11, color: 'rgba(0,0,0,0.5)', letterSpacing: 3, textTransform: 'uppercase' }}>
+        Associação Paulista do Vale
+      </div>
     </div>
   );
 }
@@ -46,19 +53,36 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Tenta consumir install token (?t= na URL) — login automático ao abrir PWA
     if (hasInstallToken()) consumeInstallToken();
-
-    // 2. Captura resultado de signInWithRedirect (iOS/Android PWA standalone)
     getRedirectResultOnLoad();
-
-    // 3. Escuta mudanças de auth (inclui resultado dos passos acima)
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setAuthLoading(false); });
     return () => unsub();
   }, []);
 
   if (authLoading) return <Splash />;
   if (!user) return <LoginScreen />;
+
+  return (
+    <ChurchProvider>
+      <AuthedApp user={user} />
+    </ChurchProvider>
+  );
+}
+
+// ── AUTHED APP — handles onboarding + main ────────────────────────────────────
+function AuthedApp({ user }: { user: User }) {
+  const { isChurchSelected } = useChurch();
+  const [showOnboarding, setShowOnboarding] = useState(!isChurchSelected);
+
+  // If church gets deselected (e.g. from profile), show onboarding again
+  useEffect(() => {
+    if (!isChurchSelected) setShowOnboarding(true);
+  }, [isChurchSelected]);
+
+  if (showOnboarding) {
+    return <OnboardingScreen onDone={() => setShowOnboarding(false)} />;
+  }
+
   return <MainApp user={user} />;
 }
 
@@ -72,15 +96,12 @@ function MainApp({ user }: { user: User }) {
   const basePhoto = user.photoURL || null;
   const baseEmail = user.email || '';
 
-  // Track uploaded photo from Firestore
   const [firestorePhoto, setFirestorePhoto] = useState<string | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
-  // Cache setup state in localStorage to avoid flashing SetupPerfil on pull-to-refresh
   const SETUP_KEY = `pg_setup_${user.uid}`;
   const [setupChecked, setSetupChecked] = useState(() => !!localStorage.getItem(SETUP_KEY));
 
   useEffect(() => {
-    // Save basic profile info for search (without marking setup as complete)
     if (user.photoURL) {
       setDoc(doc(db, 'users', user.uid), {
         name: baseName,
@@ -90,19 +111,15 @@ function MainApp({ user }: { user: User }) {
       }, { merge: true });
     }
 
-    // Listen for photoData from Firestore (uploaded via profile edit)
     const uns = onSnapshot(doc(db, 'users', user.uid), snap => {
       const data = snap.data();
       if (data?.photoData) setFirestorePhoto(data.photoData);
-      // All users (including Google) must complete setup with a username
       const done = !!data?.setupComplete || !!data?.username;
       if (done) localStorage.setItem(SETUP_KEY, '1');
-      // Only redirect to setup if Firestore confirms it's not done (never from cache-empty)
       setNeedsSetup(!done && !localStorage.getItem(SETUP_KEY));
       setSetupChecked(true);
     });
 
-    // Auto-register as member for prayer draw
     (async () => {
       if (baseName && baseName !== 'Membro') {
         const snap = await getDocs(query(collection(db, 'membros'), where('nome', '==', baseName)));
@@ -112,7 +129,6 @@ function MainApp({ user }: { user: User }) {
       }
     })();
 
-    // Listen to admin emails config
     const unsAdmins = onSnapshot(doc(db, 'config', 'admins'), snap => {
       if (snap.exists()) {
         const extra: string[] = snap.data().emails || [];
@@ -123,7 +139,6 @@ function MainApp({ user }: { user: User }) {
     return () => { uns(); unsAdmins(); };
   }, [user.uid, baseFullName, basePhoto, baseEmail, baseName]);
 
-  // Use Firestore photo if available (uploaded), otherwise Firebase Auth photo
   const currentUser: CurrentUser = {
     uid: user.uid,
     name: baseName,
@@ -137,7 +152,6 @@ function MainApp({ user }: { user: User }) {
     return saved ?? 'home';
   });
 
-  // ── Dados do Firestore ──────────────────────────────────────────────────────
   const [songs, setSongs] = useState<Song[]>([]);
   const [cifras, setCifras] = useState<Cifra[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
@@ -152,7 +166,6 @@ function MainApp({ user }: { user: User }) {
   }, [screen]);
 
   useEffect(() => {
-    // Músicas — seed automático se vazio
     const uns1 = onSnapshot(query(collection(db, 'songs'), orderBy('ordem')), async snap => {
       if (snap.empty) {
         for (const song of DEFAULT_SONGS) await addDoc(collection(db, 'songs'), song);
@@ -161,7 +174,6 @@ function MainApp({ user }: { user: User }) {
       }
     });
 
-    // Cifras — seed automático se vazio
     const uns2 = onSnapshot(query(collection(db, 'cifras'), orderBy('ordem')), async snap => {
       if (snap.empty) {
         for (const cifra of DEFAULT_CIFRAS) await addDoc(collection(db, 'cifras'), cifra);
@@ -234,7 +246,7 @@ function MainApp({ user }: { user: User }) {
         {screen === 'oracao' && (
           <OracaoScreen
             goTo={goTo}
-            currentUserName={currentUser.name}
+            currentUser={currentUser}
             membrosLista={membrosLista}
             sorteioSemana={sorteioSemana}
             isAdmin={isAdmin}

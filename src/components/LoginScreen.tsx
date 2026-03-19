@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { signInWithGoogleRedirect, registerWithEmail, loginWithEmail, signInWithGoogle } from '../services/authService';
 
-const APP_URL = 'https://verticalizados-pg.netlify.app';
+const APP_URL = 'https://verticalizados-pg.netlify.app'; // manter URL do deploy
 
 function isIosStandalone() {
   return (navigator as any).standalone === true;
@@ -11,19 +11,24 @@ function isAndroidStandalone() {
 }
 
 // ── LOGO ──────────────────────────────────────────────────────────────────────
-function AppLogo({ size = 80, radius = 20 }: { size?: number; radius?: number }) {
+function AppLogo({ size = 80 }: { size?: number }) {
+  const fontSize = size * 0.45;
   return (
     <div style={{
-      width: size, height: size, background: '#F07830', borderRadius: radius,
+      width: size, height: size, background: '#BA7517', borderRadius: size * 0.25,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      boxShadow: '0 12px 40px rgba(240,120,48,0.35)', flexShrink: 0,
+      boxShadow: '0 12px 40px rgba(186,117,23,0.4)', flexShrink: 0,
     }}>
-      <svg width={size * 0.55} height={size * 0.6} viewBox="0 0 48 52" fill="none">
-        <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
-        <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
-        <rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff" />
-        <rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff" />
-      </svg>
+      <span style={{
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontWeight: 900,
+        fontSize,
+        lineHeight: 1,
+        letterSpacing: -2,
+        color: '#fff',
+      }}>
+        <span style={{ color: 'rgba(0,0,0,0.7)' }}>7</span>T
+      </span>
     </div>
   );
 }
@@ -101,13 +106,14 @@ function IosFirstAccessScreen() {
       {/* Logo + título */}
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <div style={{ margin: '0 auto 14px', width: 'fit-content' }}>
-          <AppLogo size={72} radius={18} />
+          <AppLogo size={72} />
         </div>
-        <div style={{ fontFamily: 'Bebas Neue', fontSize: 34, color: '#fff', letterSpacing: 4 }}>
-          VERTICALIZADOS
+        <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 38, lineHeight: 1, letterSpacing: -1 }}>
+          <span style={{ color: '#BA7517' }}>7</span>
+          <span style={{ color: '#fff' }}>Teen</span>
         </div>
-        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#555', marginTop: 2 }}>
-          MJA ESPLANADA
+        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#555', marginTop: 2 }}>
+          ASSOCIAÇÃO PAULISTA DO VALE
         </div>
       </div>
 
@@ -308,7 +314,7 @@ function IosFirstAccessScreen() {
         fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700,
         letterSpacing: 2, color: '#1e1e1e', marginTop: 28,
       }}>
-        VERTICALIZADOS v2.0
+        7TEEN APV v3.0
       </div>
     </div>
   );
@@ -378,13 +384,14 @@ function BrowserLoginScreen() {
 
       <div style={{ marginBottom: 40, textAlign: 'center' }}>
         <div style={{ margin: '0 auto 16px', width: 'fit-content' }}>
-          <AppLogo size={80} radius={20} />
+          <AppLogo size={80} />
         </div>
-        <div style={{ fontFamily: 'Bebas Neue', fontSize: 38, color: '#fff', letterSpacing: 4 }}>
-          VERTICALIZADOS
+        <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 42, lineHeight: 1, letterSpacing: -1 }}>
+          <span style={{ color: '#BA7517' }}>7</span>
+          <span style={{ color: '#fff' }}>Teen</span>
         </div>
         <div style={{ fontFamily: 'Barlow Condensed', fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#71767b', marginTop: 2 }}>
-          MJA ESPLANADA
+          ASSOCIAÇÃO PAULISTA DO VALE
         </div>
       </div>
 
@@ -463,7 +470,7 @@ function BrowserLoginScreen() {
         fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700,
         letterSpacing: 2, color: '#2f3336',
       }}>
-        VERTICALIZADOS v2.0
+        7TEEN APV v3.0
       </div>
     </div>
   );

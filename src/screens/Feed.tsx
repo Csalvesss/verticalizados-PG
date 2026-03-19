@@ -20,6 +20,7 @@ import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
+import { useChurch } from '../contexts/ChurchContext';
 
 interface Props {
   posts: Post[];
@@ -43,6 +44,7 @@ export function FeedScreen({
   onOpenProfile,
 }: Props) {
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
+  const { selectedChurch } = useChurch();
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const [repostingOn, setRepostingOn] = useState<Post | null>(null);
   const [following, setFollowing] = useState<string[]>([]);
@@ -128,6 +130,11 @@ export function FeedScreen({
       comments: [],
       createdAt: serverTimestamp(),
       userEmail: currentUser.email,
+      ...(selectedChurch ? {
+        churchId: selectedChurch.id,
+        churchName: selectedChurch.name,
+        district: selectedChurch.district,
+      } : {}),
     });
   };
 
@@ -314,24 +321,26 @@ export function FeedScreen({
             {Ico.back()}
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 7, overflow: 'hidden', flexShrink: 0 }}>
-              <svg width="28" height="28" viewBox="4 2 34 52" fill="none">
-                <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
-                <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
-                <rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff" />
-                <rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff" />
-                <path d="M26 42 L30 42 L30 50 L28 47 L26 50 Z" fill="#fff" />
-              </svg>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <span style={{
-              fontFamily: 'Bebas Neue, sans-serif',
-              fontSize: 22,
-              letterSpacing: 3,
-              color: '#e7e9ea',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontWeight: 900,
+              fontSize: 20,
+              letterSpacing: -0.5,
               lineHeight: 1,
             }}>
-              FEED
+              <span style={{ color: '#BA7517' }}>7</span>
+              <span style={{ color: '#e7e9ea' }}>Teen</span>
+            </span>
+            <span style={{
+              fontFamily: 'Barlow, sans-serif',
+              fontSize: 9,
+              letterSpacing: 1.5,
+              color: '#555',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+            }}>
+              Toda a APV
             </span>
           </div>
 
@@ -430,7 +439,7 @@ export function FeedScreen({
             Você ainda não segue ninguém
           </div>
           <div style={{ color: '#444', marginBottom: 16 }}>
-            Busque membros do PG e comece a seguir.
+            Busque membros da APV e comece a seguir.
           </div>
           <button
             onClick={() => goTo('buscar')}

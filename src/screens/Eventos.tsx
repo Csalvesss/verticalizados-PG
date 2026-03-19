@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { Ico } from '../icons';
 import { LANCHES } from '../constants';
 import { useUserPhoto, useUserName } from '../contexts/UserPhotos';
+import { useChurch } from '../contexts/ChurchContext';
 import type { Evento, Confirmacao, CurrentUser, Screen } from '../types';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ interface Props {
 export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }: Props) {
   const [lanche, setLanche] = useState<string | null>(null);
   const [editando, setEditando] = useState(false);
+  const { selectedChurch } = useChurch();
   const prox = eventos[0] || null;
   const euConfirmei = confirmacoes.find(c => c.userId === uid && c.eventoId === prox?.id);
   const lista = confirmacoes.filter(c => c.eventoId === prox?.id);
@@ -104,10 +106,17 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
           padding: 6, borderRadius: '50%', background: 'transparent',
           border: 'none', cursor: 'pointer', display: 'flex', marginRight: 10,
         }}>{Ico.back()}</button>
-        <span style={{
-          fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
-          fontSize: 18, color: '#fff', letterSpacing: 0.5, flex: 1,
-        }}>Eventos</span>
+        <div style={{ flex: 1 }}>
+          <span style={{
+            fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
+            fontSize: 18, color: '#fff', letterSpacing: 0.5,
+          }}>Eventos</span>
+          {selectedChurch && (
+            <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 10, color: '#BA7517', marginTop: 1 }}>
+              {selectedChurch.name}
+            </div>
+          )}
+        </div>
         {lista.length > 0 && (
           <span style={{
             fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,

@@ -13,7 +13,8 @@ export type Screen =
   | 'notificacoes'
   | 'buscar'
   | 'jogandoEmComunhao'
-  | 'userPerfil';
+  | 'userPerfil'
+  | 'onboarding';
 
 export interface CurrentUser {
   uid: string;

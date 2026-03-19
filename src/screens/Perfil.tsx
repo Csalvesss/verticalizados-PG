@@ -4,6 +4,7 @@ import { doc, setDoc, deleteDoc, getDoc, getDocs, collection, query, where, upda
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { Avatar } from '../components/Avatar';
+import { useChurch } from '../contexts/ChurchContext';
 import type { CurrentUser, Screen, Post, UserProfile } from '../types';
 
 function toUsername(name: string): string {
@@ -51,6 +52,7 @@ export function PerfilScreen({
   const [tab, setTab] = useState<Tab>('posts');
   const [followingCount, setFollowingCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
+  const { selectedChurch, clearChurch } = useChurch();
   const [followListModal, setFollowListModal] = useState<'seguindo' | 'seguidores' | null>(null);
   const [followListUsers, setFollowListUsers] = useState<UserProfile[]>([]);
   const [followListLoading, setFollowListLoading] = useState(false);
@@ -298,14 +300,56 @@ export function PerfilScreen({
             {/* Group badge */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'rgba(240,120,48,0.08)', border: '1px solid rgba(240,120,48,0.18)',
+              background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.18)',
               borderRadius: 20, padding: '4px 10px',
             }}>
-              <div style={{ width: 6, height: 6, background: '#F07830', borderRadius: '50%', flexShrink: 0 }} />
-              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 10, letterSpacing: 1.2, color: '#F07830' }}>
-                VERTICALIZADOS · MJA ESPLANADA
+              <div style={{ width: 6, height: 6, background: '#BA7517', borderRadius: '50%', flexShrink: 0 }} />
+              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 10, letterSpacing: 1.2, color: '#BA7517' }}>
+                7TEEN · ASSOCIAÇÃO PAULISTA DO VALE
               </span>
             </div>
+
+            {/* Church section */}
+            {selectedChurch && (
+              <div style={{
+                marginTop: 12,
+                background: '#0d0d0d',
+                border: '1px solid #1e1e1e',
+                borderRadius: 12,
+                padding: '12px 14px',
+              }}>
+                <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 2, color: '#444', marginBottom: 8, textTransform: 'uppercase' }}>
+                  Minha Igreja
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 600, fontSize: 14, color: '#e7e9ea' }}>
+                      {selectedChurch.name}
+                    </div>
+                    <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#185FA5', marginTop: 2 }}>
+                      {selectedChurch.district}
+                    </div>
+                  </div>
+                  <button
+                    onClick={clearChurch}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #2a2a2a',
+                      borderRadius: 20,
+                      padding: '6px 14px',
+                      cursor: 'pointer',
+                      fontFamily: 'Barlow Condensed, sans-serif',
+                      fontWeight: 700,
+                      fontSize: 11,
+                      color: '#555',
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    TROCAR
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right: Avatar */}
