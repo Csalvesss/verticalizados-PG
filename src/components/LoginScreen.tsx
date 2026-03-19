@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { registerWithEmail, loginWithEmail } from '../services/authService';
+import { registerWithEmail, loginWithEmail, resetPassword } from '../services/authService';
 import { APV_CHURCHES } from '../screens/Onboarding';
 
 const STORAGE_KEY = 'sete_teen_church';
@@ -403,6 +403,20 @@ function BrowserLoginScreen() {
   const [selectedChurchLocal, setSelectedChurchLocal] = useState<{ name: string; district: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleReset = async () => {
+    if (!email.trim()) { setErro('Digite seu e-mail acima primeiro.'); return; }
+    setLoading(true); setErro('');
+    try {
+      await resetPassword(email.trim());
+      setResetSent(true);
+    } catch {
+      setErro('Não foi possível enviar. Verifique o e-mail.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEmail = async () => {
     if (!email.trim() || !password.trim()) { setErro('Preencha todos os campos.'); return; }
@@ -519,6 +533,24 @@ function BrowserLoginScreen() {
         }}>
           {loading ? 'Aguarde...' : mode === 'register' ? 'Criar Conta' : 'Entrar'}
         </button>
+
+        {mode === 'login' && (
+          <div style={{ textAlign: 'center', marginTop: 14 }}>
+            {resetSent ? (
+              <span style={{ fontFamily: 'Barlow', fontSize: 13, color: '#4caf50' }}>
+                E-mail de redefinição enviado! Verifique sua caixa de entrada.
+              </span>
+            ) : (
+              <button onClick={handleReset} disabled={loading} style={{
+                background: 'none', border: 'none', color: '#71767b',
+                fontFamily: 'Barlow', fontSize: 13, cursor: 'pointer',
+                textDecoration: 'underline', padding: 0,
+              }}>
+                Esqueci minha senha
+              </button>
+            )}
+          </div>
+        )}
 
       </div>
 
