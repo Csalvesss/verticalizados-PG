@@ -50,11 +50,15 @@ export function OracaoScreen({
 
   // ── Draw state ──────────────────────────────────────────────────────────────
   const [sorteando, setSorteando] = useState(false);
-  const sorteadoAtual = sorteioSemana?.sorteado || null;
-  const jaOrou = sorteioSemana?.historico || [];
+  // Validate drawn person is still in the members list
+  const sorteadoAtual = (sorteioSemana?.sorteado && membrosLista.includes(sorteioSemana.sorteado))
+    ? sorteioSemana.sorteado
+    : null;
+  const jaOrou = sorteioSemana?.historico?.filter(m => membrosLista.includes(m)) || [];
   const disponiveis = membrosLista.filter(
     (m) => m !== currentUserName && !jaOrou.includes(m)
   );
+  const userSorteioKey = `${currentUser.uid}_${getWeekKey()}`;
 
   // ── Prayer requests state ────────────────────────────────────────────────────
   const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
@@ -87,7 +91,7 @@ export function OracaoScreen({
         clearInterval(iv);
         const escolhido = pool[Math.floor(Math.random() * pool.length)];
         await setDoc(
-          doc(db, 'sorteios', getWeekKey()),
+          doc(db, 'sorteios', userSorteioKey),
           {
             sorteado: escolhido,
             historico: arrayUnion(escolhido),
@@ -102,7 +106,7 @@ export function OracaoScreen({
 
   const resetar = async () => {
     if (!window.confirm('Resetar o sorteio desta semana?')) return;
-    await deleteDoc(doc(db, 'sorteios', getWeekKey()));
+    await deleteDoc(doc(db, 'sorteios', userSorteioKey));
   };
 
   const submitPrayer = async () => {
