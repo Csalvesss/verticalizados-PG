@@ -236,47 +236,11 @@ export function PerfilScreen({
         }}>{Ico.logout()}</button>
       </div>
 
-      {/* ── Cover banner ── */}
-      <div style={{
-        height: 120,
-        position: 'relative',
-        overflow: 'hidden',
-        flexShrink: 0,
-        background: '#111',
-      }}>
-        {/* Blurred photo background (Instagram style) */}
-        {currentUser.photo ? (
-          <img
-            src={currentUser.photo}
-            alt=""
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'cover',
-              filter: 'blur(18px) saturate(1.6) brightness(0.72)',
-              transform: 'scale(1.18)',
-              pointerEvents: 'none',
-            }}
-          />
-        ) : (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(135deg, #1a0a00 0%, #2d1500 50%, #1a0a00 100%)',
-          }} />
-        )}
-        {/* Bottom fade so avatar overlaps cleanly */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, transparent 50%, rgba(15,15,15,0.85) 100%)',
-          pointerEvents: 'none',
-        }} />
-      </div>
-
       {/* ── Profile Card ── */}
       <div style={{ padding: '0 20px 0' }}>
 
-        {/* Avatar overlapping banner */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: -46, marginBottom: 14 }}>
+        {/* Avatar */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 20, marginBottom: 14 }}>
           <div style={{
             width: 90, height: 90, borderRadius: '50%', padding: 3, flexShrink: 0,
             background: 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)',
