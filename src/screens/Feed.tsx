@@ -420,7 +420,10 @@ export function FeedScreen({
         <StoriesBar
           posts={posts}
           currentUser={currentUser}
-          onStoryPress={onOpenProfile}
+          onStoryPress={onOpenProfile ? (userId) => {
+            const post = posts.find(p => p.userId === userId);
+            onOpenProfile(userId, post?.user ?? '');
+          } : undefined}
         />
       )}
 
