@@ -4,6 +4,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
 import { auth } from './firebase';
 import { consumeInstallToken, hasInstallToken } from './hooks/useInstallTransfer';
+import { migrateGlobalDataToChurch } from './utils/migration';
 import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './constants';
 import { GLOBAL_CSS, s } from './styles';
 import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio } from './types';
@@ -154,6 +155,11 @@ function MainApp({ user }: { user: User }) {
   useEffect(() => {
     window.localStorage.setItem('pg:screen', screen);
   }, [screen]);
+
+  // ── One-time migration from global collections to church-scoped ─────────
+  useEffect(() => {
+    if (selectedChurch) migrateGlobalDataToChurch(selectedChurch.id);
+  }, [selectedChurch?.id]);
 
   // ── All data scoped to the selected church ───────────────────────────────
   useEffect(() => {
