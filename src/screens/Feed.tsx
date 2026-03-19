@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   collection,
   addDoc,
@@ -54,8 +54,9 @@ export function FeedScreen({
   const [unreadCount, setUnreadCount] = useState(0);
   const [pinnedFeedPostId, setPinnedFeedPostId] = useState('');
   const [stories, setStories] = useState<Story[]>([]);
-  const [showStoryCreator, setShowStoryCreator] = useState(false);
+  const [pendingStoryImage, setPendingStoryImage] = useState<string | null>(null);
   const [viewingStoryUserId, setViewingStoryUserId] = useState<string | null>(null);
+  const storyFileRef = useRef<HTMLInputElement>(null);
 
   // Load following list from Firestore
   useEffect(() => {
@@ -272,6 +273,34 @@ export function FeedScreen({
     await deleteDoc(postRef(id));
   };
 
+  // Opens the native file picker directly in the user's click context (iOS Safari requirement)
+  const handleAddStory = useCallback(() => {
+    storyFileRef.current?.click();
+  }, []);
+
+  const handleStoryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (!ev.target?.result) return;
+      const dataUrl = ev.target.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const MAX_W = 1080;
+        const ratio = Math.min(1, MAX_W / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setPendingStoryImage(canvas.toDataURL('image/jpeg', 0.80));
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   const handleComment = (postId: string) => {
     setCommentingOn(commentingOn === postId ? null : postId);
   };
@@ -432,6 +461,15 @@ export function FeedScreen({
         </div>
       </div>
 
+      {/* Hidden file input — always in DOM, triggered directly by user gesture */}
+      <input
+        ref={storyFileRef}
+        type="file"
+        accept="image/*,video/*"
+        style={{ display: 'none' }}
+        onChange={handleStoryFileChange}
+      />
+
       {/* Stories bar (only on Para você tab) */}
       {tab === 'para-voce' && (
         <StoriesBar
@@ -439,7 +477,7 @@ export function FeedScreen({
           currentUser={currentUser}
           activeUserId={viewingStoryUserId}
           onStoryPress={(userId) => setViewingStoryUserId(userId)}
-          onAddStory={() => setShowStoryCreator(true)}
+          onAddStory={handleAddStory}
         />
       )}
 
@@ -651,9 +689,13 @@ export function FeedScreen({
         .feed-back-btn:hover { background: rgba(240,120,48,0.1) !important; }
       `}</style>
 
-      {/* Story creator modal */}
-      {showStoryCreator && (
-        <StoryCreator currentUser={currentUser} onClose={() => setShowStoryCreator(false)} />
+      {/* Story confirmation sheet — appears after photo is chosen */}
+      {pendingStoryImage && (
+        <StoryCreator
+          currentUser={currentUser}
+          initialImage={pendingStoryImage}
+          onClose={() => setPendingStoryImage(null)}
+        />
       )}
 
       {/* Story viewer */}
