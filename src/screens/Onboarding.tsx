@@ -394,28 +394,35 @@ function toSlug(name: string): string {
     .replace(/[^a-z0-9-]/g, '');
 }
 
-// Popular o Firestore com as igrejas da APV (executa apenas uma vez)
+// Retorna sempre a lista local (fonte da verdade).
+// Em background, garante que o Firestore tem todas as igrejas atualizadas.
 async function seedChurchesIfEmpty(): Promise<Church[]> {
+  const local: Church[] = APV_CHURCHES.map(c => ({
+    id: toSlug(c.name),
+    name: c.name,
+    district: c.district,
+    directorUid: null,
+  }));
+
+  // Background: seed igrejas que ainda não existem no Firestore
   const churchesRef = collection(db, 'churches');
-  const snap = await getDocs(churchesRef);
-  const existing = snap.docs.map(d => ({ id: d.id, ...d.data() } as Church));
+  getDocs(churchesRef).then(snap => {
+    const existingIds = new Set(snap.docs.map(d => d.id));
+    for (const c of APV_CHURCHES) {
+      const id = toSlug(c.name);
+      if (!existingIds.has(id)) {
+        setDoc(doc(churchesRef, id), {
+          name: c.name,
+          district: c.district,
+          associationId: 'APV',
+          directorUid: null,
+          createdAt: new Date(),
+        }, { merge: true }).catch(() => {});
+      }
+    }
+  }).catch(() => {});
 
-  if (existing.length > 0) return existing;
-
-  // Seed
-  const seeded: Church[] = [];
-  for (const c of APV_CHURCHES) {
-    const id = toSlug(c.name);
-    const church: Church = { id, name: c.name, district: c.district, directorUid: null };
-    await setDoc(doc(churchesRef, id), {
-      ...c,
-      associationId: 'APV',
-      directorUid: null,
-      createdAt: new Date(),
-    }, { merge: true });
-    seeded.push(church);
-  }
-  return seeded;
+  return local;
 }
 
 // ── Splash ────────────────────────────────────────────────────────────────────
