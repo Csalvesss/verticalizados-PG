@@ -17,6 +17,7 @@ import { Ico } from '../icons';
 import { s } from '../styles';
 import { ADMIN_EMAIL } from '../constants';
 import { Avatar } from './Avatar';
+import { useChurch } from '../contexts/ChurchContext';
 import type { Song, Cifra, Evento, UserProfile } from '../types';
 
 type Tab = 'songs' | 'cifras' | 'eventos' | 'membros' | 'usuarios';
@@ -31,6 +32,9 @@ interface Props {
 }
 
 export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmails }: Props) {
+  const { selectedChurch } = useChurch();
+  const cRef = (col: string) => collection(db, 'churches', selectedChurch!.id, col);
+  const cDoc = (col: string, id: string) => doc(db, 'churches', selectedChurch!.id, col, id);
   const [tab, setTab] = useState<Tab>('songs');
   const [form, setForm] = useState<Partial<Song & Cifra & Evento & { nome: string }> | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -60,9 +64,9 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
         sections: form.sections || [],
       };
       if (editId) {
-        await updateDoc(doc(db, 'songs', editId), d);
+        await updateDoc(cDoc('songs', editId), d);
       } else {
-        await addDoc(collection(db, 'songs'), d);
+        await addDoc(cRef('songs'), d);
       }
     }
     if (tab === 'cifras' && form.title) {
@@ -73,9 +77,9 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
         ordem: editId ? (form.ordem ?? cifras.length) : cifras.length,
       };
       if (editId) {
-        await updateDoc(doc(db, 'cifras', editId), d);
+        await updateDoc(cDoc('cifras', editId), d);
       } else {
-        await addDoc(collection(db, 'cifras'), d);
+        await addDoc(cRef('cifras'), d);
       }
     }
     if (tab === 'eventos' && form.tema) {
@@ -86,27 +90,27 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
         local: form.local || '',
       };
       if (editId) {
-        await updateDoc(doc(db, 'eventos', editId), d);
+        await updateDoc(cDoc('eventos', editId), d);
       } else {
-        await addDoc(collection(db, 'eventos'), d);
+        await addDoc(cRef('eventos'), d);
       }
     }
     if (tab === 'membros' && form.nome)
-      await addDoc(collection(db, 'membros'), { nome: form.nome });
+      await addDoc(cRef('membros'), { nome: form.nome });
     setForm(null);
     setEditId(null);
   };
 
   const deletar = async (col: string, id: string) => {
     if (!window.confirm('Apagar?')) return;
-    await deleteDoc(doc(db, col, id));
+    await deleteDoc(cDoc(col, id));
   };
 
   const deletarMembro = async (nome: string) => {
     if (!window.confirm(`Remover ${nome}?`)) return;
-    const snap = await getDocs(query(collection(db, 'membros')));
+    const snap = await getDocs(query(cRef('membros')));
     const found = snap.docs.find((d) => d.data().nome === nome);
-    if (found) await deleteDoc(doc(db, 'membros', found.id));
+    if (found) await deleteDoc(found.ref);
   };
 
   const deletarUsuario = async (user: UserProfile) => {
@@ -114,18 +118,18 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
     setDeletingUid(user.uid);
     try {
       // Delete posts
-      const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', user.uid)));
-      for (const d of postsSnap.docs) await deleteDoc(doc(db, 'posts', d.id));
+      const postsSnap = await getDocs(query(cRef('posts'), where('userId', '==', user.uid)));
+      for (const d of postsSnap.docs) await deleteDoc(d.ref);
 
       // Delete confirmações (attendance)
-      const confSnap = await getDocs(query(collection(db, 'confirmacoes'), where('userId', '==', user.uid)));
-      for (const d of confSnap.docs) await deleteDoc(doc(db, 'confirmacoes', d.id));
+      const confSnap = await getDocs(query(cRef('confirmacoes'), where('userId', '==', user.uid)));
+      for (const d of confSnap.docs) await deleteDoc(d.ref);
 
       // Delete membros entry (by first name)
       const firstName = (user.name || user.fullName || '').split(' ')[0];
       if (firstName) {
-        const membrosSnap = await getDocs(query(collection(db, 'membros'), where('nome', '==', firstName)));
-        for (const d of membrosSnap.docs) await deleteDoc(doc(db, 'membros', d.id));
+        const membrosSnap = await getDocs(query(cRef('membros'), where('nome', '==', firstName)));
+        for (const d of membrosSnap.docs) await deleteDoc(d.ref);
       }
 
       // Delete follows doc

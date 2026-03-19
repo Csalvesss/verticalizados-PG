@@ -87,7 +87,7 @@ export function OracaoScreen({
         clearInterval(iv);
         const escolhido = pool[Math.floor(Math.random() * pool.length)];
         await setDoc(
-          doc(db, 'sorteios', getWeekKey()),
+          doc(db, 'churches', selectedChurch!.id, 'sorteios', getWeekKey()),
           {
             sorteado: escolhido,
             historico: arrayUnion(escolhido),
@@ -102,7 +102,7 @@ export function OracaoScreen({
 
   const resetar = async () => {
     if (!window.confirm('Resetar o sorteio desta semana?')) return;
-    await deleteDoc(doc(db, 'sorteios', getWeekKey()));
+    await deleteDoc(doc(db, 'churches', selectedChurch!.id, 'sorteios', getWeekKey()));
   };
 
   const submitPrayer = async () => {

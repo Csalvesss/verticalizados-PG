@@ -3,7 +3,6 @@ import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDocs, w
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
 import { auth } from './firebase';
-import { getRedirectResultOnLoad } from './services/authService';
 import { consumeInstallToken, hasInstallToken } from './hooks/useInstallTransfer';
 import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './constants';
 import { GLOBAL_CSS, s } from './styles';
@@ -54,7 +53,6 @@ export default function App() {
 
   useEffect(() => {
     if (hasInstallToken()) consumeInstallToken();
-    getRedirectResultOnLoad();
     const unsub = onAuthStateChanged(auth, u => { setUser(u); setAuthLoading(false); });
     return () => unsub();
   }, []);
@@ -121,15 +119,6 @@ function MainApp({ user }: { user: User }) {
       setSetupChecked(true);
     });
 
-    (async () => {
-      if (baseName && baseName !== 'Membro') {
-        const snap = await getDocs(query(collection(db, 'membros'), where('nome', '==', baseName)));
-        if (snap.empty) {
-          await addDoc(collection(db, 'membros'), { nome: baseName });
-        }
-      }
-    })();
-
     const unsAdmins = onSnapshot(doc(db, 'config', 'admins'), snap => {
       if (snap.exists()) {
         const extra: string[] = snap.data().emails || [];
@@ -166,53 +155,64 @@ function MainApp({ user }: { user: User }) {
     window.localStorage.setItem('pg:screen', screen);
   }, [screen]);
 
+  // ── All data scoped to the selected church ───────────────────────────────
   useEffect(() => {
-    const uns1 = onSnapshot(query(collection(db, 'songs'), orderBy('ordem')), async snap => {
+    if (!selectedChurch) {
+      setSongs([]); setCifras([]); setPosts([]); setConfirmacoes([]);
+      setMembrosLista([]); setSorteioSemana(null); setEventos([]);
+      setFeedLoading(false);
+      return;
+    }
+    const cid = selectedChurch.id;
+    const cRef = (col: string) => collection(db, 'churches', cid, col);
+
+    // Register member in this church
+    if (baseName && baseName !== 'Membro') {
+      getDocs(query(cRef('membros'), where('nome', '==', baseName))).then(snap => {
+        if (snap.empty) addDoc(cRef('membros'), { nome: baseName });
+      });
+    }
+
+    const uns1 = onSnapshot(query(cRef('songs'), orderBy('ordem')), async snap => {
       if (snap.empty) {
-        for (const song of DEFAULT_SONGS) await addDoc(collection(db, 'songs'), song);
+        for (const song of DEFAULT_SONGS) await addDoc(cRef('songs'), song);
       } else {
         setSongs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Song)));
       }
     });
 
-    const uns2 = onSnapshot(query(collection(db, 'cifras'), orderBy('ordem')), async snap => {
+    const uns2 = onSnapshot(query(cRef('cifras'), orderBy('ordem')), async snap => {
       if (snap.empty) {
-        for (const cifra of DEFAULT_CIFRAS) await addDoc(collection(db, 'cifras'), cifra);
+        for (const cifra of DEFAULT_CIFRAS) await addDoc(cRef('cifras'), cifra);
       } else {
         setCifras(snap.docs.map(d => ({ id: d.id, ...d.data() } as Cifra)));
       }
     });
 
-    const uns4 = onSnapshot(query(collection(db, 'posts'), orderBy('createdAt', 'desc')), snap => {
+    const uns4 = onSnapshot(query(cRef('posts'), orderBy('createdAt', 'desc')), snap => {
       setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Post)));
       setFeedLoading(false);
     });
 
-    const uns5 = onSnapshot(collection(db, 'confirmacoes'), snap => {
+    const uns5 = onSnapshot(cRef('confirmacoes'), snap => {
       setConfirmacoes(snap.docs.map(d => ({ id: d.id, ...d.data() } as Confirmacao)));
     });
 
-    const uns6 = onSnapshot(collection(db, 'membros'), snap => {
+    const uns6 = onSnapshot(cRef('membros'), snap => {
       if (snap.docs.length > 0) setMembrosLista(snap.docs.map(d => d.data().nome as string));
     });
 
-    const semana = getWeekKey();
-    const uns7 = onSnapshot(doc(db, 'sorteios', semana), snap => {
+    const uns7 = onSnapshot(doc(db, 'churches', cid, 'sorteios', getWeekKey()), snap => {
       setSorteioSemana(snap.exists() ? (snap.data() as Sorteio) : null);
     });
 
-    return () => { uns1(); uns2(); uns4(); uns5(); uns6(); uns7(); };
-  }, []);
-
-  // ── Eventos: scoped to the user's church ─────────────────────────────────
-  useEffect(() => {
-    if (!selectedChurch) { setEventos([]); return; }
-    const unsub = onSnapshot(
-      query(collection(db, 'churches', selectedChurch.id, 'eventos'), orderBy('data', 'desc')),
+    const uns8 = onSnapshot(
+      query(cRef('eventos'), orderBy('data', 'desc')),
       snap => setEventos(snap.docs.map(d => ({ id: d.id, ...d.data() } as Evento)))
     );
-    return unsub;
-  }, [selectedChurch?.id]);
+
+    return () => { uns1(); uns2(); uns4(); uns5(); uns6(); uns7(); uns8(); };
+  }, [selectedChurch?.id, baseName]);
 
   const goTo = (sc: Screen) => setScreen(sc);
 
