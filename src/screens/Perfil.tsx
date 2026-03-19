@@ -208,12 +208,12 @@ export function PerfilScreen({
   }
 
   return (
-    <div style={{ background: '#000', minHeight: '100%' }}>
+    <div style={{ background: '#0f0f0f', minHeight: '100%' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', padding: '12px 16px',
         borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(14px)',
+        background: 'rgba(15,15,15,0.95)', backdropFilter: 'blur(14px)',
       }}>
         <button onClick={() => goTo('home')} style={{
           padding: 6, borderRadius: '50%', background: 'transparent',
@@ -236,90 +236,114 @@ export function PerfilScreen({
         }}>{Ico.logout()}</button>
       </div>
 
+      {/* ── Cover banner ── */}
+      <div style={{
+        height: 110,
+        background: 'linear-gradient(135deg, #1a0d00 0%, #2d1500 40%, #1a0a00 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(135deg, rgba(240,120,48,0.3) 0%, rgba(212,98,26,0.15) 60%, rgba(186,117,23,0.1) 100%)',
+        }} />
+        {/* subtle geometric decoration */}
+        <div style={{
+          position: 'absolute', top: -30, right: -30,
+          width: 160, height: 160, borderRadius: '50%',
+          border: '1px solid rgba(240,120,48,0.1)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: -40, left: -20,
+          width: 120, height: 120, borderRadius: '50%',
+          border: '1px solid rgba(186,117,23,0.08)',
+          pointerEvents: 'none',
+        }} />
+      </div>
+
       {/* ── Profile Card ── */}
-      <div style={{ padding: '24px 20px 0' }}>
+      <div style={{ padding: '0 20px 0' }}>
 
-        {/* Row: info left + avatar right */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-
-          {/* Left: name, username, bio, link, badge */}
-          <div style={{ flex: 1, paddingRight: 20 }}>
-            {/* Name */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
-              <span style={{
-                fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
-                fontSize: 24, color: '#fff', letterSpacing: 0.2, lineHeight: 1.1,
-              }}>
-                {currentUser.fullName}
-              </span>
-              {isAdmin && (
-                <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: '#F07830', flexShrink: 0 }}>
-                  <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.71 4.2L6.8 12.46l1.41-1.42 2.26 2.26 4.8-5.23 1.47 1.35-6.2 6.78z" />
-                </svg>
-              )}
-            </div>
-
-            {/* Username */}
-            <div style={{
-              fontFamily: 'Barlow, sans-serif', fontSize: 14,
-              color: '#71767b', marginBottom: bio ? 12 : 12,
-            }}>
-              {displayUsername}
-            </div>
-
-            {/* Bio */}
-            {bio && (
-              <div style={{
-                fontFamily: 'Barlow, sans-serif', fontSize: 14.5, color: '#e7e9ea',
-                lineHeight: 1.55, marginBottom: 10,
-                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-              }}>
-                {bio}
-              </div>
-            )}
-
-            {/* Link */}
-            {link && (
-              <a
-                href={normalizeLink(link)}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  fontFamily: 'Barlow, sans-serif', fontSize: 13.5, color: '#F07830',
-                  textDecoration: 'none', marginBottom: 12,
-                }}
-              >
-                <IcoLink />
-                <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(240,120,48,0.5)' }}>
-                  {link.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
-                </span>
-              </a>
-            )}
-
-            {/* Group badge */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.18)',
-              borderRadius: 20, padding: '4px 10px',
-            }}>
-              <div style={{ width: 6, height: 6, background: '#BA7517', borderRadius: '50%', flexShrink: 0 }} />
-              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 10, letterSpacing: 1.2, color: '#BA7517' }}>
-                7TEEN · ASSOCIAÇÃO PAULISTA DO VALE
-              </span>
-            </div>
-
-          </div>
-
-          {/* Right: Avatar */}
+        {/* Avatar overlapping banner */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: -46, marginBottom: 14 }}>
           <div style={{
-            width: 84, height: 84, borderRadius: '50%', padding: 3, flexShrink: 0,
+            width: 90, height: 90, borderRadius: '50%', padding: 3, flexShrink: 0,
             background: 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
           }}>
             <img src={currentUser.photo} alt="" style={{
               width: '100%', height: '100%', borderRadius: '50%',
-              objectFit: 'cover', border: '3px solid #000', display: 'block',
+              objectFit: 'cover', border: '4px solid #0f0f0f', display: 'block',
             }} />
+          </div>
+        </div>
+
+        {/* Name + admin badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+          <span style={{
+            fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
+            fontSize: 24, color: '#fff', letterSpacing: 0.2, lineHeight: 1.1,
+          }}>
+            {currentUser.fullName}
+          </span>
+          {isAdmin && (
+            <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: '#F07830', flexShrink: 0 }}>
+              <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.71 4.2L6.8 12.46l1.41-1.42 2.26 2.26 4.8-5.23 1.47 1.35-6.2 6.78z" />
+            </svg>
+          )}
+        </div>
+
+        {/* Username */}
+        <div style={{
+          fontFamily: 'Barlow, sans-serif', fontSize: 14,
+          color: '#71767b', marginBottom: 12,
+        }}>
+          {displayUsername}
+        </div>
+
+        {/* Bio */}
+        {bio && (
+          <div style={{
+            fontFamily: 'Barlow, sans-serif', fontSize: 14.5, color: '#e7e9ea',
+            lineHeight: 1.55, marginBottom: 10,
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          }}>
+            {bio}
+          </div>
+        )}
+
+        {/* Link */}
+        {link && (
+          <a
+            href={normalizeLink(link)}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontFamily: 'Barlow, sans-serif', fontSize: 13.5, color: '#F07830',
+              textDecoration: 'none', marginBottom: 12,
+            }}
+          >
+            <IcoLink />
+            <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(240,120,48,0.5)' }}>
+              {link.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
+            </span>
+          </a>
+        )}
+
+        {/* Group badge */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.18)',
+            borderRadius: 20, padding: '4px 10px',
+          }}>
+            <div style={{ width: 6, height: 6, background: '#BA7517', borderRadius: '50%', flexShrink: 0 }} />
+            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 10, letterSpacing: 1.2, color: '#BA7517' }}>
+              7TEEN · ASSOCIAÇÃO PAULISTA DO VALE
+            </span>
           </div>
         </div>
 
@@ -395,7 +419,7 @@ export function PerfilScreen({
       <div style={{
         display: 'flex',
         borderBottom: '1px solid #1a1a1a',
-        position: 'sticky', top: 49, background: '#000', zIndex: 40,
+        position: 'sticky', top: 49, background: '#0f0f0f', zIndex: 40,
       }}>
         {([
           { id: 'posts' as Tab, label: 'Posts' },
@@ -454,7 +478,7 @@ export function PerfilScreen({
                   }}>
                     <img src={currentUser.photo} alt="" style={{
                       width: '100%', height: '100%', borderRadius: '50%',
-                      objectFit: 'cover', border: '2px solid #000', display: 'block',
+                      objectFit: 'cover', border: '2px solid #0f0f0f', display: 'block',
                     }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
