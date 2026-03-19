@@ -99,7 +99,7 @@ export function Composer({
       gap: 12,
       padding: '12px 14px',
       borderBottom: '1px solid #1a1a1a',
-      background: '#000',
+      background: '#0f0f0f',
       alignItems: 'flex-start',
     }}>
       {/* Avatar with subtle gradient ring */}
@@ -119,6 +119,7 @@ export function Composer({
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <textarea
+          id="feed-composer-input"
           ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}

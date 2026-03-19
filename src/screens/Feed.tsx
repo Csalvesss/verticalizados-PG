@@ -424,12 +424,18 @@ export function FeedScreen({
             const post = posts.find(p => p.userId === userId);
             onOpenProfile(userId, post?.user ?? '');
           } : undefined}
+          onAddStory={() => {
+            document.getElementById('feed-composer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('feed-composer-input')?.focus();
+          }}
         />
       )}
 
       {/* Composer (only on Para você tab) */}
       {tab === 'para-voce' && (
-        <Composer userPhoto={currentUser.photo} onPost={postar} />
+        <div id="feed-composer">
+          <Composer userPhoto={currentUser.photo} onPost={postar} />
+        </div>
       )}
 
       {/* Seguindo empty state */}
