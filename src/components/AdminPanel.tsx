@@ -7,12 +7,11 @@ import {
   updateDoc,
   getDocs,
   query,
-  where,
   setDoc,
   getDoc,
   arrayRemove,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { Ico } from '../icons';
 import { s } from '../styles';
 import { ADMIN_EMAIL } from '../constants';
@@ -114,29 +113,24 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
   };
 
   const deletarUsuario = async (user: UserProfile) => {
-    if (!window.confirm(`Excluir TODOS os dados de ${user.fullName || user.name}?\n\nIsso remove posts, presenças, dados do perfil. Esta ação não pode ser desfeita.`)) return;
+    if (!window.confirm(`Excluir TODOS os dados de ${user.fullName || user.name}?\n\nIsso remove posts, presenças, dados do perfil e a conta de acesso. Esta ação não pode ser desfeita.`)) return;
     setDeletingUid(user.uid);
     try {
-      // Delete posts
-      const postsSnap = await getDocs(query(cRef('posts'), where('userId', '==', user.uid)));
-      for (const d of postsSnap.docs) await deleteDoc(d.ref);
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('Você precisa estar logado');
 
-      // Delete confirmações (attendance)
-      const confSnap = await getDocs(query(cRef('confirmacoes'), where('userId', '==', user.uid)));
-      for (const d of confSnap.docs) await deleteDoc(d.ref);
+      const idToken = await currentUser.getIdToken();
+      const res = await fetch('/.netlify/functions/delete-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ targetUid: user.uid, churchId: selectedChurch?.id }),
+      });
 
-      // Delete membros entry (by first name)
-      const firstName = (user.name || user.fullName || '').split(' ')[0];
-      if (firstName) {
-        const membrosSnap = await getDocs(query(cRef('membros'), where('nome', '==', firstName)));
-        for (const d of membrosSnap.docs) await deleteDoc(d.ref);
-      }
-
-      // Delete follows doc
-      await deleteDoc(doc(db, 'follows', user.uid));
-
-      // Delete user doc
-      await deleteDoc(doc(db, 'users', user.uid));
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao excluir');
 
       setUsuarios((prev) => prev.filter((u) => u.uid !== user.uid));
       alert(`Dados de ${user.fullName || user.name} removidos com sucesso.`);
