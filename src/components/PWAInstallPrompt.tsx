@@ -10,16 +10,24 @@ function CloseIcon() {
   );
 }
 
-// Logo SVG igual ao da Home
 function AppLogo({ size = 48 }: { size?: number }) {
+  const fontSize = size * 0.4;
   return (
-    <svg width={size} height={size} viewBox="4 2 34 52" fill="none">
-      <rect x="6" y="4" width="30" height="38" rx="3" fill="#F07830" stroke="#fff" strokeWidth="2.5" />
-      <rect x="6" y="4" width="6" height="38" rx="2" fill="#D4621A" stroke="#fff" strokeWidth="1.5" />
-      <rect x="19" y="13" width="3" height="16" rx="1.5" fill="#fff" />
-      <rect x="14" y="18" width="13" height="3" rx="1.5" fill="#fff" />
-      <path d="M26 42 L30 42 L30 50 L28 47 L26 50 Z" fill="#fff" />
-    </svg>
+    <div style={{
+      width: size, height: size, background: '#BA7517', borderRadius: size * 0.25,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <span style={{
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontWeight: 900,
+        fontSize,
+        lineHeight: 1,
+        letterSpacing: -1,
+        color: '#fff',
+      }}>
+        <span style={{ color: 'rgba(0,0,0,0.7)' }}>7</span>T
+      </span>
+    </div>
   );
 }
 
@@ -79,16 +87,18 @@ export function PWAInstallPrompt() {
           </div>
           <div>
             <div style={{
-              fontFamily: 'Bebas Neue, sans-serif',
-              fontSize: 20, color: '#fff', letterSpacing: 2, lineHeight: 1,
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontWeight: 900,
+              fontSize: 20, lineHeight: 1, letterSpacing: -0.5,
             }}>
-              PG VERTICALIZADOS
+              <span style={{ color: '#BA7517' }}>7</span>
+              <span style={{ color: '#fff' }}>Teen</span>
             </div>
             <div style={{
               fontFamily: 'Barlow, sans-serif',
               fontSize: 12, color: '#555', marginTop: 3,
             }}>
-              Adicione à Tela de Início para acesso rápido
+              Adicione ao seu celular para acessar os jovens da APV
             </div>
           </div>
         </div>
