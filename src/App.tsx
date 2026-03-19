@@ -161,12 +161,25 @@ function MainApp({ user }: { user: User }) {
     if (selectedChurch) migrateGlobalDataToChurch(selectedChurch.id);
   }, [selectedChurch?.id]);
 
-  // ── All data scoped to the selected church ───────────────────────────────
+  // ── Global data: feed + sorteio (visible to everyone) ───────────────────
+  useEffect(() => {
+    const unsPosts = onSnapshot(query(collection(db, 'posts'), orderBy('createdAt', 'desc')), snap => {
+      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Post)));
+      setFeedLoading(false);
+    });
+
+    const unsSorteio = onSnapshot(doc(db, 'sorteios', getWeekKey()), snap => {
+      setSorteioSemana(snap.exists() ? (snap.data() as Sorteio) : null);
+    });
+
+    return () => { unsPosts(); unsSorteio(); };
+  }, []);
+
+  // ── Church-scoped data: songs, cifras, membros, eventos, confirmacoes ────
   useEffect(() => {
     if (!selectedChurch) {
-      setSongs([]); setCifras([]); setPosts([]); setConfirmacoes([]);
-      setMembrosLista([]); setSorteioSemana(null); setEventos([]);
-      setFeedLoading(false);
+      setSongs([]); setCifras([]); setConfirmacoes([]);
+      setMembrosLista([]); setEventos([]);
       return;
     }
     const cid = selectedChurch.id;
@@ -195,11 +208,6 @@ function MainApp({ user }: { user: User }) {
       }
     });
 
-    const uns4 = onSnapshot(query(cRef('posts'), orderBy('createdAt', 'desc')), snap => {
-      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Post)));
-      setFeedLoading(false);
-    });
-
     const uns5 = onSnapshot(cRef('confirmacoes'), snap => {
       setConfirmacoes(snap.docs.map(d => ({ id: d.id, ...d.data() } as Confirmacao)));
     });
@@ -208,16 +216,12 @@ function MainApp({ user }: { user: User }) {
       if (snap.docs.length > 0) setMembrosLista(snap.docs.map(d => d.data().nome as string));
     });
 
-    const uns7 = onSnapshot(doc(db, 'churches', cid, 'sorteios', getWeekKey()), snap => {
-      setSorteioSemana(snap.exists() ? (snap.data() as Sorteio) : null);
-    });
-
     const uns8 = onSnapshot(
       query(cRef('eventos'), orderBy('data', 'desc')),
       snap => setEventos(snap.docs.map(d => ({ id: d.id, ...d.data() } as Evento)))
     );
 
-    return () => { uns1(); uns2(); uns4(); uns5(); uns6(); uns7(); uns8(); };
+    return () => { uns1(); uns2(); uns5(); uns6(); uns8(); };
   }, [selectedChurch?.id, baseName]);
 
   const goTo = (sc: Screen) => setScreen(sc);
