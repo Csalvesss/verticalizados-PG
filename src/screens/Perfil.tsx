@@ -52,7 +52,7 @@ export function PerfilScreen({
   const [tab, setTab] = useState<Tab>('posts');
   const [followingCount, setFollowingCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
-  const { selectedChurch, clearChurch } = useChurch();
+  const { selectedChurch } = useChurch();
   const [followListModal, setFollowListModal] = useState<'seguindo' | 'seguidores' | null>(null);
   const [followListUsers, setFollowListUsers] = useState<UserProfile[]>([]);
   const [followListLoading, setFollowListLoading] = useState(false);
@@ -309,47 +309,6 @@ export function PerfilScreen({
               </span>
             </div>
 
-            {/* Church section */}
-            {selectedChurch && (
-              <div style={{
-                marginTop: 12,
-                background: '#0d0d0d',
-                border: '1px solid #1e1e1e',
-                borderRadius: 12,
-                padding: '12px 14px',
-              }}>
-                <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 2, color: '#444', marginBottom: 8, textTransform: 'uppercase' }}>
-                  Minha Igreja
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 600, fontSize: 14, color: '#e7e9ea' }}>
-                      {selectedChurch.name}
-                    </div>
-                    <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#185FA5', marginTop: 2 }}>
-                      {selectedChurch.district}
-                    </div>
-                  </div>
-                  <button
-                    onClick={clearChurch}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid #2a2a2a',
-                      borderRadius: 20,
-                      padding: '6px 14px',
-                      cursor: 'pointer',
-                      fontFamily: 'Barlow Condensed, sans-serif',
-                      fontWeight: 700,
-                      fontSize: 11,
-                      color: '#555',
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    TROCAR
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Right: Avatar */}
