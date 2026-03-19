@@ -53,51 +53,56 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
 
   const salvar = async () => {
     if (!form) return;
-    if (tab === 'songs' && form.title) {
-      const d = {
-        title: form.title,
-        letra: form.letra || '',
-        spotify: form.spotify || '',
-        youtube: form.youtube || '',
-        ordem: editId ? (form.ordem ?? songs.length) : songs.length,
-        sections: form.sections || [],
-      };
-      if (editId) {
-        await updateDoc(cDoc('songs', editId), d);
-      } else {
-        await addDoc(cRef('songs'), d);
+    if (!selectedChurch) { alert('Nenhuma igreja selecionada.'); return; }
+    try {
+      if (tab === 'songs' && form.title) {
+        const d = {
+          title: form.title,
+          letra: form.letra || '',
+          spotify: form.spotify || '',
+          youtube: form.youtube || '',
+          ordem: editId ? (form.ordem ?? songs.length) : songs.length,
+          sections: form.sections || [],
+        };
+        if (editId) {
+          await updateDoc(cDoc('songs', editId), d);
+        } else {
+          await addDoc(cRef('songs'), d);
+        }
       }
-    }
-    if (tab === 'cifras' && form.title) {
-      const d = {
-        title: form.title,
-        tom: form.tom || '',
-        cifra: form.cifra || '',
-        ordem: editId ? (form.ordem ?? cifras.length) : cifras.length,
-      };
-      if (editId) {
-        await updateDoc(cDoc('cifras', editId), d);
-      } else {
-        await addDoc(cRef('cifras'), d);
+      if (tab === 'cifras' && form.title) {
+        const d = {
+          title: form.title,
+          tom: form.tom || '',
+          cifra: form.cifra || '',
+          ordem: editId ? (form.ordem ?? cifras.length) : cifras.length,
+        };
+        if (editId) {
+          await updateDoc(cDoc('cifras', editId), d);
+        } else {
+          await addDoc(cRef('cifras'), d);
+        }
       }
-    }
-    if (tab === 'eventos' && form.tema) {
-      const d = {
-        tema: form.tema,
-        data: form.data || '',
-        hora: form.hora || '',
-        local: form.local || '',
-      };
-      if (editId) {
-        await updateDoc(cDoc('eventos', editId), d);
-      } else {
-        await addDoc(cRef('eventos'), d);
+      if (tab === 'eventos' && form.tema) {
+        const d = {
+          tema: form.tema,
+          data: form.data || '',
+          hora: form.hora || '',
+          local: form.local || '',
+        };
+        if (editId) {
+          await updateDoc(cDoc('eventos', editId), d);
+        } else {
+          await addDoc(cRef('eventos'), d);
+        }
       }
+      if (tab === 'membros' && form.nome)
+        await addDoc(cRef('membros'), { nome: form.nome });
+      setForm(null);
+      setEditId(null);
+    } catch (e: any) {
+      alert('Erro ao salvar: ' + (e?.message || 'verifique sua conexão e tente novamente'));
     }
-    if (tab === 'membros' && form.nome)
-      await addDoc(cRef('membros'), { nome: form.nome });
-    setForm(null);
-    setEditId(null);
   };
 
   const deletar = async (col: string, id: string) => {
