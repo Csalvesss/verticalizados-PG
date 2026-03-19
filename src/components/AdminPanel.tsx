@@ -122,11 +122,8 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
       const idToken = await currentUser.getIdToken();
       const res = await fetch('/.netlify/functions/delete-user', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ targetUid: user.uid, churchId: selectedChurch?.id }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, targetUid: user.uid, churchId: selectedChurch?.id }),
       });
 
       const data = await res.json();

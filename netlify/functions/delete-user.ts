@@ -4,8 +4,9 @@
  * Deleta um usuário completamente: Firebase Auth + todos os dados no Firestore.
  * Só pode ser chamado por admins autenticados (verificação via ID token).
  *
- * Body: { targetUid: string, churchId: string }
- * Header: Authorization: Bearer <idToken>
+ * Body: { idToken: string, targetUid: string, churchId: string }
+ * Nota: token enviado no body (não no header Authorization) para evitar
+ * interceptação pelo middleware do Netlify Identity.
  */
 
 import type { Handler } from '@netlify/functions';
@@ -44,14 +45,12 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const authHeader = event.headers['authorization'] || event.headers['Authorization'];
-    if (!authHeader?.startsWith('Bearer ')) {
+    const body = JSON.parse(event.body || '{}');
+    const { idToken, targetUid, churchId } = body;
+
+    if (!idToken || typeof idToken !== 'string') {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Token não fornecido' }) };
     }
-    const idToken = authHeader.slice(7);
-
-    const body = JSON.parse(event.body || '{}');
-    const { targetUid, churchId } = body;
 
     if (!targetUid || typeof targetUid !== 'string') {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'targetUid inválido' }) };
