@@ -27,7 +27,20 @@ interface Props {
 }
 
 export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, onAddStory }: Props) {
+  const ownStories = stories.filter(s => s.userId === currentUser.uid);
+  const hasOwnStory = ownStories.length > 0;
   const groups = groupByUser(stories.filter(s => s.userId !== currentUser.uid));
+  const isOwnActive = activeUserId === currentUser.uid;
+
+  // Clicking "Seu story": view own story if exists, otherwise create
+  const handleOwnStoryClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hasOwnStory) {
+      onStoryPress?.(currentUser.uid);
+    } else {
+      onAddStory?.();
+    }
+  };
 
   return (
     <div style={{
@@ -39,9 +52,9 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
       scrollbarWidth: 'none',
       msOverflowStyle: 'none',
     }}>
-      {/* Current user — add story button */}
+      {/* Current user — shows own story ring if posted, dashed if not */}
       <button
-        onClick={(e) => { e.stopPropagation(); onAddStory?.(); }}
+        onClick={handleOwnStoryClick}
         style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           gap: 5, background: 'transparent', border: 'none',
@@ -49,24 +62,44 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
         }}
       >
         <div style={{ position: 'relative', width: 60, height: 60 }}>
-          <div style={{
-            width: 60, height: 60, borderRadius: '50%', padding: 3,
-            background: '#1e1e1e', border: '2px dashed #333', boxSizing: 'border-box',
-          }}>
-            <Avatar src={currentUser.photo} name={currentUser.name} size={50}
-              style={{ border: '2px solid #0f0f0f', boxSizing: 'border-box' }} />
-          </div>
-          <div style={{
-            position: 'absolute', bottom: 0, right: 0,
-            width: 20, height: 20, borderRadius: '50%',
-            background: '#F07830', border: '2px solid #0f0f0f',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, color: '#fff', fontWeight: 700, lineHeight: 1,
-            boxSizing: 'border-box',
-          }}>+</div>
+          {hasOwnStory ? (
+            // Colored ring — has active story
+            <div style={{
+              width: 60, height: 60, borderRadius: '50%', padding: 3,
+              background: isOwnActive
+                ? 'linear-gradient(135deg, #fff 0%, #F07830 100%)'
+                : 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)',
+              boxSizing: 'border-box',
+            }}>
+              <Avatar src={currentUser.photo} name={currentUser.name} size={50}
+                style={{ border: '3px solid #0f0f0f', boxSizing: 'border-box' }} />
+            </div>
+          ) : (
+            // Dashed ring — no story yet
+            <div style={{
+              width: 60, height: 60, borderRadius: '50%', padding: 3,
+              background: '#1e1e1e', border: '2px dashed #333', boxSizing: 'border-box',
+            }}>
+              <Avatar src={currentUser.photo} name={currentUser.name} size={50}
+                style={{ border: '2px solid #0f0f0f', boxSizing: 'border-box' }} />
+            </div>
+          )}
+          {/* "+" badge — always shown to allow adding new story */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onAddStory?.(); }}
+            style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: 20, height: 20, borderRadius: '50%',
+              background: '#F07830', border: '2px solid #0f0f0f',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, color: '#fff', fontWeight: 700, lineHeight: 1,
+              boxSizing: 'border-box', cursor: 'pointer',
+            }}
+          >+</button>
         </div>
         <span style={{
-          fontSize: 10, color: '#888', fontFamily: 'Barlow, sans-serif',
+          fontSize: 10, color: isOwnActive ? '#F07830' : '#888',
+          fontFamily: 'Barlow, sans-serif', fontWeight: isOwnActive ? 700 : 400,
           maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis',
           whiteSpace: 'nowrap', display: 'block',
         }}>Seu story</span>

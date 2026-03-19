@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { CurrentUser } from '../types';
 
@@ -49,6 +49,8 @@ export function StoryCreator({ currentUser, onClose }: Props) {
     if (!img || loading) return;
     setLoading(true);
     try {
+      // expiresAt: used by Firestore TTL policy (enable on field "expiresAt" in Firebase console)
+      const expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
       await addDoc(collection(db, 'stories'), {
         userId: currentUser.uid,
         userName: currentUser.name,
@@ -56,6 +58,7 @@ export function StoryCreator({ currentUser, onClose }: Props) {
         mediaUrl: img,
         caption: caption.trim() || null,
         createdAt: serverTimestamp(),
+        expiresAt,
         seenBy: [],
       });
       onClose();
