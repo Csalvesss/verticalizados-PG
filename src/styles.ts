@@ -25,7 +25,7 @@ export const GLOBAL_CSS = `
   body {
     display: flex;
     justify-content: center;
-    background: #000;
+    background: #0f0f0f;
     color: #e7e9ea;
     font-family: 'Barlow', sans-serif;
   }
@@ -91,7 +91,7 @@ export const GLOBAL_CSS = `
 
 export const s: Record<string, CSSProperties> = {
   root: {
-    background: '#000',
+    background: '#0f0f0f',
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
@@ -204,13 +204,14 @@ export const s: Record<string, CSSProperties> = {
     padding: '16px',
   },
   gridCard: {
-    background: '#16181c',
-    borderRadius: 16,
-    padding: '20px 16px',
-    border: '1px solid #2f3336',
+    background: '#13151a',
+    borderRadius: 20,
+    padding: '20px 16px 18px',
+    border: '1px solid #1e2028',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
   },
   nextEvent: {
     background: 'rgba(240,120,48,0.1)',
@@ -220,11 +221,12 @@ export const s: Record<string, CSSProperties> = {
     margin: '0 16px 16px',
   },
   card: {
-    background: '#16181c',
-    borderRadius: 16,
-    border: '1px solid #2f3336',
+    background: '#13151a',
+    borderRadius: 20,
+    border: '1px solid #1e2028',
     overflow: 'hidden',
     marginBottom: 16,
+    boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
   },
   cardTop: {
     display: 'flex',

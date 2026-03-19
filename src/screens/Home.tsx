@@ -14,11 +14,6 @@ interface Props {
   proximoEvento: Evento | null;
 }
 
-const ChevronRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 18 15 12 9 6" />
-  </svg>
-);
 
 export function HomeScreen({
   currentUser,
@@ -142,50 +137,69 @@ export function HomeScreen({
         </div>
       )}
 
-      {/* ── Menu list ──────────────────────────────────────── */}
-      <div style={{ paddingTop: 8 }}>
-        {MENU_ITEMS.map((item, i) => (
+      {/* ── Menu grid ──────────────────────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 12,
+        padding: '12px 16px 4px',
+      }}>
+        {MENU_ITEMS.map((item) => (
           <button
             key={item.sc}
             onClick={() => goTo(item.sc as Screen)}
             style={{
+              background: '#13151a',
+              border: '1px solid #1e2028',
+              borderRadius: 20,
+              padding: '20px 16px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 10,
+              cursor: 'pointer',
+              textAlign: 'left',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
+              transition: 'transform 0.15s, background 0.15s',
+            }}
+            onPointerDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
+            onPointerUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+            onPointerLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, rgba(240,120,48,0.2) 0%, rgba(212,98,26,0.1) 100%)',
+              border: '1px solid rgba(240,120,48,0.18)',
               display: 'flex',
               alignItems: 'center',
-              width: '100%',
-              padding: '14px 16px',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: i < MENU_ITEMS.length - 1 ? '1px solid #111' : 'none',
-              cursor: 'pointer',
-              gap: 14,
-              textAlign: 'left',
-            }}
-          >
-            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24 }}>
-              {item.icon('#BA7517')}
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              {item.icon('#F07830')}
             </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div>
               <div style={{
-                fontFamily: 'Barlow, sans-serif',
+                fontFamily: 'Barlow Condensed, sans-serif',
                 fontWeight: 700,
-                fontSize: 15,
-                color: '#e7e9ea',
-                lineHeight: 1.3,
+                fontSize: 16,
+                color: '#fff',
+                letterSpacing: 0.3,
+                lineHeight: 1.2,
               }}>
                 {item.label}
               </div>
               <div style={{
                 fontFamily: 'Barlow, sans-serif',
-                fontSize: 12,
+                fontSize: 11,
                 color: '#555',
-                marginTop: 1,
+                marginTop: 3,
               }}>
                 {item.sub}
               </div>
             </div>
-
-            <ChevronRight />
           </button>
         ))}
       </div>

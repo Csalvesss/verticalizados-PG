@@ -20,6 +20,7 @@ import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
+import { StoriesBar } from '../components/StoriesBar';
 
 interface Props {
   posts: Post[];
@@ -278,7 +279,7 @@ export function FeedScreen({
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      background: '#000',
+      background: '#0f0f0f',
       width: '100%',
     }}>
       {/* Sticky header */}
@@ -286,7 +287,7 @@ export function FeedScreen({
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        background: 'rgba(0,0,0,0.92)',
+        background: 'rgba(15,15,15,0.95)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid #1e1e1e',
@@ -413,6 +414,15 @@ export function FeedScreen({
           ))}
         </div>
       </div>
+
+      {/* Stories bar (only on Para você tab) */}
+      {tab === 'para-voce' && (
+        <StoriesBar
+          posts={posts}
+          currentUser={currentUser}
+          onStoryPress={onOpenProfile}
+        />
+      )}
 
       {/* Composer (only on Para você tab) */}
       {tab === 'para-voce' && (
