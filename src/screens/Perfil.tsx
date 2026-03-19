@@ -238,27 +238,31 @@ export function PerfilScreen({
 
       {/* ── Cover banner ── */}
       <div style={{
-        height: 110,
-        background: 'linear-gradient(135deg, #1a0d00 0%, #2d1500 40%, #1a0a00 100%)',
+        height: 120,
         position: 'relative',
         overflow: 'hidden',
         flexShrink: 0,
+        background: '#111',
       }}>
+        {/* Blurred photo background (Instagram style) */}
+        {currentUser.photo && (
+          <img
+            src={currentUser.photo}
+            alt=""
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+              filter: 'blur(20px) saturate(1.4) brightness(0.45)',
+              transform: 'scale(1.15)',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+        {/* Dark gradient overlay for readability */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, rgba(240,120,48,0.3) 0%, rgba(212,98,26,0.15) 60%, rgba(186,117,23,0.1) 100%)',
-        }} />
-        {/* subtle geometric decoration */}
-        <div style={{
-          position: 'absolute', top: -30, right: -30,
-          width: 160, height: 160, borderRadius: '50%',
-          border: '1px solid rgba(240,120,48,0.1)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: -40, left: -20,
-          width: 120, height: 120, borderRadius: '50%',
-          border: '1px solid rgba(186,117,23,0.08)',
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(15,15,15,0.55) 100%)',
           pointerEvents: 'none',
         }} />
       </div>

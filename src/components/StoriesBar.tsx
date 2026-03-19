@@ -1,3 +1,4 @@
+import { Avatar } from './Avatar';
 import type { Post, CurrentUser } from '../types';
 
 interface Props {
@@ -5,10 +6,11 @@ interface Props {
   currentUser: CurrentUser;
   activeUserId?: string | null;
   onStoryPress?: (userId: string) => void;
+  onAddStory?: () => void;
 }
 
-export function StoriesBar({ posts, currentUser, activeUserId, onStoryPress }: Props) {
-  // Only show other users who actually have posts (skip current user entirely)
+export function StoriesBar({ posts, currentUser, activeUserId, onStoryPress, onAddStory }: Props) {
+  // Build unique poster list (other users who have posts only)
   const seen = new Set<string>([currentUser.uid]);
   const posters: { userId: string; user: string; photo: string }[] = [];
 
@@ -20,8 +22,6 @@ export function StoriesBar({ posts, currentUser, activeUserId, onStoryPress }: P
     if (posters.length >= 12) break;
   }
 
-  if (posters.length === 0) return null;
-
   return (
     <div style={{
       display: 'flex',
@@ -30,10 +30,80 @@ export function StoriesBar({ posts, currentUser, activeUserId, onStoryPress }: P
       padding: '12px 14px 14px',
       borderBottom: '1px solid #1a1a1a',
       scrollbarWidth: 'none',
+      msOverflowStyle: 'none',
     }}>
+      {/* Current user — "add story" button */}
+      <button
+        onClick={onAddStory}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 5,
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          flexShrink: 0,
+          padding: 0,
+        }}
+      >
+        <div style={{ position: 'relative', width: 60, height: 60 }}>
+          {/* dashed ring (not yet posted) */}
+          <div style={{
+            width: 60,
+            height: 60,
+            borderRadius: '50%',
+            padding: 3,
+            background: '#1e1e1e',
+            border: '2px dashed #333',
+            boxSizing: 'border-box',
+          }}>
+            <Avatar
+              src={currentUser.photo}
+              name={currentUser.name}
+              size={50}
+              style={{ border: '2px solid #0f0f0f', boxSizing: 'border-box' }}
+            />
+          </div>
+          {/* "+" badge */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: 20,
+            height: 20,
+            borderRadius: '50%',
+            background: '#F07830',
+            border: '2px solid #0f0f0f',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 14,
+            color: '#fff',
+            fontWeight: 700,
+            lineHeight: 1,
+            boxSizing: 'border-box',
+          }}>
+            +
+          </div>
+        </div>
+        <span style={{
+          fontSize: 10,
+          color: '#888',
+          fontFamily: 'Barlow, sans-serif',
+          maxWidth: 60,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          display: 'block',
+        }}>
+          Seu feed
+        </span>
+      </button>
+
+      {/* Other users who posted */}
       {posters.map((p) => {
         const isActive = activeUserId === p.userId;
-
         return (
           <button
             key={p.userId}
@@ -52,7 +122,6 @@ export function StoriesBar({ posts, currentUser, activeUserId, onStoryPress }: P
               transition: 'opacity 0.2s',
             }}
           >
-            {/* Ring + avatar */}
             <div style={{
               width: 60,
               height: 60,
@@ -63,21 +132,13 @@ export function StoriesBar({ posts, currentUser, activeUserId, onStoryPress }: P
                 : 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)',
               boxSizing: 'border-box',
             }}>
-              <img
+              <Avatar
                 src={p.photo}
-                alt={p.user}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '3px solid #0f0f0f',
-                  display: 'block',
-                  boxSizing: 'border-box',
-                }}
+                name={p.user}
+                size={50}
+                style={{ border: '3px solid #0f0f0f', boxSizing: 'border-box' }}
               />
             </div>
-
             <span style={{
               fontSize: 10,
               color: isActive ? '#F07830' : '#888',
@@ -95,10 +156,6 @@ export function StoriesBar({ posts, currentUser, activeUserId, onStoryPress }: P
           </button>
         );
       })}
-
-      <style>{`
-        .stories-scroll::-webkit-scrollbar { display: none; }
-      `}</style>
     </div>
   );
 }
