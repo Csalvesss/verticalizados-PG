@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { CurrentUser } from '../types';
@@ -7,7 +7,6 @@ async function compressImage(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      // Story images: 9:16 crop, max 1080px wide
       const MAX_W = 1080;
       const ratio = Math.min(1, MAX_W / img.width);
       const canvas = document.createElement('canvas');
@@ -30,10 +29,29 @@ export function StoryCreator({ currentUser, onClose }: Props) {
   const [caption, setCaption] = useState('');
   const [loading, setLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const fileSelectedRef = useRef(false);
+
+  // Open the gallery picker immediately on mount
+  useEffect(() => {
+    const t = setTimeout(() => fileRef.current?.click(), 60);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Detect "cancel" — window regains focus without a file being selected
+  useEffect(() => {
+    const handleFocus = () => {
+      setTimeout(() => {
+        if (!fileSelectedRef.current) onClose();
+      }, 400);
+    };
+    window.addEventListener('focus', handleFocus, { once: true });
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [onClose]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    fileSelectedRef.current = true;
     const reader = new FileReader();
     reader.onload = async (ev) => {
       if (ev.target?.result) {
@@ -49,7 +67,6 @@ export function StoryCreator({ currentUser, onClose }: Props) {
     if (!img || loading) return;
     setLoading(true);
     try {
-      // expiresAt: used by Firestore TTL policy (enable on field "expiresAt" in Firebase console)
       const expiresAt = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
       await addDoc(collection(db, 'stories'), {
         userId: currentUser.uid,
@@ -69,6 +86,17 @@ export function StoryCreator({ currentUser, onClose }: Props) {
     }
   };
 
+  // Hidden file input — always mounted so the picker can open immediately
+  const fileInput = (
+    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+  );
+
+  // No image yet — render nothing visible while the gallery is open
+  if (!img) {
+    return fileInput;
+  }
+
+  // Image chosen — show confirmation sheet
   return (
     <div
       onClick={onClose}
@@ -78,55 +106,38 @@ export function StoryCreator({ currentUser, onClose }: Props) {
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
       }}
     >
+      {fileInput}
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#161616', borderRadius: '20px 20px 0 0',
-          padding: '20px 20px 32px', width: '100%', maxWidth: 480,
+          padding: '16px 16px 32px', width: '100%', maxWidth: 480,
         }}
       >
         {/* Handle bar */}
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: '#333', margin: '0 auto 20px' }} />
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: '#333', margin: '0 auto 14px' }} />
 
-        <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 20, color: '#fff', marginBottom: 18 }}>
-          Novo story
-        </div>
-
-        {/* Image picker */}
-        {!img ? (
+        {/* Preview */}
+        <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', marginBottom: 14 }}>
+          <img src={img} alt="" style={{ width: '100%', maxHeight: 340, objectFit: 'cover', display: 'block' }} />
+          {/* Swap photo button */}
           <button
-            onClick={() => fileRef.current?.click()}
+            onClick={() => { fileSelectedRef.current = false; setImg(null); setTimeout(() => fileRef.current?.click(), 30); }}
             style={{
-              width: '100%', height: 220, borderRadius: 16,
-              background: '#1e1e1e', border: '2px dashed #333',
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', gap: 10, cursor: 'pointer',
-              color: '#555', fontSize: 14, fontFamily: 'Barlow, sans-serif',
+              position: 'absolute', top: 8, left: 8,
+              background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: 20,
+              padding: '5px 12px', color: '#fff', fontSize: 12,
+              fontFamily: 'Barlow, sans-serif', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', gap: 5,
             }}
           >
-            <svg width="40" height="40" fill="none" viewBox="0 0 24 24">
-              <rect x="3" y="3" width="18" height="18" rx="3" stroke="#555" strokeWidth="1.5" />
-              <circle cx="8.5" cy="8.5" r="1.5" fill="#555" />
-              <path d="M3 15l5-5 4 4 3-3 6 6" stroke="#555" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24">
+              <path d="M4 16v-4a8 8 0 0116 0v4M8 20h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 14l2 2 2-2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Toque para escolher uma foto
+            Trocar
           </button>
-        ) : (
-          <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', marginBottom: 14 }}>
-            <img src={img} alt="" style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }} />
-            <button
-              onClick={() => setImg(null)}
-              style={{
-                position: 'absolute', top: 8, right: 8,
-                background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
-                width: 30, height: 30, cursor: 'pointer', color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-              }}
-            >✕</button>
-          </div>
-        )}
-
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
+        </div>
 
         {/* Caption */}
         <input
@@ -138,12 +149,12 @@ export function StoryCreator({ currentUser, onClose }: Props) {
             width: '100%', background: '#1e1e1e', border: '1px solid #2a2a2a',
             borderRadius: 10, padding: '12px 14px', color: '#e7e9ea',
             fontSize: 15, fontFamily: 'Barlow, sans-serif', outline: 'none',
-            boxSizing: 'border-box', marginTop: img ? 0 : 14,
+            boxSizing: 'border-box',
           }}
         />
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
           <button
             onClick={onClose}
             style={{
@@ -154,13 +165,13 @@ export function StoryCreator({ currentUser, onClose }: Props) {
           >Cancelar</button>
           <button
             onClick={handlePost}
-            disabled={!img || loading}
+            disabled={loading}
             style={{
               flex: 2, padding: '13px 0', borderRadius: 12,
-              background: img && !loading ? '#F07830' : '#2a2a2a',
-              border: 'none', color: img && !loading ? '#fff' : '#555',
+              background: loading ? '#2a2a2a' : '#F07830',
+              border: 'none', color: loading ? '#555' : '#fff',
               fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
-              fontSize: 16, cursor: img && !loading ? 'pointer' : 'default',
+              fontSize: 16, cursor: loading ? 'default' : 'pointer',
               transition: 'background 0.2s',
             }}
           >{loading ? 'Publicando…' : 'Publicar story'}</button>
