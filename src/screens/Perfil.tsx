@@ -245,7 +245,7 @@ export function PerfilScreen({
         background: '#111',
       }}>
         {/* Blurred photo background (Instagram style) */}
-        {currentUser.photo && (
+        {currentUser.photo ? (
           <img
             src={currentUser.photo}
             alt=""
@@ -253,16 +253,21 @@ export function PerfilScreen({
               position: 'absolute', inset: 0,
               width: '100%', height: '100%',
               objectFit: 'cover',
-              filter: 'blur(20px) saturate(1.4) brightness(0.45)',
-              transform: 'scale(1.15)',
+              filter: 'blur(18px) saturate(1.6) brightness(0.72)',
+              transform: 'scale(1.18)',
               pointerEvents: 'none',
             }}
           />
+        ) : (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(135deg, #1a0a00 0%, #2d1500 50%, #1a0a00 100%)',
+          }} />
         )}
-        {/* Dark gradient overlay for readability */}
+        {/* Bottom fade so avatar overlaps cleanly */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(15,15,15,0.55) 100%)',
+          background: 'linear-gradient(to bottom, transparent 50%, rgba(15,15,15,0.85) 100%)',
           pointerEvents: 'none',
         }} />
       </div>
