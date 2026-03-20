@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import { Avatar } from './Avatar';
 import type { Story, CurrentUser } from '../types';
 
@@ -32,16 +33,6 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
   const groups = groupByUser(stories.filter(s => s.userId !== currentUser.uid));
   const isOwnActive = activeUserId === currentUser.uid;
 
-  // Clicking "Seu story": view own story if exists, otherwise create
-  const handleOwnStoryClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (hasOwnStory) {
-      onStoryPress?.(currentUser.uid);
-    } else {
-      onAddStory?.();
-    }
-  };
-
   return (
     <div style={{
       display: 'flex',
@@ -52,18 +43,25 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
       scrollbarWidth: 'none',
       msOverflowStyle: 'none',
     }}>
-      {/* Current user — shows own story ring if posted, dashed if not */}
-      <button
-        onClick={handleOwnStoryClick}
+      {/* Current user — div wrapper avoids invalid nested <button> */}
+      <div
         style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          gap: 5, background: 'transparent', border: 'none',
-          cursor: 'pointer', flexShrink: 0, padding: 0,
+          gap: 5, flexShrink: 0,
         }}
       >
-        <div style={{ position: 'relative', width: 60, height: 60 }}>
+        {/* Avatar ring area — clickable to view own story or open picker */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={(e: MouseEvent) => {
+            e.stopPropagation();
+            if (hasOwnStory) onStoryPress?.(currentUser.uid);
+            else onAddStory?.();
+          }}
+          style={{ position: 'relative', width: 60, height: 60, cursor: 'pointer' }}
+        >
           {hasOwnStory ? (
-            // Colored ring — has active story
             <div style={{
               width: 60, height: 60, borderRadius: '50%', padding: 3,
               background: isOwnActive
@@ -75,7 +73,6 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
                 style={{ border: '3px solid #0f0f0f', boxSizing: 'border-box' }} />
             </div>
           ) : (
-            // Dashed ring — no story yet
             <div style={{
               width: 60, height: 60, borderRadius: '50%', padding: 3,
               background: '#1e1e1e', border: '2px dashed #333', boxSizing: 'border-box',
@@ -84,9 +81,11 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
                 style={{ border: '2px solid #0f0f0f', boxSizing: 'border-box' }} />
             </div>
           )}
-          {/* "+" badge — always shown to allow adding new story */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddStory?.(); }}
+          {/* "+" badge — separate clickable zone, calls onAddStory directly */}
+          <div
+            role="button"
+            tabIndex={-1}
+            onClick={(e: MouseEvent) => { e.stopPropagation(); onAddStory?.(); }}
             style={{
               position: 'absolute', bottom: 0, right: 0,
               width: 20, height: 20, borderRadius: '50%',
@@ -95,7 +94,7 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
               fontSize: 14, color: '#fff', fontWeight: 700, lineHeight: 1,
               boxSizing: 'border-box', cursor: 'pointer',
             }}
-          >+</button>
+          >+</div>
         </div>
         <span style={{
           fontSize: 10, color: isOwnActive ? '#F07830' : '#888',
@@ -103,7 +102,7 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
           maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis',
           whiteSpace: 'nowrap', display: 'block',
         }}>Seu story</span>
-      </button>
+      </div>
 
       {/* Other users with active stories */}
       {groups.map((g) => {
@@ -115,7 +114,7 @@ export function StoriesBar({ stories, currentUser, activeUserId, onStoryPress, o
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               gap: 5, background: 'transparent', border: 'none',
-              cursor: 'pointer', flexShrink: 0, padding: 0,
+              cursor: 'pointer', flexShrink: 0, padding: 0, margin: 0,
               opacity: activeUserId && !isActive ? 0.45 : 1,
               transition: 'opacity 0.2s',
             }}
