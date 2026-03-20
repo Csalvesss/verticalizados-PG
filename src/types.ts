@@ -126,18 +126,6 @@ export interface Notificacao {
   createdAt: import('firebase/firestore').Timestamp | null;
 }
 
-export interface Story {
-  id: string;
-  userId: string;
-  userName: string;
-  userPhoto: string;
-  mediaUrl: string;
-  caption?: string;
-  createdAt: import('firebase/firestore').Timestamp | null;
-  expiresAt?: import('firebase/firestore').Timestamp | null;
-  seenBy: string[];
-}
-
 export interface UserProfile {
   uid: string;
   name: string;

@@ -70,21 +70,5 @@ service cloud.firestore {
     match /config/{id} {
       allow read, write: if request.auth != null;
     }
-    // Stories: qualquer autenticado lê e cria; só o autor deleta; qualquer um atualiza seenBy
-    match /stories/{storyId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null
-        && (
-          // autor pode editar tudo
-          resource.data.userId == request.auth.uid
-          ||
-          // qualquer um pode adicionar seu uid em seenBy
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenBy']))
-        );
-      allow delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-    }
   }
 }
