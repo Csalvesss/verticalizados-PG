@@ -303,8 +303,9 @@ interface Props {
 }
 
 const verifiedBadge = (
-  <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#F07830', flexShrink: 0, marginLeft: 2 }}>
-    <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.71 4.2L6.8 12.46l1.41-1.42 2.26 2.26 4.8-5.23 1.47 1.35-6.2 6.78z" />
+  <svg viewBox="0 0 16 16" width="16" height="16" style={{ flexShrink: 0, marginLeft: 2 }}>
+    <circle cx="8" cy="8" r="8" fill="#F07830" />
+    <polyline points="4.5,8.5 7,11 11.5,5.5" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -411,16 +412,18 @@ export function PostCard({
 
   return (
     <div style={{
-      borderBottom: '1px solid #1a1a1a',
-      background: '#000',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      background: '#0a0a0a',
       padding: '12px 16px',
+      letterSpacing: '-0.01em',
     }}>
       {/* Pinned feed indicator */}
       {isPinnedInFeed && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           paddingBottom: 8, paddingLeft: 52,
-          fontSize: 12, fontWeight: 600, color: '#F07830', fontFamily: 'Barlow, sans-serif',
+          fontSize: 12, fontWeight: 500, color: 'rgba(240,120,48,0.8)', fontFamily: 'Barlow, sans-serif',
+          background: 'rgba(240,120,48,0.08)', margin: '-12px -16px 10px', padding: '6px 16px 6px 68px',
         }}>
           <IcoPin />
           <span>Post fixado no feed</span>
@@ -466,7 +469,7 @@ export function PostCard({
                 {resolvedName}
               </button>
               {isVerified && verifiedBadge}
-              <span style={{ color: '#555', fontSize: 13, fontFamily: 'Barlow, sans-serif' }}>
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: 400, fontFamily: 'Barlow, sans-serif' }}>
                 · {tempoRelativo(post.createdAt)}
               </span>
             </div>
@@ -522,8 +525,10 @@ export function PostCard({
 
           {/* Image */}
           {post.imageUrl && !post.repostOf && (
-            <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #2f3336', marginBottom: 10 }}>
-              <img src={post.imageUrl} alt="" style={{ width: '100%', maxHeight: 440, objectFit: 'cover', display: 'block' }} />
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', marginBottom: 10 }}>
+              <img src={post.imageUrl} alt="" style={{ width: '100%', maxHeight: 440, objectFit: 'cover', display: 'block', transition: 'opacity 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.95')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')} />
             </div>
           )}
 
@@ -560,7 +565,9 @@ export function PostCard({
             <button
               onClick={() => setShowComments(!showComments)}
               style={{
-                display: 'block', marginTop: 4, fontSize: 13, color: '#555',
+                display: 'block', marginTop: 4, fontSize: 13,
+                color: showComments ? 'rgba(255,255,255,0.45)' : '#F07830',
+                fontWeight: 600,
                 background: 'transparent', border: 'none', cursor: 'pointer',
                 fontFamily: 'Barlow, sans-serif', padding: '2px 0', textAlign: 'left',
               }}
@@ -666,18 +673,22 @@ export function PostCard({
           display: flex; align-items: center; gap: 5px;
           padding: 6px 8px; border-radius: 20px;
           background: transparent; border: none; cursor: pointer;
-          transition: background 0.15s; color: #888;
+          transition: background 0.15s, opacity 0.15s; color: #888;
+          opacity: 0.65;
         }
-        .threads-action-btn:hover { background: rgba(255,255,255,0.06); }
-        .threads-action-btn:active { transform: scale(0.88); }
+        .threads-action-btn:hover { background: rgba(255,255,255,0.06); opacity: 1; }
+        .threads-action-btn:active { transform: scale(0.88); opacity: 1; }
+        .threads-action-btn.liked { opacity: 1; }
         .threads-action-btn.liked svg { fill: #F07830; stroke: #F07830; }
         .like-count-btn {
           font-size: 13px; font-family: 'Barlow', sans-serif; color: #888;
           background: none; border: none; cursor: pointer; padding: 6px 4px;
           line-height: 1; margin-left: -4px; border-radius: 4px;
+          opacity: 0.65;
         }
-        .like-count-btn:hover { text-decoration: underline; }
-        .like-count-btn.liked { color: #F07830; }
+        .like-count-btn:hover { text-decoration: underline; opacity: 1; }
+        .like-count-btn.liked { color: #F07830; opacity: 1; }
+        .action-count { font-size: 12px; font-family: 'Barlow', sans-serif; }
       `}</style>
     </div>
   );

@@ -149,10 +149,10 @@ export function HomeScreen({
             key={item.sc}
             onClick={() => goTo(item.sc as Screen)}
             style={{
-              background: '#13151a',
-              border: '1px solid #1e2028',
-              borderRadius: 20,
-              padding: '20px 16px 18px',
+              background: 'linear-gradient(145deg, #1a1a1a 0%, #141414 100%)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 16,
+              padding: '18px 14px 14px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
@@ -160,18 +160,29 @@ export function HomeScreen({
               cursor: 'pointer',
               textAlign: 'left',
               boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
-              transition: 'transform 0.15s, background 0.15s',
+              transition: 'transform 0.15s, background 0.2s',
+              position: 'relative',
+              overflow: 'hidden',
             }}
-            onPointerDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
-            onPointerUp={e => (e.currentTarget.style.transform = 'scale(1)')}
-            onPointerLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+            onPointerDown={e => {
+              e.currentTarget.style.transform = 'scale(0.97)';
+              e.currentTarget.style.background = 'rgba(240,120,48,0.08)';
+            }}
+            onPointerUp={e => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = 'linear-gradient(145deg, #1a1a1a 0%, #141414 100%)';
+            }}
+            onPointerLeave={e => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = 'linear-gradient(145deg, #1a1a1a 0%, #141414 100%)';
+            }}
           >
+            {/* Icon container */}
             <div style={{
               width: 44,
               height: 44,
               borderRadius: 14,
-              background: 'linear-gradient(135deg, rgba(240,120,48,0.2) 0%, rgba(212,98,26,0.1) 100%)',
-              border: '1px solid rgba(240,120,48,0.18)',
+              background: 'rgba(240,120,48,0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -180,26 +191,54 @@ export function HomeScreen({
               {item.icon('#F07830')}
             </div>
 
-            <div>
-              <div style={{
-                fontFamily: 'Barlow Condensed, sans-serif',
-                fontWeight: 700,
-                fontSize: 16,
-                color: '#fff',
-                letterSpacing: 0.3,
-                lineHeight: 1.2,
-              }}>
-                {item.label}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{
+                  fontFamily: 'Barlow Condensed, sans-serif',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  color: '#fff',
+                  letterSpacing: 0.3,
+                  lineHeight: 1.2,
+                }}>
+                  {item.label}
+                </div>
+                {/* Feed badge */}
+                {item.sc === 'feed' && postsCount > 0 && (
+                  <span style={{
+                    background: '#F07830',
+                    color: '#fff',
+                    fontFamily: 'Barlow Condensed, sans-serif',
+                    fontWeight: 700,
+                    fontSize: 10,
+                    borderRadius: 99,
+                    padding: '1px 6px',
+                    lineHeight: 1.6,
+                    flexShrink: 0,
+                  }}>
+                    {postsCount > 99 ? '99+' : postsCount}
+                  </span>
+                )}
               </div>
               <div style={{
                 fontFamily: 'Barlow, sans-serif',
                 fontSize: 11,
-                color: '#555',
+                color: 'rgba(255,255,255,0.35)',
                 marginTop: 3,
               }}>
                 {item.sub}
               </div>
             </div>
+
+            {/* Arrow indicator */}
+            <span style={{
+              position: 'absolute',
+              bottom: 12,
+              right: 12,
+              fontSize: 16,
+              color: 'rgba(255,255,255,0.3)',
+              lineHeight: 1,
+            }}>›</span>
           </button>
         ))}
       </div>

@@ -236,11 +236,18 @@ export function PerfilScreen({
         }}>{Ico.logout()}</button>
       </div>
 
+      {/* ── Cover photo ── */}
+      <div style={{
+        height: 120,
+        background: 'linear-gradient(135deg, #1a0a00 0%, #2d1500 50%, #1a0a00 100%)',
+        flexShrink: 0,
+      }} />
+
       {/* ── Profile Card ── */}
       <div style={{ padding: '0 20px 0' }}>
 
-        {/* Avatar */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 20, marginBottom: 14 }}>
+        {/* Avatar — overlaps cover */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: -40, marginBottom: 14 }}>
           <div style={{
             width: 90, height: 90, borderRadius: '50%', padding: 3, flexShrink: 0,
             background: 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)',
@@ -248,7 +255,7 @@ export function PerfilScreen({
           }}>
             <img src={currentUser.photo} alt="" style={{
               width: '100%', height: '100%', borderRadius: '50%',
-              objectFit: 'cover', border: '4px solid #0f0f0f', display: 'block',
+              objectFit: 'cover', border: '3px solid #0f0f0f', display: 'block',
             }} />
           </div>
         </div>
@@ -256,8 +263,8 @@ export function PerfilScreen({
         {/* Name + admin badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
           <span style={{
-            fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
-            fontSize: 24, color: '#fff', letterSpacing: 0.2, lineHeight: 1.1,
+            fontFamily: 'Barlow, sans-serif', fontWeight: 700,
+            fontSize: 20, color: '#fff', letterSpacing: -0.3, lineHeight: 1.2,
           }}>
             {currentUser.fullName}
           </span>
@@ -271,7 +278,7 @@ export function PerfilScreen({
         {/* Username */}
         <div style={{
           fontFamily: 'Barlow, sans-serif', fontSize: 14,
-          color: '#71767b', marginBottom: 12,
+          color: 'rgba(255,255,255,0.45)', marginBottom: 12,
         }}>
           {displayUsername}
         </div>
@@ -279,8 +286,8 @@ export function PerfilScreen({
         {/* Bio */}
         {bio && (
           <div style={{
-            fontFamily: 'Barlow, sans-serif', fontSize: 14.5, color: '#e7e9ea',
-            lineHeight: 1.55, marginBottom: 10,
+            fontFamily: 'Barlow, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.85)',
+            lineHeight: 1.4, marginBottom: 10,
             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
           }}>
             {bio}
@@ -329,7 +336,7 @@ export function PerfilScreen({
             <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff' }}>
               {followersCount}
             </span>
-            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#555' }}>
+            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.45)' }}>
               seguidores
             </span>
           </button>
@@ -343,7 +350,7 @@ export function PerfilScreen({
             <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff' }}>
               {followingCount}
             </span>
-            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#555' }}>
+            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.45)' }}>
               seguindo
             </span>
           </button>
@@ -362,11 +369,11 @@ export function PerfilScreen({
               setShowEdit(true);
             }}
             style={{
-              flex: 1, padding: '10px 16px', borderRadius: 12,
-              border: '1px solid #2f2f2f', background: 'transparent',
-              color: '#e7e9ea', fontFamily: 'Barlow Condensed, sans-serif',
-              fontWeight: 700, fontSize: 14, letterSpacing: 0.5, cursor: 'pointer',
-              transition: 'background 0.15s',
+              flex: 1, padding: '9px 16px', borderRadius: 20,
+              border: '1.5px solid rgba(255,255,255,0.25)', background: 'transparent',
+              color: '#e7e9ea', fontFamily: 'Barlow, sans-serif',
+              fontWeight: 600, fontSize: 14, cursor: 'pointer',
+              transition: 'border-color 0.2s',
             }}
           >
             Editar perfil
