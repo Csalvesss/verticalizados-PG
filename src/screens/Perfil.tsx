@@ -760,10 +760,8 @@ export function PerfilScreen({
                       try {
                         const user = auth.currentUser;
                         if (user) {
-                          if (selectedChurch) {
-                            const postsSnap = await getDocs(query(collection(db, 'churches', selectedChurch.id, 'posts'), where('userId', '==', uid)));
-                            await Promise.all(postsSnap.docs.map(d => deleteDoc(d.ref)));
-                          }
+                          const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', uid)));
+                          await Promise.all(postsSnap.docs.map(d => deleteDoc(d.ref)));
                           await deleteDoc(doc(db, 'follows', uid)).catch(() => {});
                           await deleteDoc(doc(db, 'users', uid));
                           localStorage.removeItem(`pg_setup_${uid}`);
