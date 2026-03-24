@@ -28,12 +28,20 @@ interface Props {
   eventos: Evento[];
   membros: string[];
   adminEmails: string[];
+  currentUserUid: string;
+  currentUserEmail: string;
 }
 
-export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmails }: Props) {
+export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmails, currentUserUid, currentUserEmail }: Props) {
   const { selectedChurch } = useChurch();
   const cRef = (col: string) => collection(db, 'churches', selectedChurch!.id, col);
   const cDoc = (col: string, id: string) => doc(db, 'churches', selectedChurch!.id, col, id);
+
+  // Verifica se o usuário pode editar esta igreja específica
+  const isSuperAdmin = currentUserEmail === ADMIN_EMAIL;
+  const isChurchDirector = selectedChurch?.directorUid === currentUserUid;
+  const canEditThisChurch = isSuperAdmin || isChurchDirector;
+
   const [tab, setTab] = useState<Tab>('songs');
   const [form, setForm] = useState<Partial<Song & Cifra & Evento & { nome: string }> | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -214,8 +222,48 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
         <button style={s.backBtn} onClick={goHome}>
           {Ico.back()}
         </button>
-        <div style={s.pageTitle}>PAINEL ADMIN</div>
+        <div style={s.pageTitle}>Painel Admin</div>
       </div>
+
+      {/* Igreja atual sendo editada */}
+      {selectedChurch && (
+        <div style={{
+          padding: '10px 16px',
+          background: canEditThisChurch ? 'rgba(240,120,48,0.06)' : 'rgba(244,33,46,0.08)',
+          borderBottom: `1px solid ${canEditThisChurch ? 'rgba(240,120,48,0.15)' : 'rgba(244,33,46,0.2)'}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+            stroke={canEditThisChurch ? '#F07830' : '#f4212e'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{
+              fontFamily: 'Barlow, sans-serif', fontWeight: 700, fontSize: 13,
+              color: canEditThisChurch ? '#e7e9ea' : '#f4212e',
+            }}>
+              {selectedChurch.name}
+            </span>
+            {!canEditThisChurch && (
+              <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 11, color: '#f4212e', marginTop: 1 }}>
+                Você não é o diretor desta igreja — acesso somente leitura
+              </div>
+            )}
+          </div>
+          {canEditThisChurch && (
+            <span style={{
+              fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 9,
+              letterSpacing: 1, color: '#F07830',
+              background: 'rgba(240,120,48,0.12)', borderRadius: 99, padding: '2px 7px',
+            }}>
+              {isSuperAdmin ? 'SUPER ADMIN' : 'DIRETOR'}
+            </span>
+          )}
+        </div>
+      )}
 
       <div style={s.page}>
         <div
@@ -302,7 +350,11 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
             )}
             {tab === 'membros' && <>{inp('nome', 'Nome do membro')}</>}
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button onClick={salvar} style={s.btnOrange}>
+              <button onClick={salvar} disabled={!canEditThisChurch} style={{
+                ...s.btnOrange,
+                opacity: canEditThisChurch ? 1 : 0.4,
+                cursor: canEditThisChurch ? 'pointer' : 'not-allowed',
+              }}>
                 {Ico.check()} Salvar
               </button>
               <button
@@ -459,153 +511,92 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
                   ? `${eventos.length} EVENTOS`
                   : `${membros.length} MEMBROS`}
               </div>
-              <button
-                onClick={() => {
-                  setForm({});
-                  setEditId(null);
-                }}
-                style={{
-                  ...s.btnOrange,
-                  padding: '6px 14px',
-                  fontSize: 12,
-                  gap: 6,
-                }}
-              >
-                {Ico.plus()} Novo
-              </button>
+              {canEditThisChurch && (
+                <button
+                  onClick={() => {
+                    setForm({});
+                    setEditId(null);
+                  }}
+                  style={{
+                    ...s.btnOrange,
+                    padding: '6px 14px',
+                    fontSize: 12,
+                    gap: 6,
+                  }}
+                >
+                  {Ico.plus()} Novo
+                </button>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {tab === 'songs' &&
                 songs.map((item) => (
                   <div key={item.id} style={s.adminRow}>
-                    <div
-                      style={{
-                        fontFamily: 'Barlow',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        color: '#fff',
-                        flex: 1,
-                      }}
-                    >
+                    <div style={{ fontFamily: 'Barlow', fontWeight: 600, fontSize: 15, color: '#fff', flex: 1 }}>
                       {item.title}
                     </div>
-                    <button
-                      onClick={() => {
-                        setForm({ ...item });
-                        setEditId(item.id);
-                      }}
-                      style={s.adminActionBtn}
-                    >
-                      {Ico.edit()}
-                    </button>
-                    <button
-                      onClick={() => deletar('songs', item.id)}
-                      style={{ ...s.adminActionBtn, color: '#f4212e' }}
-                    >
-                      {Ico.trash()}
-                    </button>
+                    {canEditThisChurch && (
+                      <>
+                        <button onClick={() => { setForm({ ...item }); setEditId(item.id); }} style={s.adminActionBtn}>
+                          {Ico.edit()}
+                        </button>
+                        <button onClick={() => deletar('songs', item.id)} style={{ ...s.adminActionBtn, color: '#f4212e' }}>
+                          {Ico.trash()}
+                        </button>
+                      </>
+                    )}
                   </div>
                 ))}
               {tab === 'cifras' &&
                 cifras.map((item) => (
                   <div key={item.id} style={s.adminRow}>
-                    <div
-                      style={{
-                        fontFamily: 'Barlow',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        color: '#fff',
-                        flex: 1,
-                      }}
-                    >
+                    <div style={{ fontFamily: 'Barlow', fontWeight: 600, fontSize: 15, color: '#fff', flex: 1 }}>
                       {item.title}{' '}
-                      <span
-                        style={{
-                          color: '#71767b',
-                          fontWeight: 400,
-                          fontSize: 13,
-                        }}
-                      >
-                        · Tom {item.tom}
-                      </span>
+                      <span style={{ color: '#71767b', fontWeight: 400, fontSize: 13 }}>· Tom {item.tom}</span>
                     </div>
-                    <button
-                      onClick={() => {
-                        setForm({ ...item });
-                        setEditId(item.id);
-                      }}
-                      style={s.adminActionBtn}
-                    >
-                      {Ico.edit()}
-                    </button>
-                    <button
-                      onClick={() => deletar('cifras', item.id)}
-                      style={{ ...s.adminActionBtn, color: '#f4212e' }}
-                    >
-                      {Ico.trash()}
-                    </button>
+                    {canEditThisChurch && (
+                      <>
+                        <button onClick={() => { setForm({ ...item }); setEditId(item.id); }} style={s.adminActionBtn}>
+                          {Ico.edit()}
+                        </button>
+                        <button onClick={() => deletar('cifras', item.id)} style={{ ...s.adminActionBtn, color: '#f4212e' }}>
+                          {Ico.trash()}
+                        </button>
+                      </>
+                    )}
                   </div>
                 ))}
               {tab === 'eventos' &&
                 eventos.map((item) => (
                   <div key={item.id} style={s.adminRow}>
-                    <div
-                      style={{
-                        fontFamily: 'Barlow',
-                        fontWeight: 600,
-                        fontSize: 15,
-                        color: '#fff',
-                        flex: 1,
-                      }}
-                    >
+                    <div style={{ fontFamily: 'Barlow', fontWeight: 600, fontSize: 15, color: '#fff', flex: 1 }}>
                       {item.tema}{' '}
-                      <span
-                        style={{
-                          color: '#71767b',
-                          fontWeight: 400,
-                          fontSize: 12,
-                        }}
-                      >
-                        · {item.data}
-                      </span>
+                      <span style={{ color: '#71767b', fontWeight: 400, fontSize: 12 }}>· {item.data}</span>
                     </div>
-                    <button
-                      onClick={() => {
-                        setForm({ ...item });
-                        setEditId(item.id);
-                      }}
-                      style={s.adminActionBtn}
-                    >
-                      {Ico.edit()}
-                    </button>
-                    <button
-                      onClick={() => deletar('eventos', item.id)}
-                      style={{ ...s.adminActionBtn, color: '#f4212e' }}
-                    >
-                      {Ico.trash()}
-                    </button>
+                    {canEditThisChurch && (
+                      <>
+                        <button onClick={() => { setForm({ ...item }); setEditId(item.id); }} style={s.adminActionBtn}>
+                          {Ico.edit()}
+                        </button>
+                        <button onClick={() => deletar('eventos', item.id)} style={{ ...s.adminActionBtn, color: '#f4212e' }}>
+                          {Ico.trash()}
+                        </button>
+                      </>
+                    )}
                   </div>
                 ))}
               {tab === 'membros' &&
                 membros.map((nome, i) => (
                   <div key={i} style={s.adminRow}>
-                    <div
-                      style={{
-                        fontFamily: 'Barlow',
-                        fontSize: 15,
-                        color: '#fff',
-                        flex: 1,
-                      }}
-                    >
+                    <div style={{ fontFamily: 'Barlow', fontSize: 15, color: '#fff', flex: 1 }}>
                       {nome}
                     </div>
-                    <button
-                      onClick={() => deletarMembro(nome)}
-                      style={{ ...s.adminActionBtn, color: '#f4212e' }}
-                    >
-                      {Ico.trash()}
-                    </button>
+                    {canEditThisChurch && (
+                      <button onClick={() => deletarMembro(nome)} style={{ ...s.adminActionBtn, color: '#f4212e' }}>
+                        {Ico.trash()}
+                      </button>
+                    )}
                   </div>
                 ))}
             </div>

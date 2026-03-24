@@ -4,9 +4,7 @@
  * Deleta um usuário completamente: Firebase Auth + todos os dados no Firestore.
  * Só pode ser chamado por admins autenticados (verificação via ID token).
  *
- * Body: { idToken: string, targetUid: string, churchId: string }
- * Nota: token enviado no body (não no header Authorization) para evitar
- * interceptação pelo middleware do Netlify Identity.
+ * Body: { idToken: string, targetUid: string, churchId?: string }
  */
 
 import type { Handler } from '@netlify/functions';
@@ -46,7 +44,7 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { idToken, targetUid, churchId } = body;
+    const { idToken, targetUid } = body;
 
     if (!idToken || typeof idToken !== 'string') {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Token não fornecido' }) };
@@ -80,38 +78,53 @@ export const handler: Handler = async (event) => {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'Não é possível excluir o administrador principal' }) };
     }
 
-    // Deletar dados no Firestore
-    const batch = db.batch();
+    // ── Deletar dados no Firestore ────────────────────────────────────────────
+    // Firebase batch tem limite de 500 operações; usamos múltiplos batches
+    const batches: ReturnType<typeof db.batch>[] = [];
+    let currentBatch = db.batch();
+    let opCount = 0;
 
-    // Posts da igreja
-    if (churchId) {
-      const postsSnap = await db
-        .collection('churches').doc(churchId)
-        .collection('posts')
-        .where('userId', '==', targetUid)
-        .get();
-      postsSnap.docs.forEach((d: any) => batch.delete(d.ref));
+    const addDelete = (ref: any) => {
+      if (opCount > 0 && opCount % 490 === 0) {
+        batches.push(currentBatch);
+        currentBatch = db.batch();
+      }
+      currentBatch.delete(ref);
+      opCount++;
+    };
 
-      // Confirmações (presenças)
-      const confSnap = await db
-        .collection('churches').doc(churchId)
-        .collection('confirmacoes')
-        .where('userId', '==', targetUid)
-        .get();
-      confSnap.docs.forEach((d: any) => batch.delete(d.ref));
-    }
+    // 1. Posts globais (coleção /posts onde o app realmente salva)
+    const postsSnap = await db
+      .collection('posts')
+      .where('userId', '==', targetUid)
+      .get();
+    postsSnap.docs.forEach((d: any) => addDelete(d.ref));
 
-    // Follows
-    const followsRef = db.collection('follows').doc(targetUid);
-    batch.delete(followsRef);
+    // 2. Confirmações de presença em TODAS as igrejas (collection group)
+    const confSnap = await db
+      .collectionGroup('confirmacoes')
+      .where('userId', '==', targetUid)
+      .get();
+    confSnap.docs.forEach((d: any) => addDelete(d.ref));
 
-    // Perfil do usuário
-    const userRef = db.collection('users').doc(targetUid);
-    batch.delete(userRef);
+    // 3. Follows
+    addDelete(db.collection('follows').doc(targetUid));
 
-    await batch.commit();
+    // 4. Notificações do usuário
+    const notifSnap = await db
+      .collection('notifications')
+      .where('toUid', '==', targetUid)
+      .get();
+    notifSnap.docs.forEach((d: any) => addDelete(d.ref));
 
-    // Deletar conta no Firebase Auth
+    // 5. Perfil do usuário
+    addDelete(db.collection('users').doc(targetUid));
+
+    // Commit todos os batches
+    batches.push(currentBatch);
+    await Promise.all(batches.map(b => b.commit()));
+
+    // 6. Deletar conta no Firebase Auth (por último)
     await admin.auth().deleteUser(targetUid);
 
     return {
