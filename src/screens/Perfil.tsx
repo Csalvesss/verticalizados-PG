@@ -4,7 +4,6 @@ import { doc, setDoc, deleteDoc, getDoc, getDocs, collection, query, where, upda
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { Avatar } from '../components/Avatar';
-import { useChurch } from '../contexts/ChurchContext';
 import type { CurrentUser, Screen, Post, UserProfile } from '../types';
 
 function toUsername(name: string): string {
@@ -52,7 +51,6 @@ export function PerfilScreen({
   const [tab, setTab] = useState<Tab>('posts');
   const [followingCount, setFollowingCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
-  const { selectedChurch } = useChurch();
   const [followListModal, setFollowListModal] = useState<'seguindo' | 'seguidores' | null>(null);
   const [followListUsers, setFollowListUsers] = useState<UserProfile[]>([]);
   const [followListLoading, setFollowListLoading] = useState(false);
