@@ -97,9 +97,9 @@ export function Composer({
     <div style={{
       display: 'flex',
       gap: 12,
-      padding: '12px 14px',
-      borderBottom: '1px solid #1a1a1a',
-      background: '#0f0f0f',
+      padding: '12px 16px',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      background: '#161616',
       alignItems: 'flex-start',
     }}>
       {/* Avatar with subtle gradient ring */}
@@ -199,7 +199,9 @@ export function Composer({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginTop: 6,
+          marginTop: 8,
+          paddingTop: 8,
+          borderTop: '1px solid rgba(255,255,255,0.06)',
         }}>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -242,18 +244,17 @@ export function Composer({
               onClick={handlePost}
               disabled={!canPost}
               style={{
-                background: isActive ? '#F07830' : '#111',
-                color: isActive ? '#fff' : '#333',
-                padding: '6px 16px',
-                borderRadius: 999,
+                background: isActive ? '#F07830' : '#1e1e1e',
+                color: isActive ? '#fff' : '#444',
+                padding: '6px 18px',
+                borderRadius: 20,
                 fontWeight: 700,
-                fontSize: 13,
+                fontSize: 14,
                 fontFamily: 'Barlow, sans-serif',
                 border: 'none',
                 cursor: canPost ? 'pointer' : 'default',
                 opacity: loading ? 0.5 : 1,
                 transition: 'all 0.2s',
-                letterSpacing: 0.2,
               }}
             >
               {loading ? '...' : submitLabel}
@@ -266,8 +267,8 @@ export function Composer({
         .composer-ico-btn:hover {
           background: rgba(240, 120, 48, 0.12) !important;
         }
-        textarea::placeholder {
-          color: #333;
+        #feed-composer-input::placeholder {
+          color: rgba(255,255,255,0.35);
         }
       `}</style>
     </div>

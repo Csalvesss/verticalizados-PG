@@ -39,17 +39,37 @@ export const GLOBAL_CSS = `
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #333;
+    background: rgba(240, 120, 48, 0.3);
     border-radius: 4px;
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   .fade {
-    animation: fadeUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation: fadeUp 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  @keyframes navBounce {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  .nav-icon-active {
+    animation: navBounce 200ms ease-out;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  .skeleton {
+    background: linear-gradient(90deg, #1a1a1a 25%, #242424 50%, #1a1a1a 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+    border-radius: 6px;
   }
 
   textarea, input {
@@ -124,29 +144,35 @@ export const s: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 12,
-    padding: '12px 16px',
-    background: 'rgba(0,0,0,0.85)',
-    backdropFilter: 'blur(12px)',
+    padding: '0 16px',
+    minHeight: 52,
+    background: 'rgba(15,15,15,0.95)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
     position: 'sticky',
     top: 0,
     zIndex: 50,
-    borderBottom: '1px solid #2f3336',
-    marginBottom: 16,
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    marginBottom: 0,
   },
   pageTitle: {
-    fontFamily: 'Barlow Condensed',
-    fontWeight: 700,
-    fontSize: 19,
+    fontFamily: 'Barlow, sans-serif',
+    fontWeight: 600,
+    fontSize: 16,
     color: '#fff',
-    letterSpacing: 0.5,
+    letterSpacing: 'normal',
+    flex: 1,
+    textAlign: 'center' as const,
   },
   backBtn: {
-    padding: '6px',
+    minWidth: 44,
+    minHeight: 44,
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     background: 'transparent',
+    color: '#F07830',
   },
   iconBtn: {
     padding: '8px',

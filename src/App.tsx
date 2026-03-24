@@ -342,6 +342,8 @@ function MainApp({ user }: { user: User }) {
             eventos={eventos}
             membros={membrosLista}
             adminEmails={adminEmails}
+            currentUserUid={user.uid}
+            currentUserEmail={user.email || ''}
           />
         )}
 

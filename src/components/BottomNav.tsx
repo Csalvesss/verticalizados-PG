@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import { Ico } from '../icons';
 import type { Screen } from '../types';
@@ -19,6 +20,14 @@ export function BottomNav({
   goTo: (sc: Screen) => void;
   userPhoto: string;
 }) {
+  const [bouncing, setBouncing] = useState<Screen | null>(null);
+
+  useEffect(() => {
+    setBouncing(screen);
+    const t = setTimeout(() => setBouncing(null), 200);
+    return () => clearTimeout(t);
+  }, [screen]);
+
   return (
     <div style={{
       position: 'fixed',
@@ -27,17 +36,18 @@ export function BottomNav({
       transform: 'translateX(-50%)',
       width: '100%',
       maxWidth: 500,
-      background: 'rgba(0,0,0,0.92)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      borderTop: '1px solid #1a1a1a',
+      background: 'rgba(15, 15, 15, 0.92)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
       display: 'flex',
       justifyContent: 'space-around',
-      padding: '8px 0 env(safe-area-inset-bottom, 10px)',
+      padding: `8px 0 env(safe-area-inset-bottom, 10px)`,
       zIndex: 100,
     }}>
       {NAV.map((item) => {
         const active = screen === item.id;
+        const isBouncing = bouncing === item.id;
         return (
           <button
             key={item.id}
@@ -54,10 +64,11 @@ export function BottomNav({
               cursor: 'pointer',
               flex: 1,
               minWidth: 0,
+              minHeight: 44,
               position: 'relative',
             }}
           >
-            {/* Pill highlight behind icon+label */}
+            {/* Pill highlight */}
             {active && (
               <div style={{
                 position: 'absolute',
@@ -67,8 +78,7 @@ export function BottomNav({
                 width: 52,
                 height: 34,
                 borderRadius: 18,
-                background: 'rgba(240,120,48,0.14)',
-                transition: 'all 0.2s',
+                background: 'rgba(240,120,48,0.12)',
                 pointerEvents: 'none',
               }} />
             )}
@@ -84,6 +94,7 @@ export function BottomNav({
                 boxSizing: 'border-box',
                 position: 'relative',
                 zIndex: 1,
+                ...(isBouncing ? { animation: 'navBounce 200ms ease-out' } : {}),
               }}>
                 <img
                   src={userPhoto}
@@ -102,22 +113,28 @@ export function BottomNav({
             ) : (
               <div style={{
                 transition: 'transform 0.2s',
-                transform: active ? 'scale(1.08)' : 'scale(1)',
+                transform: active ? 'scale(1.05)' : 'scale(1)',
                 position: 'relative',
                 zIndex: 1,
+                opacity: active ? 1 : 0.45,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 22,
+                height: 22,
+                ...(isBouncing ? { animation: 'navBounce 200ms ease-out' } : {}),
               }}>
-                {item.icon!(active ? '#F07830' : '#4a4a4a')}
+                {item.icon!(active ? '#F07830' : '#e7e9ea')}
               </div>
             )}
 
             <span style={{
-              fontFamily: 'Barlow Condensed, sans-serif',
-              fontSize: 9,
-              fontWeight: active ? 700 : 400,
-              letterSpacing: 0.5,
-              color: active ? '#F07830' : '#3a3a3a',
+              fontFamily: 'Barlow, sans-serif',
+              fontSize: 10,
+              fontWeight: active ? 600 : 400,
+              letterSpacing: 0.2,
+              color: active ? '#F07830' : 'rgba(255,255,255,0.35)',
               transition: 'color 0.2s',
-              textTransform: 'uppercase',
               position: 'relative',
               zIndex: 1,
             }}>

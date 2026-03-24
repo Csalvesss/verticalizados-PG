@@ -1,90 +1,124 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Usuário autenticado pode ler/escrever seu próprio perfil
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isAuthed() && request.auth.token.email == 'ads.cesaralves@gmail.com';
+    }
+
+    function isGlobalAdmin() {
+      return isAuthed() && (
+        isSuperAdmin() ||
+        (exists(/databases/$(database)/documents/config/admins) &&
+         request.auth.token.email in
+           get(/databases/$(database)/documents/config/admins).data.get('emails', []))
+      );
+    }
+
+    function isChurchDirector(churchId) {
+      return isAuthed() &&
+        exists(/databases/$(database)/documents/churches/$(churchId)) &&
+        get(/databases/$(database)/documents/churches/$(churchId)).data.get('directorUid', '') == request.auth.uid;
+    }
+
+    // Pode editar dados de uma igreja específica
+    function canWriteChurch(churchId) {
+      return isSuperAdmin() || isChurchDirector(churchId) || isGlobalAdmin();
+    }
+
+    // ── Usuários ──────────────────────────────────────────────────────────────
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
-      // outros usuários podem ler perfis (para busca/feed)
-      allow read: if request.auth != null;
+      allow read: if isAuthed();
+      allow write: if isAuthed() && request.auth.uid == uid;
     }
-    // Igrejas: todos autenticados leem e criam (auto-seed), só diretores atualizam/deletam
+
+    // ── Igrejas (documento raiz) ───────────────────────────────────────────
     match /churches/{churchId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
-        in ['director', 'admin'];
-      // Eventos: membros criam, diretores gerenciam
-      match /events/{eventId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth != null &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
-          in ['director', 'admin'];
+      allow read: if isAuthed();
+      allow create: if isAuthed();
+      allow update, delete: if canWriteChurch(churchId);
+
+      // ── Músicas, Cifras, Eventos: só admins da igreja escrevem ────────────
+      match /songs/{docId} {
+        allow read: if isAuthed();
+        allow write: if canWriteChurch(churchId);
       }
-      // Oração: qualquer membro cria, só o autor deleta
-      match /prayers/{prayerId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null;
-        allow update: if request.auth != null; // para incrementar prayedCount
-        allow delete: if request.auth != null &&
-          request.auth.uid == resource.data.authorUid;
+      match /cifras/{docId} {
+        allow read: if isAuthed();
+        allow write: if canWriteChurch(churchId);
+      }
+      match /eventos/{docId} {
+        allow read: if isAuthed();
+        allow write: if canWriteChurch(churchId);
+      }
+
+      // ── Membros: qualquer autenticado lê/cria, admin deleta ───────────────
+      match /membros/{docId} {
+        allow read: if isAuthed();
+        allow create: if isAuthed();
+        allow update, delete: if canWriteChurch(churchId);
+      }
+
+      // ── Confirmações de presença: qualquer membro gerencia a própria ───────
+      match /confirmacoes/{docId} {
+        allow read: if isAuthed();
+        allow create: if isAuthed();
+        allow update, delete: if isAuthed() && (
+          request.auth.uid == resource.data.get('userId', '') ||
+          canWriteChurch(churchId)
+        );
+      }
+
+      // ── Sorteio/oração: qualquer autenticado ─────────────────────────────
+      match /sorteios/{docId} {
+        allow read, write: if isAuthed();
+      }
+
+      // Fallback para qualquer subcoleção não mapeada acima
+      match /{subcol}/{docId} {
+        allow read: if isAuthed();
+        allow write: if canWriteChurch(churchId);
       }
     }
-    // Feed global: qualquer autenticado lê e cria
-    match /feed/{postId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null &&
-        request.auth.uid == resource.data.authorUid;
-    }
-    // Coleções legadas (manter compatibilidade)
+
+    // ── Feed global ───────────────────────────────────────────────────────────
     match /posts/{postId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
+
+    // ── Coleções legadas (compatibilidade) ────────────────────────────────────
     match /eventos/{eventoId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
     match /confirmacoes/{id} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
     match /sorteios/{id} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
     match /membros/{id} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
     match /songs/{id} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
     match /cifras/{id} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
     match /follows/{id} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
     match /notifications/{id} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthed();
     }
     match /config/{id} {
-      allow read, write: if request.auth != null;
-    }
-    // Stories: qualquer autenticado lê e cria; só o autor deleta; qualquer um atualiza seenBy
-    match /stories/{storyId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null
-        && (
-          // autor pode editar tudo
-          resource.data.userId == request.auth.uid
-          ||
-          // qualquer um pode adicionar seu uid em seenBy
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenBy']))
-        );
-      allow delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
+      allow read: if isAuthed();
+      allow write: if isGlobalAdmin();
     }
   }
 }
