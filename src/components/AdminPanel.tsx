@@ -355,7 +355,9 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
         body: JSON.stringify({ idToken, targetUid: user.uid, churchId: selectedChurch?.id }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { throw new Error(`Resposta inválida do servidor (${res.status}): ${text.slice(0, 200)}`); }
       if (!res.ok) throw new Error(data.error || 'Erro ao excluir');
 
       setUsuarios((prev) => prev.filter((u) => u.uid !== user.uid));
