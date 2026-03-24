@@ -11,19 +11,22 @@ import type { Handler } from '@netlify/functions';
 
 const ADMIN_EMAIL = 'ads.cesaralves@gmail.com';
 
-let adminApp: any = null;
+let initialized = false;
 
-async function getAdmin() {
-  if (adminApp) return adminApp;
-  const admin = await import('firebase-admin');
+async function getServices() {
+  const { initializeApp, getApps, cert } = await import('firebase-admin/app');
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountJson) throw new Error('FIREBASE_SERVICE_ACCOUNT env var not set');
   const serviceAccount = JSON.parse(serviceAccountJson);
-  if (!admin.apps.length) {
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  if (!getApps().length) {
+    initializeApp({ credential: cert(serviceAccount) });
+    initialized = true;
+  } else if (!initialized) {
+    initialized = true;
   }
-  adminApp = admin;
-  return admin;
+  const { getFirestore } = await import('firebase-admin/firestore');
+  const { getAuth } = await import('firebase-admin/auth');
+  return { db: getFirestore(), auth: getAuth() };
 }
 
 export const handler: Handler = async (event) => {
@@ -54,11 +57,10 @@ export const handler: Handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'targetUid inválido' }) };
     }
 
-    const admin = await getAdmin();
-    const db = admin.firestore();
+    const { db, auth } = await getServices();
 
     // Verificar se o chamador é admin
-    const decoded = await admin.auth().verifyIdToken(idToken);
+    const decoded = await auth.verifyIdToken(idToken);
     const callerEmail = decoded.email || '';
 
     let isAdmin = callerEmail === ADMIN_EMAIL;
@@ -73,7 +75,7 @@ export const handler: Handler = async (event) => {
     }
 
     // Verificar que não está tentando deletar o super admin
-    const targetUser = await admin.auth().getUser(targetUid);
+    const targetUser = await auth.getUser(targetUid);
     if (targetUser.email === ADMIN_EMAIL) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'Não é possível excluir o administrador principal' }) };
     }
@@ -101,11 +103,16 @@ export const handler: Handler = async (event) => {
     postsSnap.docs.forEach((d: any) => addDelete(d.ref));
 
     // 2. Confirmações de presença em TODAS as igrejas (collection group)
-    const confSnap = await db
-      .collectionGroup('confirmacoes')
-      .where('userId', '==', targetUid)
-      .get();
-    confSnap.docs.forEach((d: any) => addDelete(d.ref));
+    try {
+      const confSnap = await db
+        .collectionGroup('confirmacoes')
+        .where('userId', '==', targetUid)
+        .get();
+      confSnap.docs.forEach((d: any) => addDelete(d.ref));
+    } catch (indexErr: any) {
+      // Index may not exist yet — skip confirmacoes deletion gracefully
+      console.warn('collectionGroup confirmacoes query failed (index missing?):', indexErr?.message);
+    }
 
     // 3. Follows
     addDelete(db.collection('follows').doc(targetUid));
@@ -125,7 +132,7 @@ export const handler: Handler = async (event) => {
     await Promise.all(batches.map(b => b.commit()));
 
     // 6. Deletar conta no Firebase Auth (por último)
-    await admin.auth().deleteUser(targetUid);
+    await auth.deleteUser(targetUid);
 
     return {
       statusCode: 200,

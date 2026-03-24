@@ -18,19 +18,22 @@
 
 import type { Handler } from '@netlify/functions';
 
-let adminApp: any = null;
+let initialized = false;
 
-async function getAdmin() {
-  if (adminApp) return adminApp;
-  const admin = await import('firebase-admin');
+async function getServices() {
+  const { initializeApp, getApps, cert } = await import('firebase-admin/app');
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountJson) throw new Error('FIREBASE_SERVICE_ACCOUNT env var not set');
   const serviceAccount = JSON.parse(serviceAccountJson);
-  if (!admin.apps.length) {
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  if (!getApps().length) {
+    initializeApp({ credential: cert(serviceAccount) });
+    initialized = true;
+  } else if (!initialized) {
+    initialized = true;
   }
-  adminApp = admin;
-  return admin;
+  const { getFirestore } = await import('firebase-admin/firestore');
+  const { getAuth } = await import('firebase-admin/auth');
+  return { db: getFirestore(), auth: getAuth() };
 }
 
 export const handler: Handler = async (event) => {
@@ -46,8 +49,7 @@ export const handler: Handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Token inválido' }) };
     }
 
-    const admin = await getAdmin();
-    const db = admin.firestore();
+    const { db, auth } = await getServices();
 
     const ref = db.collection('installTokens').doc(token);
     const snap = await ref.get();
@@ -70,7 +72,7 @@ export const handler: Handler = async (event) => {
     await ref.update({ used: true, usedAt: Date.now() });
 
     // Gera Firebase Custom Token para o uid do usuário
-    const customToken = await admin.auth().createCustomToken(data.uid);
+    const customToken = await auth.createCustomToken(data.uid);
 
     return {
       statusCode: 200,
