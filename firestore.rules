@@ -86,6 +86,29 @@ service cloud.firestore {
       }
     }
 
+    // ── collectionGroup: songs e cifras (necessário para aba "Para Você") ────
+    // Firestore exige regra com wildcard recursivo para queries collectionGroup
+    match /{path=**}/songs/{docId} {
+      allow read: if isAuthed();
+    }
+    match /{path=**}/cifras/{docId} {
+      allow read: if isAuthed();
+    }
+
+    // ── Solicitações de troca de igreja ───────────────────────────────────────
+    match /churchJoinRequests/{reqId} {
+      allow read: if isAuthed() && (
+        request.auth.uid == resource.data.get('fromUid', '') ||
+        isChurchDirector(resource.data.get('toChurchId', '')) ||
+        isGlobalAdmin()
+      );
+      allow create: if isAuthed() && request.auth.uid == request.resource.data.get('fromUid', '');
+      allow update: if isAuthed() && (
+        isChurchDirector(resource.data.get('toChurchId', '')) ||
+        isGlobalAdmin()
+      );
+    }
+
     // ── Feed global ───────────────────────────────────────────────────────────
     match /posts/{postId} {
       allow read, write: if isAuthed();
@@ -120,5 +143,11 @@ service cloud.firestore {
       allow read: if isAuthed();
       allow write: if isGlobalAdmin();
     }
+
+    // ── Comunhão global ───────────────────────────────────────────────────────
+    match /comunhao/{id} {
+      allow read, write: if isAuthed();
+    }
   }
 }
+
