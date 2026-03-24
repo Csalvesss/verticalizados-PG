@@ -38,6 +38,9 @@ export interface Song {
   ordem: number;
   sections?: Section[];
   letra?: string;
+  playCount?: number;
+  churchId?: string;
+  churchName?: string;
 }
 
 export interface Cifra {
@@ -136,4 +139,18 @@ export interface UserProfile {
   bio?: string;
   link?: string;
   pinnedPostId?: string;
+  churchId?: string;
+}
+
+export interface ChurchJoinRequest {
+  id: string;
+  fromUid: string;
+  fromName: string;
+  fromPhoto: string;
+  fromChurchId: string | null;
+  fromChurchName: string | null;
+  toChurchId: string;
+  toChurchName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: import('firebase/firestore').Timestamp | null;
 }

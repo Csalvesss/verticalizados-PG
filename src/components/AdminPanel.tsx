@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   collection,
   addDoc,
@@ -10,6 +10,9 @@ import {
   setDoc,
   getDoc,
   arrayRemove,
+  where,
+  onSnapshot,
+  orderBy,
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Ico } from '../icons';
@@ -17,9 +20,9 @@ import { s } from '../styles';
 import { ADMIN_EMAIL } from '../constants';
 import { Avatar } from './Avatar';
 import { useChurch } from '../contexts/ChurchContext';
-import type { Song, Cifra, Evento, UserProfile } from '../types';
+import type { Song, Cifra, Evento, UserProfile, ChurchJoinRequest } from '../types';
 
-type Tab = 'songs' | 'cifras' | 'eventos' | 'membros' | 'usuarios';
+type Tab = 'songs' | 'cifras' | 'eventos' | 'membros' | 'usuarios' | 'solicitacoes' | 'diretores';
 
 interface Props {
   goHome: () => void;
@@ -30,6 +33,117 @@ interface Props {
   adminEmails: string[];
   currentUserUid: string;
   currentUserEmail: string;
+}
+
+// ── ChurchDirectorRow (used in DIRETORES tab) ─────────────────────────────────
+function ChurchDirectorRow({
+  church,
+  usuarios,
+  usuariosLoaded,
+  loadUsuarios,
+  onAssign,
+  onRemove,
+}: {
+  church: { id: string; name: string; district: string; directorUid: string | null };
+  usuarios: UserProfile[];
+  usuariosLoaded: boolean;
+  loadUsuarios: () => void;
+  onAssign: (uid: string, name: string) => void;
+  onRemove: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [searchUser, setSearchUser] = useState('');
+
+  const currentDirector = church.directorUid
+    ? usuarios.find(u => u.uid === church.directorUid)
+    : null;
+
+  const filteredUsers = usuarios.filter(u =>
+    !searchUser ||
+    (u.fullName || u.name || '').toLowerCase().includes(searchUser.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(searchUser.toLowerCase())
+  );
+
+  return (
+    <div style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 10, overflow: 'hidden' }}>
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', cursor: 'pointer' }}
+        onClick={() => {
+          setExpanded(e => !e);
+          if (!usuariosLoaded) loadUsuarios();
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: 'Barlow', fontWeight: 700, fontSize: 13, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {church.name}
+          </div>
+          <div style={{ fontFamily: 'Barlow', fontSize: 10, color: '#555' }}>{church.district}</div>
+        </div>
+        {church.directorUid ? (
+          <span style={{ fontFamily: 'Barlow Condensed', fontSize: 9, fontWeight: 700, letterSpacing: 1, color: '#F07830', background: 'rgba(240,120,48,0.12)', borderRadius: 99, padding: '2px 7px' }}>
+            DIRETOR
+          </span>
+        ) : (
+          <span style={{ fontFamily: 'Barlow Condensed', fontSize: 9, fontWeight: 700, letterSpacing: 1, color: '#555', background: '#111', borderRadius: 99, padding: '2px 7px' }}>
+            SEM DIRETOR
+          </span>
+        )}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: '0.2s' }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+
+      {expanded && (
+        <div style={{ borderTop: '1px solid #1a1a1a', padding: '12px' }}>
+          {church.directorUid && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, background: 'rgba(240,120,48,0.06)', borderRadius: 8, padding: '8px 10px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#F07830', fontWeight: 700 }}>Diretor atual</div>
+                {currentDirector ? (
+                  <div style={{ fontFamily: 'Barlow', fontSize: 13, color: '#e7e9ea' }}>{currentDirector.fullName || currentDirector.name} · {currentDirector.email}</div>
+                ) : (
+                  <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#555' }}>UID: {church.directorUid}</div>
+                )}
+              </div>
+              <button onClick={onRemove} style={{ padding: '5px 10px', borderRadius: 7, border: '1px solid rgba(244,33,46,0.3)', background: 'transparent', color: '#f4212e', fontFamily: 'Barlow Condensed', fontSize: 10, cursor: 'pointer', fontWeight: 700 }}>
+                Remover
+              </button>
+            </div>
+          )}
+
+          <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#71767b', marginBottom: 8 }}>Selecionar novo diretor:</div>
+          <input
+            type="text"
+            placeholder="Buscar usuário por nome ou email..."
+            value={searchUser}
+            onChange={e => setSearchUser(e.target.value)}
+            style={{ background: '#000', border: '1px solid #2f3336', borderRadius: 8, padding: '8px 10px', fontFamily: 'Barlow', fontSize: 12, width: '100%', color: '#fff', outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
+          />
+          {!usuariosLoaded ? (
+            <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#555' }}>Carregando usuários...</div>
+          ) : (
+            <div style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {filteredUsers.slice(0, 20).map(u => (
+                <button
+                  key={u.uid}
+                  onClick={() => onAssign(u.uid, u.fullName || u.name)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 8px', background: 'transparent', border: '1px solid #1a1a1a', borderRadius: 7, cursor: 'pointer', textAlign: 'left' }}
+                >
+                  <Avatar src={u.photo} name={u.name || '?'} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'Barlow', fontWeight: 600, fontSize: 12, color: '#e7e9ea', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {u.fullName || u.name}
+                    </div>
+                    <div style={{ fontFamily: 'Barlow', fontSize: 10, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmails, currentUserUid, currentUserEmail }: Props) {
@@ -48,6 +162,69 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
   const [usuarios, setUsuarios] = useState<UserProfile[]>([]);
   const [usuariosLoaded, setUsuariosLoaded] = useState(false);
   const [deletingUid, setDeletingUid] = useState<string | null>(null);
+  const [solicitacoes, setSolicitacoes] = useState<ChurchJoinRequest[]>([]);
+  const [churchSearch, setChurchSearch] = useState('');
+  const [allChurches, setAllChurches] = useState<{ id: string; name: string; district: string; directorUid: string | null; directorName?: string }[]>([]);
+  const [churchesLoaded, setChurchesLoaded] = useState(false);
+
+  // Load pending join requests for this church (real-time)
+  useEffect(() => {
+    if (!selectedChurch || !canEditThisChurch) return;
+    const unsub = onSnapshot(
+      query(
+        collection(db, 'churchJoinRequests'),
+        where('toChurchId', '==', selectedChurch.id),
+        where('status', '==', 'pending'),
+        orderBy('createdAt', 'desc')
+      ),
+      snap => setSolicitacoes(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChurchJoinRequest)))
+    );
+    return () => unsub();
+  }, [selectedChurch?.id, canEditThisChurch]);
+
+  const loadAllChurches = async () => {
+    if (churchesLoaded) return;
+    const snap = await getDocs(collection(db, 'churches'));
+    const list = snap.docs.map(d => {
+      const data = d.data();
+      return { id: d.id, name: data.name || d.id, district: data.district || '', directorUid: data.directorUid || null };
+    });
+    // Sort alphabetically
+    list.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    setAllChurches(list);
+    setChurchesLoaded(true);
+  };
+
+  const aprovarSolicitacao = async (req: ChurchJoinRequest) => {
+    if (!window.confirm(`Aprovar ${req.fromName} para entrar em ${req.toChurchName}?`)) return;
+    // Update request status
+    await updateDoc(doc(db, 'churchJoinRequests', req.id), { status: 'approved' });
+    // Update user's churchId in Firestore
+    await setDoc(doc(db, 'users', req.fromUid), { churchId: req.toChurchId }, { merge: true });
+    // Register as member in the new church
+    const membrosRef = collection(db, 'churches', req.toChurchId, 'membros');
+    const existing = await getDocs(query(membrosRef, where('nome', '==', req.fromName)));
+    if (existing.empty) await addDoc(membrosRef, { nome: req.fromName });
+    alert(`${req.fromName} foi aprovado e adicionado à ${req.toChurchName}.`);
+  };
+
+  const rejeitarSolicitacao = async (req: ChurchJoinRequest) => {
+    if (!window.confirm(`Rejeitar solicitação de ${req.fromName}?`)) return;
+    await updateDoc(doc(db, 'churchJoinRequests', req.id), { status: 'rejected' });
+  };
+
+  const atribuirDiretor = async (churchId: string, uid: string, name: string) => {
+    if (!window.confirm(`Definir ${name} como diretor de ${churchId}?`)) return;
+    await setDoc(doc(db, 'churches', churchId), { directorUid: uid }, { merge: true });
+    setAllChurches(prev => prev.map(c => c.id === churchId ? { ...c, directorUid: uid, directorName: name } : c));
+    alert(`${name} agora é diretor de ${churchId}.`);
+  };
+
+  const removerDiretor = async (churchId: string) => {
+    if (!window.confirm(`Remover diretor de ${churchId}?`)) return;
+    await setDoc(doc(db, 'churches', churchId), { directorUid: null }, { merge: true });
+    setAllChurches(prev => prev.map(c => c.id === churchId ? { ...c, directorUid: null, directorName: undefined } : c));
+  };
 
   const set = (f: string, v: string) =>
     setForm((x) => ({ ...x, [f]: v }));
@@ -208,12 +385,14 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
       />
     );
 
-  const TABS: { id: Tab; label: string }[] = [
+  const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: 'songs', label: 'MÚSICAS' },
     { id: 'cifras', label: 'CIFRAS' },
     { id: 'eventos', label: 'EVENTOS' },
     { id: 'membros', label: 'MEMBROS' },
     { id: 'usuarios', label: 'USUÁRIOS' },
+    ...(canEditThisChurch ? [{ id: 'solicitacoes' as Tab, label: 'SOLICITAÇÕES', badge: solicitacoes.length }] : []),
+    ...(isSuperAdmin ? [{ id: 'diretores' as Tab, label: 'DIRETORES' }] : []),
   ];
 
   return (
@@ -283,6 +462,7 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
                 setForm(null);
                 setEditId(null);
                 if (t.id === 'usuarios') loadUsuarios();
+                if (t.id === 'diretores') loadAllChurches();
               }}
               style={{
                 fontFamily: 'Barlow Condensed',
@@ -297,9 +477,19 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
                 color: tab === t.id ? '#fff' : '#71767b',
                 whiteSpace: 'nowrap',
                 transition: '0.2s',
+                position: 'relative',
               }}
             >
               {t.label}
+              {t.badge && t.badge > 0 ? (
+                <span style={{
+                  position: 'absolute', top: 4, right: 4,
+                  background: '#f4212e', color: '#fff', borderRadius: 999,
+                  fontSize: 9, fontWeight: 700, minWidth: 14, height: 14,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 3px', lineHeight: 1,
+                }}>{t.badge}</span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -491,8 +681,103 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
           </div>
         )}
 
+        {/* SOLICITAÇÕES tab */}
+        {tab === 'solicitacoes' && (
+          <div style={{ ...s.card, padding: 20 }}>
+            <div style={{ fontFamily: 'Barlow Condensed', fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: 0.5, marginBottom: 16 }}>
+              SOLICITAÇÕES DE ENTRADA
+            </div>
+            {solicitacoes.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: '#555', fontFamily: 'Barlow', fontSize: 14 }}>
+                Nenhuma solicitação pendente.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {solicitacoes.map(req => (
+                  <div key={req.id} style={{ background: '#0a0a0a', border: '1px solid rgba(240,120,48,0.2)', borderRadius: 12, padding: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                      <Avatar src={req.fromPhoto} name={req.fromName} size={36} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: 'Barlow', fontWeight: 700, fontSize: 14, color: '#fff' }}>{req.fromName}</div>
+                        {req.fromChurchName ? (
+                          <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#71767b' }}>
+                            De: {req.fromChurchName} → {req.toChurchName}
+                          </div>
+                        ) : (
+                          <div style={{ fontFamily: 'Barlow', fontSize: 11, color: '#71767b' }}>
+                            Quer entrar em: {req.toChurchName}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => aprovarSolicitacao(req)}
+                        style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: 'none', background: '#F07830', color: '#fff', fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12, letterSpacing: 0.5, cursor: 'pointer' }}
+                      >
+                        Aprovar
+                      </button>
+                      <button
+                        onClick={() => rejeitarSolicitacao(req)}
+                        style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(244,33,46,0.3)', background: 'transparent', color: '#f4212e', fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 12, letterSpacing: 0.5, cursor: 'pointer' }}
+                      >
+                        Rejeitar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* DIRETORES tab (super admin only) */}
+        {tab === 'diretores' && isSuperAdmin && (
+          <div style={{ ...s.card, padding: 20 }}>
+            <div style={{ fontFamily: 'Barlow Condensed', fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: 0.5, marginBottom: 4 }}>
+              DIRETORES POR IGREJA
+            </div>
+            <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#71767b', marginBottom: 16 }}>
+              Para atribuir um diretor, cole o UID do usuário no campo abaixo.
+            </div>
+
+            {/* Search filter */}
+            <input
+              type="text"
+              placeholder="Filtrar por nome da igreja..."
+              value={churchSearch}
+              onChange={e => setChurchSearch(e.target.value)}
+              style={{
+                background: '#000', border: '1px solid #2f3336', borderRadius: 10,
+                padding: '10px 12px', fontFamily: 'Barlow', fontSize: 13,
+                width: '100%', marginBottom: 16, color: '#fff', outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+
+            {!churchesLoaded ? (
+              <div style={{ textAlign: 'center', padding: 20, color: '#555', fontFamily: 'Barlow', fontSize: 14 }}>Carregando igrejas...</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {allChurches
+                  .filter(c => !churchSearch || c.name.toLowerCase().includes(churchSearch.toLowerCase()) || c.district.toLowerCase().includes(churchSearch.toLowerCase()))
+                  .map(church => (
+                    <ChurchDirectorRow
+                      key={church.id}
+                      church={church}
+                      usuarios={usuarios}
+                      usuariosLoaded={usuariosLoaded}
+                      loadUsuarios={loadUsuarios}
+                      onAssign={(uid, name) => atribuirDiretor(church.id, uid, name)}
+                      onRemove={() => removerDiretor(church.id)}
+                    />
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Other tabs */}
-        {tab !== 'usuarios' && (
+        {tab !== 'usuarios' && tab !== 'solicitacoes' && tab !== 'diretores' && (
           <div style={{ ...s.card, padding: 20 }}>
             <div
               style={{

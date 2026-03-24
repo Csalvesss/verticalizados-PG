@@ -70,23 +70,42 @@ export default function App() {
 
 // ── AUTHED APP — handles onboarding + main ────────────────────────────────────
 function AuthedApp({ user }: { user: User }) {
-  const { isChurchSelected } = useChurch();
+  const { isChurchSelected, loadChurchFromFirestore } = useChurch();
   const [showOnboarding, setShowOnboarding] = useState(!isChurchSelected);
+  // 'switch' mode: user is already in a church but wants to change
+  const [switchMode, setSwitchMode] = useState(false);
 
-  // If church gets deselected (e.g. from profile), show onboarding again
+  // On mount, try to sync church from Firestore (handles approved join requests)
+  useEffect(() => {
+    loadChurchFromFirestore(user.uid).then(() => {
+      // After sync, if we now have a church and were showing onboarding, close it
+      setShowOnboarding(prev => prev && !localStorage.getItem('sete_teen_church'));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.uid]);
+
+  // If church gets deselected, show onboarding again
   useEffect(() => {
     if (!isChurchSelected) setShowOnboarding(true);
   }, [isChurchSelected]);
 
-  if (showOnboarding) {
-    return <OnboardingScreen onDone={() => setShowOnboarding(false)} />;
+  if (showOnboarding || switchMode) {
+    return (
+      <OnboardingScreen
+        mode={switchMode ? 'switch' : 'first'}
+        uid={user.uid}
+        userName={user.displayName || 'Membro'}
+        userPhoto={user.photoURL || ''}
+        onDone={() => { setShowOnboarding(false); setSwitchMode(false); }}
+      />
+    );
   }
 
-  return <MainApp user={user} />;
+  return <MainApp user={user} onChangeChurch={() => setSwitchMode(true)} />;
 }
 
 // ── MAIN APP (dados globais + roteamento) ─────────────────────────────────────
-function MainApp({ user }: { user: User }) {
+function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => void }) {
   const { selectedChurch } = useChurch();
   const [adminEmails, setAdminEmails] = useState<string[]>([ADMIN_EMAIL]);
   const isAdmin = adminEmails.includes(user.email || '') || user.email === ADMIN_EMAIL;
@@ -186,6 +205,9 @@ function MainApp({ user }: { user: User }) {
     const cid = selectedChurch.id;
     const cRef = (col: string) => collection(db, 'churches', cid, col);
 
+    // Persist churchId to Firestore on every church load (handles first-time + migrations)
+    setDoc(doc(db, 'users', user.uid), { churchId: cid }, { merge: true }).catch(() => {});
+
     // Register member in this church
     if (baseName && baseName !== 'Membro') {
       getDocs(query(cRef('membros'), where('nome', '==', baseName))).then(snap => {
@@ -250,6 +272,7 @@ function MainApp({ user }: { user: User }) {
             postsCount={posts.length}
             confirmacoesCount={confirmacoesProximo.length}
             proximoEvento={eventos[0] || null}
+            onChangeChurch={onChangeChurch}
           />
         )}
 

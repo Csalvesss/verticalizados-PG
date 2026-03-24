@@ -12,6 +12,7 @@ interface Props {
   postsCount: number;
   confirmacoesCount: number;
   proximoEvento: Evento | null;
+  onChangeChurch: () => void;
 }
 
 
@@ -23,9 +24,10 @@ export function HomeScreen({
   postsCount,
   confirmacoesCount,
   proximoEvento,
+  onChangeChurch,
 }: Props) {
   const { canInstallAndroid, isIOS, isStandalone, iosAdded, triggerInstall, openIOSModal } = usePWAInstallContext();
-  const { selectedChurch, clearChurch } = useChurch();
+  const { selectedChurch } = useChurch();
   const showInstallCard = !isStandalone && (canInstallAndroid || (isIOS && !iosAdded));
 
   const MENU_ITEMS = [
@@ -112,7 +114,7 @@ export function HomeScreen({
             </div>
           </div>
           <button
-            onClick={clearChurch}
+            onClick={onChangeChurch}
             title="Trocar de igreja"
             style={{
               background: 'transparent',
