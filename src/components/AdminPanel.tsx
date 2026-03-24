@@ -241,6 +241,20 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
     if (!selectedChurch) { alert('Nenhuma igreja selecionada.'); return; }
     try {
       if (tab === 'songs' && form.title) {
+        const normalizar = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+        if (!editId) {
+          const titleNorm = normalizar(form.title);
+          const letraNorm = normalizar(form.letra || '');
+          const duplicado = songs.find((s) => {
+            if (normalizar(s.title) === titleNorm) return true;
+            if (letraNorm && s.letra && normalizar(s.letra) === letraNorm) return true;
+            return false;
+          });
+          if (duplicado) {
+            alert(`Já existe uma música com esse título ou letra: "${duplicado.title}"`);
+            return;
+          }
+        }
         const d = {
           title: form.title,
           letra: form.letra || '',
@@ -293,6 +307,31 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
   const deletar = async (col: string, id: string) => {
     if (!window.confirm('Apagar?')) return;
     await deleteDoc(cDoc(col, id));
+  };
+
+  const limparDuplicatas = async () => {
+    const normalizar = (v: string) => v.trim().toLowerCase().replace(/\s+/g, ' ');
+    const grupos = new Map<string, Song[]>();
+    for (const s of songs) {
+      const k = normalizar(s.title);
+      if (!grupos.has(k)) grupos.set(k, []);
+      grupos.get(k)!.push(s);
+    }
+    const paraApagar: string[] = [];
+    for (const grupo of grupos.values()) {
+      if (grupo.length <= 1) continue;
+      // Mantém o mais completo (maior letra + sections)
+      const melhor = grupo.reduce((a, b) => {
+        const scoreA = (a.letra?.length ?? 0) + (a.sections?.length ?? 0) * 10;
+        const scoreB = (b.letra?.length ?? 0) + (b.sections?.length ?? 0) * 10;
+        return scoreB > scoreA ? b : a;
+      });
+      grupo.filter((s) => s.id !== melhor.id).forEach((s) => paraApagar.push(s.id));
+    }
+    if (paraApagar.length === 0) { alert('Nenhuma duplicata encontrada!'); return; }
+    if (!window.confirm(`Apagar ${paraApagar.length} música(s) duplicada(s)?`)) return;
+    await Promise.all(paraApagar.map((id) => deleteDoc(cDoc('songs', id))));
+    alert(`${paraApagar.length} duplicata(s) removida(s).`);
   };
 
   const deletarMembro = async (nome: string) => {
@@ -797,20 +836,30 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
                   : `${membros.length} MEMBROS`}
               </div>
               {canEditThisChurch && (
-                <button
-                  onClick={() => {
-                    setForm({});
-                    setEditId(null);
-                  }}
-                  style={{
-                    ...s.btnOrange,
-                    padding: '6px 14px',
-                    fontSize: 12,
-                    gap: 6,
-                  }}
-                >
-                  {Ico.plus()} Novo
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {tab === 'songs' && (
+                    <button
+                      onClick={limparDuplicatas}
+                      style={{ ...s.btnOrange, padding: '6px 14px', fontSize: 12, gap: 6, background: '#555' }}
+                    >
+                      Limpar duplicatas
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setForm({});
+                      setEditId(null);
+                    }}
+                    style={{
+                      ...s.btnOrange,
+                      padding: '6px 14px',
+                      fontSize: 12,
+                      gap: 6,
+                    }}
+                  >
+                    {Ico.plus()} Novo
+                  </button>
+                </div>
               )}
             </div>
 
