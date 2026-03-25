@@ -18,6 +18,7 @@ import {
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
+import { pushNotify } from '../utils/pushNotify';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
 
@@ -82,6 +83,13 @@ export function FeedScreen({
     return () => uns();
   }, [uid]);
 
+  const PUSH_TITLES: Record<'like' | 'comment' | 'repost' | 'reply', string> = {
+    like: `${currentUser.name} curtiu seu post`,
+    comment: `${currentUser.name} comentou no seu post`,
+    repost: `${currentUser.name} repostou seu post`,
+    reply: `${currentUser.name} respondeu seu comentário`,
+  };
+
   async function sendNotification(
     toUserId: string,
     type: 'like' | 'comment' | 'repost' | 'reply',
@@ -102,6 +110,7 @@ export function FeedScreen({
       read: false,
       createdAt: serverTimestamp(),
     });
+    pushNotify(toUserId, PUSH_TITLES[type], postText.slice(0, 80));
   }
 
   const follow = async (targetUserId: string) => {
