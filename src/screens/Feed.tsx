@@ -359,16 +359,21 @@ export function FeedScreen({
             >
               {Ico.bell(unreadCount > 0 ? '#F07830' : '#71767b')}
               {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: 2, right: 2,
-                  background: '#F07830', color: '#fff',
-                  borderRadius: 99, minWidth: 16, height: 16,
+                <div style={{
+                  position: 'absolute', top: 1, right: 1,
+                  minWidth: 18, height: 18,
+                  background: 'linear-gradient(135deg, #F07830, #BA7517)',
+                  color: '#fff',
+                  borderRadius: 99,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9, fontFamily: 'Barlow Condensed', fontWeight: 700,
-                  border: '2px solid #000',
+                  fontSize: 10, fontFamily: 'Barlow Condensed', fontWeight: 700,
+                  border: '2px solid #0f0f0f',
+                  boxShadow: '0 2px 8px rgba(240,120,48,0.5)',
+                  padding: '0 4px',
+                  lineHeight: 1,
                 }}>
                   {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+                </div>
               )}
             </button>
           </div>
