@@ -569,7 +569,7 @@ function NewChatView({
 
 export function MensagensScreen({
   uid,
-  currentUser,
+  currentUser: _currentUser,
   goTo,
 }: {
   uid: string;
