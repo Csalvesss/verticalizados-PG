@@ -29,6 +29,7 @@ interface Props {
   uid: string;
   adminEmails: string[];
   goTo: (sc: Screen) => void;
+  unreadMsgCount?: number;
   onOpenProfile?: (userId: string, userName: string) => void;
 }
 
