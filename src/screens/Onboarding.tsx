@@ -619,7 +619,7 @@ function SelectChurchScreen({ groups, search, onSearch, onPick, loading, isSwitc
                 </div>
 
                 {/* Chevron / lock */}
-                {isSwitch && church.directorUid ? (
+                {isSwitch ? (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -736,39 +736,30 @@ export function OnboardingScreen({ onDone, mode = 'first', uid, userName, userPh
 
   const handlePick = async (church: Church) => {
     if (mode === 'switch' && uid) {
-      // Check if the target church has a director
-      const hasDirector = !!church.directorUid;
-
-      if (hasDirector) {
-        // Check for existing pending request to avoid duplicates
-        const existing = await getDocs(
-          query(
-            collection(db, 'churchJoinRequests'),
-            where('fromUid', '==', uid),
-            where('toChurchId', '==', church.id),
-            where('status', '==', 'pending')
-          )
-        );
-        if (existing.empty) {
-          await addDoc(collection(db, 'churchJoinRequests'), {
-            fromUid: uid,
-            fromName: userName || 'Membro',
-            fromPhoto: userPhoto || '',
-            fromChurchId: selectedChurch?.id || null,
-            fromChurchName: selectedChurch?.name || null,
-            toChurchId: church.id,
-            toChurchName: church.name,
-            status: 'pending',
-            createdAt: serverTimestamp(),
-          });
-        }
-        setRequestedChurch(church.name);
-        setPhase('requested');
-      } else {
-        // No director → allow immediate switch
-        setSelectedChurch(church, uid);
-        onDone();
+      // Always require approval when switching — send a join request
+      const existing = await getDocs(
+        query(
+          collection(db, 'churchJoinRequests'),
+          where('fromUid', '==', uid),
+          where('toChurchId', '==', church.id),
+          where('status', '==', 'pending')
+        )
+      );
+      if (existing.empty) {
+        await addDoc(collection(db, 'churchJoinRequests'), {
+          fromUid: uid,
+          fromName: userName || 'Membro',
+          fromPhoto: userPhoto || '',
+          fromChurchId: selectedChurch?.id || null,
+          fromChurchName: selectedChurch?.name || null,
+          toChurchId: church.id,
+          toChurchName: church.name,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        });
       }
+      setRequestedChurch(church.name);
+      setPhase('requested');
     } else {
       // First-time selection → immediate join
       setSelectedChurch(church, uid);
