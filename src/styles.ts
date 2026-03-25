@@ -25,7 +25,7 @@ export const GLOBAL_CSS = `
   body {
     display: flex;
     justify-content: center;
-    background: #000;
+    background: #0f0f0f;
     color: #e7e9ea;
     font-family: 'Barlow', sans-serif;
   }
@@ -111,7 +111,7 @@ export const GLOBAL_CSS = `
 
 export const s: Record<string, CSSProperties> = {
   root: {
-    background: 'radial-gradient(ellipse at 50% 0%, rgba(186,117,23,0.1) 0%, #000 55%)',
+    background: '#0f0f0f',
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
