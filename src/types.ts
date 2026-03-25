@@ -16,7 +16,9 @@ export type Screen =
   | 'userPerfil'
   | 'onboarding'
   | 'inbox'
-  | 'chat';
+  | 'chat'
+  | 'estudo'
+  | 'mensagens';
 
 export interface CurrentUser {
   uid: string;
@@ -40,6 +42,9 @@ export interface Song {
   ordem: number;
   sections?: Section[];
   letra?: string;
+  playCount?: number;
+  churchId?: string;
+  churchName?: string;
 }
 
 export interface Cifra {
@@ -138,4 +143,16 @@ export interface UserProfile {
   bio?: string;
   link?: string;
   pinnedPostId?: string;
+}
+
+export interface ChurchJoinRequest {
+  id: string;
+  fromUid: string;
+  fromName: string;
+  fromPhoto?: string;
+  fromChurchName?: string;
+  toChurchId: string;
+  toChurchName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Timestamp | null;
 }
