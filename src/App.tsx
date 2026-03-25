@@ -4,6 +4,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
 import { auth } from './firebase';
 import { consumeInstallToken, hasInstallToken } from './hooks/useInstallTransfer';
+import { usePushNotifications } from './hooks/usePushNotifications';
 import { migrateGlobalDataToChurch } from './utils/migration';
 import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './constants';
 import { GLOBAL_CSS, s } from './styles';
@@ -158,6 +159,8 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
     photo: firestorePhoto || basePhoto || '',
     email: baseEmail,
   };
+
+  usePushNotifications(user.uid);
 
   const [screen, setScreen] = useState<Screen>(() => {
     const saved = window.localStorage.getItem('pg:screen') as Screen | null;

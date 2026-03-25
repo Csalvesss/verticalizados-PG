@@ -3,6 +3,7 @@ import {
   collection, doc, onSnapshot, addDoc, updateDoc, serverTimestamp,
   query, orderBy, getDoc, setDoc, where, increment,
 } from 'firebase/firestore';
+import { pushNotify } from '../utils/pushNotify';
 import type { Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Ico } from '../icons';
@@ -313,6 +314,8 @@ function ChatView({
         createdAt: serverTimestamp(),
         read: false,
       });
+
+      pushNotify(otherUser.uid, otherUser.fullName || otherUser.name || 'Mensagem', t.slice(0, 100));
     } finally {
       setSending(false);
     }
