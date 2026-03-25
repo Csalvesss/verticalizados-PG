@@ -29,6 +29,7 @@ interface Props {
   uid: string;
   adminEmails: string[];
   goTo: (sc: Screen) => void;
+  unreadMsgCount?: number;
   onOpenProfile?: (userId: string, userName: string) => void;
 }
 
@@ -40,6 +41,7 @@ export function FeedScreen({
   uid,
   adminEmails,
   goTo,
+  unreadMsgCount = 0,
   onOpenProfile,
 }: Props) {
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
@@ -348,6 +350,31 @@ export function FeedScreen({
               }}
             >
               {Ico.search('#71767b')}
+            </button>
+            <button
+              onClick={() => goTo('mensagens')}
+              style={{
+                padding: 6, background: 'transparent', border: 'none',
+                cursor: 'pointer', borderRadius: '50%', display: 'flex',
+                position: 'relative',
+              }}
+            >
+              {Ico.msg(unreadMsgCount > 0 ? '#F07830' : '#71767b')}
+              {unreadMsgCount > 0 && (
+                <div style={{
+                  position: 'absolute', top: 1, right: 1,
+                  minWidth: 18, height: 18,
+                  background: 'linear-gradient(135deg, #F07830, #BA7517)',
+                  color: '#fff', borderRadius: 99,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontFamily: 'Barlow Condensed', fontWeight: 700,
+                  border: '2px solid #0f0f0f',
+                  boxShadow: '0 2px 8px rgba(240,120,48,0.5)',
+                  padding: '0 4px', lineHeight: 1,
+                }}>
+                  {unreadMsgCount > 9 ? '9+' : unreadMsgCount}
+                </div>
+              )}
             </button>
             <button
               onClick={() => goTo('notificacoes')}
