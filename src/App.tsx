@@ -24,6 +24,7 @@ import { PerfilScreen } from './screens/Perfil';
 import { ComunhaoScreen } from './screens/Comunhao';
 import { NotificacoesScreen } from './screens/Notificacoes';
 import { EstudoFacilScreen } from './screens/EstudoFacil';
+import { MensagensScreen } from './screens/Mensagens';
 import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPerfilScreen } from './screens/UserPerfil';
@@ -172,6 +173,7 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
   const [membrosLista, setMembrosLista] = useState<string[]>([]);
   const [sorteioSemana, setSorteioSemana] = useState<Sorteio | null>(null);
   const [solicitacoesPendentes, setSolicitacoesPendentes] = useState<ChurchJoinRequest[]>([]);
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
 
   // ── Feed "não lido" ──────────────────────────────────────────────────────
   const FEED_SEEN_KEY = `pg:feedSeen_${user.uid}`;
@@ -206,7 +208,18 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
       setSorteioSemana(snap.exists() ? (snap.data() as Sorteio) : null);
     });
 
-    return () => { unsPosts(); unsSorteio(); };
+    // Unread messages badge — always-on listener
+    const unsMsgs = onSnapshot(
+      query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid)),
+      snap => {
+        let total = 0;
+        snap.docs.forEach(d => { total += (d.data().unread?.[user.uid] ?? 0); });
+        setUnreadMsgCount(total);
+      },
+      () => {}
+    );
+
+    return () => { unsPosts(); unsSorteio(); unsMsgs(); };
   }, [user.uid]);
 
   // ── Church-scoped data: songs, cifras, membros, eventos, confirmacoes ────
@@ -336,6 +349,7 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
             uid={user.uid}
             adminEmails={adminEmails}
             goTo={goTo}
+            unreadMsgCount={unreadMsgCount}
             onOpenProfile={(targetUid) => {
               setProfileTarget(targetUid);
               goTo('userPerfil');
@@ -392,6 +406,10 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
 
         {screen === 'estudo' && (
           <EstudoFacilScreen goTo={goTo} />
+        )}
+
+        {screen === 'mensagens' && (
+          <MensagensScreen uid={user.uid} currentUser={currentUser} goTo={goTo} />
         )}
 
         {screen === 'admin' && isAdmin && (
