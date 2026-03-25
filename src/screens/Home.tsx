@@ -39,6 +39,7 @@ export function HomeScreen({
     { icon: Ico.feed, label: 'Feed', sub: `${postsCount} posts da APV`, sc: 'feed' },
     { icon: Ico.event, label: 'Eventos', sub: `${confirmacoesCount} confirmados`, sc: 'eventos' },
     { icon: Ico.cross, label: 'Jogando em Comunhão', sub: 'Quiz bíblico — ganhe pontos!', sc: 'jogandoEmComunhao' },
+    { icon: Ico.study, label: 'Estudo Fácil', sub: 'Cursos bíblicos guiados', sc: 'estudo' },
   ];
 
   return (

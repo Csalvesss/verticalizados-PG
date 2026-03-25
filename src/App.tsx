@@ -23,6 +23,7 @@ import { EventosScreen } from './screens/Eventos';
 import { PerfilScreen } from './screens/Perfil';
 import { ComunhaoScreen } from './screens/Comunhao';
 import { NotificacoesScreen } from './screens/Notificacoes';
+import { EstudoFacilScreen } from './screens/EstudoFacil';
 import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPerfilScreen } from './screens/UserPerfil';
@@ -368,6 +369,10 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
 
         {screen === 'jogandoEmComunhao' && (
           <JogandoEmComunhaoScreen currentUser={currentUser} goTo={goTo} />
+        )}
+
+        {screen === 'estudo' && (
+          <EstudoFacilScreen goTo={goTo} />
         )}
 
         {screen === 'admin' && isAdmin && (
