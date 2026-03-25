@@ -18,7 +18,6 @@ import {
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import type { Post, CurrentUser, Screen } from '../types';
-import { pushNotify } from '../utils/pushNotify';
 import { Composer } from '../components/Composer';
 import { Timeline } from '../components/Timeline';
 
@@ -30,7 +29,6 @@ interface Props {
   uid: string;
   adminEmails: string[];
   goTo: (sc: Screen) => void;
-  unreadMsgCount?: number;
   onOpenProfile?: (userId: string, userName: string) => void;
 }
 
@@ -42,7 +40,6 @@ export function FeedScreen({
   uid,
   adminEmails,
   goTo,
-  unreadMsgCount = 0,
   onOpenProfile,
 }: Props) {
   const [tab, setTab] = useState<'para-voce' | 'seguindo'>('para-voce');
@@ -83,13 +80,6 @@ export function FeedScreen({
     return () => uns();
   }, [uid]);
 
-  const PUSH_TITLES: Record<'like' | 'comment' | 'repost' | 'reply', string> = {
-    like: `${currentUser.name} curtiu seu post`,
-    comment: `${currentUser.name} comentou no seu post`,
-    repost: `${currentUser.name} repostou seu post`,
-    reply: `${currentUser.name} respondeu seu comentário`,
-  };
-
   async function sendNotification(
     toUserId: string,
     type: 'like' | 'comment' | 'repost' | 'reply',
@@ -110,7 +100,6 @@ export function FeedScreen({
       read: false,
       createdAt: serverTimestamp(),
     });
-    pushNotify(toUserId, PUSH_TITLES[type], postText.slice(0, 80));
   }
 
   const follow = async (targetUserId: string) => {
@@ -289,7 +278,7 @@ export function FeedScreen({
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      background: '#0f0f0f',
+      background: '#000',
       width: '100%',
     }}>
       {/* Sticky header */}
@@ -297,7 +286,7 @@ export function FeedScreen({
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        background: 'rgba(15,15,15,0.95)',
+        background: 'rgba(0,0,0,0.92)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid #1e1e1e',
@@ -361,29 +350,13 @@ export function FeedScreen({
               {Ico.search('#71767b')}
             </button>
             <button
-              onClick={() => goTo('mensagens')}
+              onClick={() => goTo('inbox')}
               style={{
                 padding: 6, background: 'transparent', border: 'none',
                 cursor: 'pointer', borderRadius: '50%', display: 'flex',
-                position: 'relative',
               }}
             >
-              {Ico.msg(unreadMsgCount > 0 ? '#F07830' : '#71767b')}
-              {unreadMsgCount > 0 && (
-                <div style={{
-                  position: 'absolute', top: 1, right: 1,
-                  minWidth: 18, height: 18,
-                  background: 'linear-gradient(135deg, #F07830, #BA7517)',
-                  color: '#fff', borderRadius: 99,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontFamily: 'Barlow Condensed', fontWeight: 700,
-                  border: '2px solid #0f0f0f',
-                  boxShadow: '0 2px 8px rgba(240,120,48,0.5)',
-                  padding: '0 4px', lineHeight: 1,
-                }}>
-                  {unreadMsgCount > 9 ? '9+' : unreadMsgCount}
-                </div>
-              )}
+              {Ico.send()}
             </button>
             <button
               onClick={() => goTo('notificacoes')}
@@ -395,21 +368,16 @@ export function FeedScreen({
             >
               {Ico.bell(unreadCount > 0 ? '#F07830' : '#71767b')}
               {unreadCount > 0 && (
-                <div style={{
-                  position: 'absolute', top: 1, right: 1,
-                  minWidth: 18, height: 18,
-                  background: 'linear-gradient(135deg, #F07830, #BA7517)',
-                  color: '#fff',
-                  borderRadius: 99,
+                <span style={{
+                  position: 'absolute', top: 2, right: 2,
+                  background: '#F07830', color: '#fff',
+                  borderRadius: 99, minWidth: 16, height: 16,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontFamily: 'Barlow Condensed', fontWeight: 700,
-                  border: '2px solid #0f0f0f',
-                  boxShadow: '0 2px 8px rgba(240,120,48,0.5)',
-                  padding: '0 4px',
-                  lineHeight: 1,
+                  fontSize: 9, fontFamily: 'Barlow Condensed', fontWeight: 700,
+                  border: '2px solid #000',
                 }}>
                   {unreadCount > 9 ? '9+' : unreadCount}
-                </div>
+                </span>
               )}
             </button>
           </div>
@@ -457,9 +425,7 @@ export function FeedScreen({
 
       {/* Composer (only on Para você tab) */}
       {tab === 'para-voce' && (
-        <div id="feed-composer">
-          <Composer userPhoto={currentUser.photo} onPost={postar} />
-        </div>
+        <Composer userPhoto={currentUser.photo} onPost={postar} />
       )}
 
       {/* Seguindo empty state */}
@@ -662,7 +628,6 @@ export function FeedScreen({
       <style>{`
         .feed-back-btn:hover { background: rgba(240,120,48,0.1) !important; }
       `}</style>
-
     </div>
   );
 }

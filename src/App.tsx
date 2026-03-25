@@ -30,6 +30,8 @@ import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPerfilScreen } from './screens/UserPerfil';
 import { OnboardingScreen } from './screens/Onboarding';
+import { InboxScreen } from './screens/Inbox';
+import { ChatScreen } from './screens/Chat';
 import { UserPhotosProvider } from './contexts/UserPhotos';
 import { PWAInstallProvider } from './contexts/PWAInstall';
 import { ChurchProvider, useChurch } from './contexts/ChurchContext';
@@ -113,6 +115,7 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
   const [adminEmails, setAdminEmails] = useState<string[]>([ADMIN_EMAIL]);
   const isAdmin = adminEmails.includes(user.email || '') || user.email === ADMIN_EMAIL;
   const [profileTarget, setProfileTarget] = useState<string | null>(null);
+  const [chatTarget, setChatTarget] = useState<{ convId: string; uid: string; name: string; photo: string } | null>(null);
   const baseName = user.displayName?.split(' ')[0] || 'Membro';
   const baseFullName = user.displayName || 'Membro';
   const basePhoto = user.photoURL || null;
@@ -437,6 +440,25 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
             adminEmails={adminEmails}
             goBack={() => goTo('feed')}
             onOpenProfile={(targetUid) => { setProfileTarget(targetUid); goTo('userPerfil'); }}
+            onOpenChat={(convId, other) => { setChatTarget({ convId, ...other }); goTo('chat'); }}
+          />
+        )}
+
+        {screen === 'inbox' && (
+          <InboxScreen
+            uid={user.uid}
+            currentUserName={currentUser.name}
+            goBack={() => goTo('feed')}
+            onOpenChat={(convId, other) => { setChatTarget({ convId, ...other }); goTo('chat'); }}
+          />
+        )}
+
+        {screen === 'chat' && chatTarget && (
+          <ChatScreen
+            convId={chatTarget.convId}
+            otherUser={{ uid: chatTarget.uid, name: chatTarget.name, photo: chatTarget.photo }}
+            currentUser={{ uid: user.uid, name: currentUser.name, photo: currentUser.photo }}
+            goBack={() => goTo('inbox')}
           />
         )}
 
