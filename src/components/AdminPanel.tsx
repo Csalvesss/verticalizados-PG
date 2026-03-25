@@ -11,7 +11,6 @@ import {
   getDoc,
   arrayRemove,
   where,
-  onSnapshot,
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Ico } from '../icons';
@@ -32,6 +31,7 @@ interface Props {
   adminEmails: string[];
   currentUserUid: string;
   currentUserEmail: string;
+  solicitacoesPendentes: ChurchJoinRequest[];
 }
 
 // ── ChurchDirectorRow (used in DIRETORES tab) ─────────────────────────────────
@@ -145,7 +145,7 @@ function ChurchDirectorRow({
   );
 }
 
-export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmails, currentUserUid, currentUserEmail }: Props) {
+export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmails, currentUserUid, currentUserEmail, solicitacoesPendentes }: Props) {
   const { selectedChurch } = useChurch();
   const cRef = (col: string) => collection(db, 'churches', selectedChurch!.id, col);
   const cDoc = (col: string, id: string) => doc(db, 'churches', selectedChurch!.id, col, id);
@@ -161,34 +161,10 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
   const [usuarios, setUsuarios] = useState<UserProfile[]>([]);
   const [usuariosLoaded, setUsuariosLoaded] = useState(false);
   const [deletingUid, setDeletingUid] = useState<string | null>(null);
-  const [solicitacoes, setSolicitacoes] = useState<ChurchJoinRequest[]>([]);
+  const solicitacoes = solicitacoesPendentes;
   const [churchSearch, setChurchSearch] = useState('');
   const [allChurches, setAllChurches] = useState<{ id: string; name: string; district: string; directorUid: string | null; directorName?: string }[]>([]);
   const [churchesLoaded, setChurchesLoaded] = useState(false);
-
-  // Load pending join requests for this church (real-time)
-  useEffect(() => {
-    if (!selectedChurch || !canEditThisChurch) return;
-    const unsub = onSnapshot(
-      query(
-        collection(db, 'churchJoinRequests'),
-        where('toChurchId', '==', selectedChurch.id),
-        where('status', '==', 'pending')
-      ),
-      snap => {
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ChurchJoinRequest));
-        // Sort client-side to avoid composite index requirement
-        list.sort((a, b) => {
-          const ta = a.createdAt?.toMillis?.() ?? 0;
-          const tb = b.createdAt?.toMillis?.() ?? 0;
-          return tb - ta;
-        });
-        setSolicitacoes(list);
-      },
-      err => console.error('Erro ao carregar solicitações:', err)
-    );
-    return () => unsub();
-  }, [selectedChurch?.id, canEditThisChurch]);
 
   const loadAllChurches = async () => {
     if (churchesLoaded) return;

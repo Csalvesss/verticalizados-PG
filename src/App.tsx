@@ -7,7 +7,7 @@ import { consumeInstallToken, hasInstallToken } from './hooks/useInstallTransfer
 import { migrateGlobalDataToChurch } from './utils/migration';
 import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './constants';
 import { GLOBAL_CSS, s } from './styles';
-import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio } from './types';
+import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio, ChurchJoinRequest } from './types';
 
 import { LoginScreen } from './components/LoginScreen';
 import { SetupPerfil } from './components/SetupPerfil';
@@ -171,6 +171,7 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
   const [confirmacoes, setConfirmacoes] = useState<Confirmacao[]>([]);
   const [membrosLista, setMembrosLista] = useState<string[]>([]);
   const [sorteioSemana, setSorteioSemana] = useState<Sorteio | null>(null);
+  const [solicitacoesPendentes, setSolicitacoesPendentes] = useState<ChurchJoinRequest[]>([]);
 
   // ── Feed "não lido" ──────────────────────────────────────────────────────
   const FEED_SEEN_KEY = `pg:feedSeen_${user.uid}`;
@@ -257,8 +258,26 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
       snap => setEventos(snap.docs.map(d => ({ id: d.id, ...d.data() } as Evento)))
     );
 
-    return () => { uns1(); uns2(); uns5(); uns6(); uns8(); };
-  }, [selectedChurch?.id, baseName]);
+    // Listener persistente de solicitações — ativo em qualquer tela para admins
+    let unsSol = () => {};
+    if (isAdmin) {
+      unsSol = onSnapshot(
+        query(
+          collection(db, 'churchJoinRequests'),
+          where('toChurchId', '==', cid),
+          where('status', '==', 'pending')
+        ),
+        snap => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ChurchJoinRequest));
+          list.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+          setSolicitacoesPendentes(list);
+        },
+        () => {}
+      );
+    }
+
+    return () => { uns1(); uns2(); uns5(); uns6(); uns8(); unsSol(); };
+  }, [selectedChurch?.id, baseName, isAdmin]);
 
   const goTo = (sc: Screen) => setScreen(sc);
 
@@ -385,6 +404,7 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
             adminEmails={adminEmails}
             currentUserUid={user.uid}
             currentUserEmail={user.email || ''}
+            solicitacoesPendentes={solicitacoesPendentes}
           />
         )}
 
