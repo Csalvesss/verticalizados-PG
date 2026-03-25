@@ -212,8 +212,7 @@ function MusicasParaVoce() {
     // (avoids needing a composite Firestore index and handles missing playCount field)
     getDocs(collectionGroup(db, 'songs'))
       .then(snap => {
-        const songs: Song[] = snap.docs.map(d => {
-          // Extract churchId from path: churches/{churchId}/songs/{songId}
+        const raw: Song[] = snap.docs.map(d => {
           const pathParts = d.ref.path.split('/');
           const churchId = pathParts[1] || '';
           const data = d.data();
@@ -230,6 +229,24 @@ function MusicasParaVoce() {
             churchName: data.churchName || churchId,
           } as Song;
         });
+
+        // Deduplicate by normalized title, summing playCount across churches
+        const map = new Map<string, Song>();
+        for (const song of raw) {
+          const key = song.title.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const existing = map.get(key);
+          if (!existing) {
+            map.set(key, { ...song });
+          } else {
+            existing.playCount = (existing.playCount ?? 0) + (song.playCount ?? 0);
+            if (!existing.spotify && song.spotify) existing.spotify = song.spotify;
+            if (!existing.youtube && song.youtube) existing.youtube = song.youtube;
+            if (!existing.sections && song.sections) existing.sections = song.sections;
+            if (!existing.letra && song.letra) existing.letra = song.letra;
+          }
+        }
+        const songs = Array.from(map.values());
+
         // Sort by playCount descending
         songs.sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0));
         setAllSongs(songs);
