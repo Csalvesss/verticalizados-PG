@@ -213,7 +213,7 @@ function IosFirstAccessScreen() {
           <span style={{ color: '#BA7517' }}>7</span>
           <span style={{ color: '#fff' }}>Teen</span>
         </div>
-        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#3a3a3a', marginTop: 2 }}>
+        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#666', marginTop: 2 }}>
           ASSOCIAÇÃO PAULISTA DO VALE
         </div>
       </div>
@@ -493,7 +493,7 @@ function BrowserLoginScreen() {
           <span style={{ color: '#BA7517' }}>7</span>
           <span style={{ color: '#fff' }}>Teen</span>
         </div>
-        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#2e2e2e', marginTop: 4 }}>
+        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#666', marginTop: 4 }}>
           ASSOCIAÇÃO PAULISTA DO VALE
         </div>
       </div>
