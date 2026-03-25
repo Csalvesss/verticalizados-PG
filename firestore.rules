@@ -148,6 +148,26 @@ service cloud.firestore {
     match /comunhao/{id} {
       allow read, write: if isAuthed();
     }
+
+    // ── Conversas privadas ────────────────────────────────────────────────────
+    match /conversations/{convId} {
+      allow read: if isAuthed() &&
+        request.auth.uid in resource.data.participants;
+      allow create: if isAuthed() &&
+        request.auth.uid in request.resource.data.participants;
+      allow update: if isAuthed() &&
+        request.auth.uid in resource.data.participants;
+
+      match /messages/{msgId} {
+        allow read: if isAuthed() &&
+          request.auth.uid in
+            get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
+        allow create: if isAuthed() &&
+          request.auth.uid in
+            get(/databases/$(database)/documents/conversations/$(convId)).data.participants &&
+          request.resource.data.senderId == request.auth.uid;
+      }
+    }
   }
 }
 
