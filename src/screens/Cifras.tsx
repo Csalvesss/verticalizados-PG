@@ -71,8 +71,7 @@ function CifrasParaVoce() {
   useEffect(() => {
     getDocs(collectionGroup(db, 'cifras'))
       .then(snap => {
-        const list = snap.docs.map(d => {
-          // Extrair churchId do caminho: churches/{churchId}/cifras/{cifraId}
+        const raw = snap.docs.map(d => {
           const churchId = d.ref.path.split('/')[1] || '';
           const data = d.data();
           return {
@@ -84,7 +83,20 @@ function CifrasParaVoce() {
             churchName: data.churchName || churchId,
           } as Cifra & { churchName?: string };
         });
-        // Ordem alfabética por título
+
+        // Deduplicate by normalized title — keep first entry with actual cifra content
+        const map = new Map<string, Cifra & { churchName?: string }>();
+        for (const c of raw) {
+          const key = c.title.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const existing = map.get(key);
+          if (!existing) {
+            map.set(key, { ...c });
+          } else {
+            if (!existing.cifra && c.cifra) existing.cifra = c.cifra;
+          }
+        }
+
+        const list = Array.from(map.values());
         list.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
         setAllCifras(list);
         setLoading(false);
