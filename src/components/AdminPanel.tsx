@@ -12,7 +12,6 @@ import {
   arrayRemove,
   where,
   onSnapshot,
-  orderBy,
 } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Ico } from '../icons';
