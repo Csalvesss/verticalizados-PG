@@ -154,108 +154,78 @@ export function HomeScreen({
             key={item.sc}
             onClick={() => goTo(item.sc as Screen)}
             style={{
-              background: 'rgba(18,20,25,0.85)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 18,
-              padding: '18px 14px 14px',
+              background: '#111315',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 20,
+              padding: '20px 16px 16px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
-              gap: 10,
+              gap: 0,
               cursor: 'pointer',
               textAlign: 'left',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)',
-              transition: 'transform 0.15s, box-shadow 0.2s',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+              transition: 'transform 0.12s, opacity 0.12s',
               position: 'relative',
               overflow: 'hidden',
             }}
-            onPointerDown={e => {
-              e.currentTarget.style.transform = 'scale(0.97)';
-              e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
-            }}
-            onPointerUp={e => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)';
-            }}
-            onPointerLeave={e => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)';
-            }}
+            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.96)'; e.currentTarget.style.opacity = '0.85'; }}
+            onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.opacity = '1'; }}
+            onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.opacity = '1'; }}
           >
-            {/* Icon container com badge estilo Instagram */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: 14,
-                background: 'linear-gradient(135deg, rgba(240,120,48,0.18) 0%, rgba(186,117,23,0.12) 100%)',
-                border: '1px solid rgba(240,120,48,0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                {item.icon('#F07830')}
-              </div>
+            {/* Icon solto com glow */}
+            <div style={{
+              marginBottom: 20,
+              position: 'relative',
+              filter: 'drop-shadow(0 0 10px rgba(240,120,48,0.35))',
+              lineHeight: 0,
+            }}>
+              {item.icon('#F07830')}
               {item.sc === 'feed' && newPostsCount > 0 && (
                 <div style={{
                   position: 'absolute',
-                  top: -7,
-                  right: -7,
-                  minWidth: 20,
-                  height: 20,
+                  top: -6,
+                  right: -8,
+                  minWidth: 18,
+                  height: 18,
                   borderRadius: 99,
-                  background: 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)',
+                  background: 'linear-gradient(135deg, #F07830, #BA7517)',
                   color: '#fff',
                   fontFamily: 'Barlow Condensed, sans-serif',
                   fontWeight: 700,
-                  fontSize: 11,
+                  fontSize: 10,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '0 5px',
-                  border: '2px solid #0f0f0f',
-                  boxShadow: '0 2px 8px rgba(240,120,48,0.5)',
+                  padding: '0 4px',
+                  border: '2px solid #111315',
                   lineHeight: 1,
+                  filter: 'drop-shadow(none)',
                 }}>
                   {newPostsCount > 99 ? '99+' : newPostsCount}
                 </div>
               )}
             </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{
-                  fontFamily: 'Barlow Condensed, sans-serif',
-                  fontWeight: 700,
-                  fontSize: 16,
-                  color: '#fff',
-                  letterSpacing: 0.3,
-                  lineHeight: 1.2,
-                }}>
-                  {item.label}
-                </div>
-              </div>
-              <div style={{
-                fontFamily: 'Barlow, sans-serif',
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.35)',
-                marginTop: 3,
-              }}>
-                {item.sub}
-              </div>
+            <div style={{
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontWeight: 700,
+              fontSize: 15,
+              color: '#e7e9ea',
+              letterSpacing: 0.2,
+              lineHeight: 1.2,
+              marginBottom: 4,
+            }}>
+              {item.label}
             </div>
-
-            {/* Arrow indicator */}
-            <span style={{
-              position: 'absolute',
-              bottom: 12,
-              right: 12,
-              fontSize: 16,
-              color: 'rgba(255,255,255,0.3)',
-              lineHeight: 1,
-            }}>›</span>
+            <div style={{
+              fontFamily: 'Barlow, sans-serif',
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.28)',
+              lineHeight: 1.3,
+            }}>
+              {item.sub}
+            </div>
           </button>
         ))}
       </div>
