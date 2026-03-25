@@ -42,6 +42,7 @@ interface Props {
   adminEmails: string[];
   goBack: () => void;
   onOpenProfile?: (userId: string, userName: string) => void;
+  onOpenChat?: (convId: string, other: { uid: string; name: string; photo: string }) => void;
 }
 
 interface FollowUser {
@@ -53,7 +54,7 @@ interface FollowUser {
   username?: string;
 }
 
-export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails, goBack, onOpenProfile }: Props) {
+export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails, goBack, onOpenProfile, onOpenChat }: Props) {
   const [profile, setProfile] = useState<{
     name: string;
     fullName: string;
@@ -309,13 +310,24 @@ export function UserPerfilScreen({ targetUserId, currentUid, posts, adminEmails,
             >
               {isFollowing ? 'Seguindo' : 'Seguir'}
             </button>
-            <button style={{
-              flex: 1, padding: '10px 16px', borderRadius: 10,
-              border: '1px solid #333', background: 'transparent',
-              color: '#e7e9ea', fontFamily: 'Barlow Condensed, sans-serif',
-              fontWeight: 700, fontSize: 14, letterSpacing: 0.5, cursor: 'default',
-            }}>
-              Mencionar
+            <button
+              onClick={() => {
+                if (!onOpenChat || !profile) return;
+                const convId = [currentUid, targetUserId].sort().join('_');
+                onOpenChat(convId, {
+                  uid: targetUserId,
+                  name: profile.fullName || profile.name,
+                  photo: profile.photo,
+                });
+              }}
+              style={{
+                flex: 1, padding: '10px 16px', borderRadius: 10,
+                border: '1px solid #333', background: 'transparent',
+                color: '#e7e9ea', fontFamily: 'Barlow Condensed, sans-serif',
+                fontWeight: 700, fontSize: 14, letterSpacing: 0.5, cursor: 'pointer',
+              }}
+            >
+              Mensagem
             </button>
           </div>
         )}

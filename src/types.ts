@@ -14,7 +14,9 @@ export type Screen =
   | 'buscar'
   | 'jogandoEmComunhao'
   | 'userPerfil'
-  | 'onboarding';
+  | 'onboarding'
+  | 'inbox'
+  | 'chat';
 
 export interface CurrentUser {
   uid: string;

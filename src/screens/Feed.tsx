@@ -350,6 +350,15 @@ export function FeedScreen({
               {Ico.search('#71767b')}
             </button>
             <button
+              onClick={() => goTo('inbox')}
+              style={{
+                padding: 6, background: 'transparent', border: 'none',
+                cursor: 'pointer', borderRadius: '50%', display: 'flex',
+              }}
+            >
+              {Ico.send()}
+            </button>
+            <button
               onClick={() => goTo('notificacoes')}
               style={{
                 padding: 6, background: 'transparent', border: 'none',
