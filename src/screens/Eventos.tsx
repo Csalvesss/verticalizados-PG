@@ -48,7 +48,7 @@ function ConfirmacaoRow({ c, isLast }: { c: Confirmacao; isLast: boolean }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0',
-      borderBottom: isLast ? 'none' : '1px solid #1a1a1a',
+      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
     }}>
       <div style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid #222' }}>
         <img src={resolvedPhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
@@ -95,12 +95,13 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
   };
 
   return (
-    <div className="fade" style={{ background: '#000', minHeight: '100vh' }}>
+    <div className="fade" style={{ minHeight: '100vh' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', padding: '12px 16px',
-        borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0,
-        zIndex: 50, background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(14px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)', position: 'sticky', top: 0,
+        zIndex: 50, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
       }}>
         <button onClick={() => goTo('home')} style={{
           padding: 6, borderRadius: '50%', background: 'transparent',
@@ -161,8 +162,11 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
             {/* Próximo evento — card principal */}
             <div style={{
               borderRadius: 20, overflow: 'hidden',
-              border: '1px solid #2a2a2a', marginBottom: 12,
-              background: '#0d0d0d',
+              border: '1px solid rgba(255,255,255,0.07)', marginBottom: 12,
+              background: 'rgba(18,20,25,0.9)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
             }}>
               {/* Topo com gradiente laranja */}
               <div style={{
@@ -203,8 +207,10 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
             {/* Confirmar / editar presença */}
             {!euConfirmei || editando ? (
               <div style={{
-                background: '#0d0d0d', borderRadius: 16, padding: '18px 18px 20px',
-                border: '1px solid #1e1e1e', marginBottom: 12,
+                background: 'rgba(18,20,25,0.9)', borderRadius: 16, padding: '18px 18px 20px',
+                border: '1px solid rgba(255,255,255,0.07)', marginBottom: 12,
+                backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
               }}>
                 <div style={{
                   fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700,
@@ -222,9 +228,9 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
                     <button key={l} onClick={() => setLanche(lanche === l ? null : l)} style={{
                       fontFamily: 'Barlow, sans-serif', fontSize: 13, padding: '7px 14px',
                       borderRadius: 999, cursor: 'pointer',
-                      border: `1px solid ${lanche === l ? '#F07830' : '#1e1e1e'}`,
-                      background: lanche === l ? 'rgba(240,120,48,0.1)' : 'transparent',
-                      color: lanche === l ? '#F07830' : '#555',
+                      border: `1px solid ${lanche === l ? '#F07830' : 'rgba(255,255,255,0.07)'}`,
+                      background: lanche === l ? 'rgba(240,120,48,0.12)' : 'rgba(255,255,255,0.03)',
+                      color: lanche === l ? '#F07830' : '#666',
                       fontWeight: lanche === l ? 700 : 400,
                     }}>{l}</button>
                   ))}
@@ -261,8 +267,10 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
             ) : (
               /* Já confirmado */
               <div style={{
-                background: '#0d0d0d', borderRadius: 16, padding: '16px 18px 18px',
-                border: '1px solid rgba(46,160,67,0.25)', marginBottom: 12,
+                background: 'rgba(18,20,25,0.9)', borderRadius: 16, padding: '16px 18px 18px',
+                border: '1px solid rgba(46,160,67,0.2)', marginBottom: 12,
+                backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
               }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
                   <div style={{
@@ -283,8 +291,8 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
                 </div>
                 <div style={{ display: 'flex', gap: 7 }}>
                   <button onClick={() => { setLanche(euConfirmei.lanche || null); setEditando(true); }} style={{
-                    flex: 1, padding: '9px', borderRadius: 999, border: '1px solid #1e1e1e',
-                    background: 'transparent', color: '#888', fontFamily: 'Barlow Condensed',
+                    flex: 1, padding: '9px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.07)',
+                    background: 'rgba(255,255,255,0.03)', color: '#888', fontFamily: 'Barlow Condensed',
                     fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: 0.5,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
                   }}>
@@ -305,8 +313,10 @@ export function EventosScreen({ eventos, confirmacoes, currentUser, uid, goTo }:
 
             {/* Lista confirmados */}
             <div style={{
-              background: '#0d0d0d', borderRadius: 16, padding: '16px 18px 6px',
-              border: '1px solid #1a1a1a',
+              background: 'rgba(18,20,25,0.9)', borderRadius: 16, padding: '16px 18px 6px',
+              border: '1px solid rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <span style={{

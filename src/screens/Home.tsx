@@ -76,8 +76,8 @@ export function HomeScreen({
         <div style={{
           margin: '0 0 0',
           padding: '10px 16px',
-          background: 'rgba(186,117,23,0.06)',
-          borderBottom: '1px solid rgba(186,117,23,0.12)',
+          background: 'rgba(186,117,23,0.05)',
+          borderBottom: '1px solid rgba(186,117,23,0.1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -117,14 +117,14 @@ export function HomeScreen({
             onClick={onChangeChurch}
             title="Trocar de igreja"
             style={{
-              background: 'transparent',
-              border: '1px solid #2a2a2a',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 20,
               padding: '4px 10px',
               cursor: 'pointer',
               fontFamily: 'Barlow, sans-serif',
               fontSize: 11,
-              color: '#555',
+              color: '#666',
               display: 'flex',
               alignItems: 'center',
               gap: 4,
@@ -151,9 +151,11 @@ export function HomeScreen({
             key={item.sc}
             onClick={() => goTo(item.sc as Screen)}
             style={{
-              background: 'linear-gradient(145deg, #1a1a1a 0%, #141414 100%)',
+              background: 'rgba(18,20,25,0.85)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
               border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 16,
+              borderRadius: 18,
               padding: '18px 14px 14px',
               display: 'flex',
               flexDirection: 'column',
@@ -161,22 +163,22 @@ export function HomeScreen({
               gap: 10,
               cursor: 'pointer',
               textAlign: 'left',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
-              transition: 'transform 0.15s, background 0.2s',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)',
+              transition: 'transform 0.15s, box-shadow 0.2s',
               position: 'relative',
               overflow: 'hidden',
             }}
             onPointerDown={e => {
               e.currentTarget.style.transform = 'scale(0.97)';
-              e.currentTarget.style.background = 'rgba(240,120,48,0.08)';
+              e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
             }}
             onPointerUp={e => {
               e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.background = 'linear-gradient(145deg, #1a1a1a 0%, #141414 100%)';
+              e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)';
             }}
             onPointerLeave={e => {
               e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.background = 'linear-gradient(145deg, #1a1a1a 0%, #141414 100%)';
+              e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)';
             }}
           >
             {/* Icon container */}
@@ -184,7 +186,8 @@ export function HomeScreen({
               width: 44,
               height: 44,
               borderRadius: 14,
-              background: 'rgba(240,120,48,0.15)',
+              background: 'linear-gradient(135deg, rgba(240,120,48,0.18) 0%, rgba(186,117,23,0.12) 100%)',
+              border: '1px solid rgba(240,120,48,0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -253,9 +256,12 @@ export function HomeScreen({
             style={{
               display: 'flex', alignItems: 'center', gap: 14,
               width: '100%', padding: '14px 16px',
-              background: 'rgba(186,117,23,0.06)',
-              border: '1px solid rgba(186,117,23,0.2)',
-              borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+              background: 'rgba(186,117,23,0.07)',
+              border: '1px solid rgba(186,117,23,0.15)',
+              borderRadius: 16, cursor: 'pointer', textAlign: 'left',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
             }}
           >
             <div style={{
@@ -314,10 +320,13 @@ export function HomeScreen({
           style={{
             margin: '16px 16px 0',
             padding: '14px 16px',
-            background: 'rgba(186,117,23,0.06)',
-            border: '1px solid rgba(186,117,23,0.15)',
-            borderRadius: 12,
+            background: 'rgba(18,20,25,0.85)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(186,117,23,0.18)',
+            borderRadius: 16,
             cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
           }}
         >
           <div style={{
