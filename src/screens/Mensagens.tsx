@@ -285,28 +285,23 @@ function ChatView({
 
     try {
       const convRef = doc(db, 'conversations', convId);
-      const snap = await getDoc(convRef);
       const otherUid = otherUser.uid;
 
-      if (!snap.exists()) {
-        await setDoc(convRef, {
-          participants: [uid, otherUid],
-          lastMessage: t,
-          lastAt: serverTimestamp(),
-          lastSender: uid,
-          unread: { [otherUid]: 1, [uid]: 0 },
-          isRequest: false,
-        });
-      } else {
-        await updateDoc(convRef, {
-          lastMessage: t,
-          lastAt: serverTimestamp(),
-          lastSender: uid,
-          [`unread.${otherUid}`]: increment(1),
-          [`unread.${uid}`]: 0,
-          ...(isRequest ? {} : {}),
-        });
-      }
+      // setDoc com merge cria a conversa se não existir, ou atualiza os campos se já existir.
+      // Assim evitamos o getDoc que falhava com permissão quando a conversa ainda não existia.
+      await setDoc(convRef, {
+        participants: [uid, otherUid],
+        lastMessage: t,
+        lastAt: serverTimestamp(),
+        lastSender: uid,
+        isRequest: false,
+      }, { merge: true });
+
+      // Atualiza contadores de unread separadamente (increment funciona em campo novo ou existente)
+      await updateDoc(convRef, {
+        [`unread.${otherUid}`]: increment(1),
+        [`unread.${uid}`]: 0,
+      });
 
       await addDoc(collection(db, 'conversations', convId, 'messages'), {
         senderId: uid,
