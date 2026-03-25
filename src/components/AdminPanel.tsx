@@ -174,10 +174,19 @@ export function AdminPanel({ goHome, songs, cifras, eventos, membros, adminEmail
       query(
         collection(db, 'churchJoinRequests'),
         where('toChurchId', '==', selectedChurch.id),
-        where('status', '==', 'pending'),
-        orderBy('createdAt', 'desc')
+        where('status', '==', 'pending')
       ),
-      snap => setSolicitacoes(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChurchJoinRequest)))
+      snap => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ChurchJoinRequest));
+        // Sort client-side to avoid composite index requirement
+        list.sort((a, b) => {
+          const ta = a.createdAt?.toMillis?.() ?? 0;
+          const tb = b.createdAt?.toMillis?.() ?? 0;
+          return tb - ta;
+        });
+        setSolicitacoes(list);
+      },
+      err => console.error('Erro ao carregar solicitações:', err)
     );
     return () => unsub();
   }, [selectedChurch?.id, canEditThisChurch]);

@@ -654,7 +654,7 @@ function RequestSentScreen({ churchName, onBack }: { churchName: string; onBack:
         Solicitação enviada!
       </div>
       <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#71767b', textAlign: 'center', lineHeight: 1.5, marginBottom: 32, maxWidth: 300 }}>
-        Seu pedido de entrada foi enviado para o diretor da igreja <span style={{ color: '#e7e9ea', fontWeight: 600 }}>{churchName}</span>. Você será notificado quando for aprovado.
+        Seu pedido de entrada foi enviado para o diretor jovem da igreja <span style={{ color: '#e7e9ea', fontWeight: 600 }}>{churchName}</span>. Você será notificado quando for aprovado.
       </div>
       <button
         onClick={onBack}
