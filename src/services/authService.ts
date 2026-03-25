@@ -8,7 +8,7 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   setPersistence,
-  browserLocalPersistence,
+  indexedDBLocalPersistence,
   browserSessionPersistence,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
@@ -53,7 +53,7 @@ export async function registerWithEmail(email: string, password: string, name: s
 }
 
 export async function loginWithEmail(email: string, password: string, rememberMe = true) {
-  await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+  await setPersistence(auth, rememberMe ? indexedDBLocalPersistence : browserSessionPersistence);
   const result = await signInWithEmailAndPassword(auth, email, password);
   return result.user;
 }
