@@ -25,7 +25,7 @@ export const GLOBAL_CSS = `
   body {
     display: flex;
     justify-content: center;
-    background: #0f0f0f;
+    background: #000;
     color: #e7e9ea;
     font-family: 'Barlow', sans-serif;
   }
@@ -95,23 +95,23 @@ export const GLOBAL_CSS = `
   }
 
   .glass {
-    background: rgba(22, 24, 28, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(18, 20, 25, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 
   @media (min-width: 560px) {
     #root {
       max-width: 500px;
-      border-left: 1px solid #2f3336;
-      border-right: 1px solid #2f3336;
+      border-left: 1px solid rgba(255,255,255,0.06);
+      border-right: 1px solid rgba(255,255,255,0.06);
     }
   }
 `;
 
 export const s: Record<string, CSSProperties> = {
   root: {
-    background: '#0f0f0f',
+    background: 'radial-gradient(ellipse at 50% 0%, rgba(186,117,23,0.1) 0%, #000 55%)',
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
@@ -126,16 +126,17 @@ export const s: Record<string, CSSProperties> = {
     paddingBottom: 'calc(70px + env(safe-area-inset-bottom, 0px))',
   },
   page: {
-    padding: '0 16px',
+    padding: '0 14px',
   },
   instaHeader: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '12px 16px',
-    background: 'rgba(0,0,0,0.85)',
-    backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid #2f3336',
+    background: 'rgba(0,0,0,0.82)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
     position: 'sticky',
     top: 0,
     zIndex: 50,
@@ -145,10 +146,10 @@ export const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '0 16px',
-    minHeight: 52,
-    background: 'rgba(15,15,15,0.95)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
+    minHeight: 54,
+    background: 'rgba(0,0,0,0.82)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
     position: 'sticky',
     top: 0,
     zIndex: 50,
@@ -156,11 +157,12 @@ export const s: Record<string, CSSProperties> = {
     marginBottom: 0,
   },
   pageTitle: {
-    fontFamily: 'Barlow, sans-serif',
-    fontWeight: 600,
-    fontSize: 16,
+    fontFamily: 'Barlow Condensed, sans-serif',
+    fontWeight: 700,
+    fontSize: 15,
+    letterSpacing: 2,
     color: '#fff',
-    letterSpacing: 'normal',
+    textTransform: 'uppercase' as const,
     flex: 1,
     textAlign: 'center' as const,
   },
@@ -188,9 +190,10 @@ export const s: Record<string, CSSProperties> = {
     transform: 'translateX(-50%)',
     width: '100%',
     maxWidth: 500,
-    background: 'rgba(0,0,0,0.85)',
-    backdropFilter: 'blur(14px)',
-    borderTop: '1px solid #2f3336',
+    background: 'rgba(0,0,0,0.88)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderTop: '1px solid rgba(255,255,255,0.06)',
     display: 'flex',
     justifyContent: 'space-around',
     padding: '6px 0 12px',
@@ -221,7 +224,7 @@ export const s: Record<string, CSSProperties> = {
   },
   welcomeBox: {
     padding: '20px 16px',
-    borderBottom: '1px solid #2f3336',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
   },
   grid: {
     display: 'grid',
@@ -230,36 +233,40 @@ export const s: Record<string, CSSProperties> = {
     padding: '16px',
   },
   gridCard: {
-    background: '#13151a',
-    borderRadius: 20,
+    background: 'rgba(18,20,25,0.85)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: 18,
     padding: '20px 16px 18px',
-    border: '1px solid #1e2028',
+    border: '1px solid rgba(255,255,255,0.07)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.45)',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
   },
   nextEvent: {
-    background: 'rgba(240,120,48,0.1)',
-    border: '1px solid rgba(240,120,48,0.2)',
+    background: 'rgba(186,117,23,0.07)',
+    border: '1px solid rgba(186,117,23,0.18)',
     borderRadius: 16,
     padding: '16px',
     margin: '0 16px 16px',
   },
   card: {
-    background: '#13151a',
-    borderRadius: 20,
-    border: '1px solid #1e2028',
+    background: 'rgba(18,20,25,0.9)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: 18,
+    border: '1px solid rgba(255,255,255,0.07)',
     overflow: 'hidden',
-    marginBottom: 16,
-    boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+    marginBottom: 12,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
   },
   cardTop: {
     display: 'flex',
     alignItems: 'center',
   },
   cardNum: {
-    background: 'rgba(240,120,48,0.15)',
+    background: 'rgba(240,120,48,0.07)',
     width: 50,
     minHeight: 70,
     display: 'flex',
@@ -285,7 +292,7 @@ export const s: Record<string, CSSProperties> = {
   cardHint: {
     fontFamily: 'Barlow',
     fontSize: 12,
-    color: '#71767b',
+    color: '#4a4a4a',
     marginTop: 2,
   },
   btnOrange: {
@@ -294,11 +301,12 @@ export const s: Record<string, CSSProperties> = {
     gap: 8,
     padding: '12px 24px',
     borderRadius: 999,
-    background: '#F07830',
+    background: 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)',
     color: '#fff',
     fontFamily: 'Barlow',
     fontWeight: 700,
     fontSize: 14,
+    boxShadow: '0 4px 16px rgba(240,120,48,0.25)',
   },
   btnSpotify: {
     display: 'flex',
@@ -333,8 +341,8 @@ export const s: Record<string, CSSProperties> = {
     objectFit: 'cover',
   },
   textarea: {
-    background: 'transparent',
-    border: '1px solid #2f3336',
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 12,
     padding: '12px',
     color: '#fff',
@@ -345,7 +353,7 @@ export const s: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    color: '#71767b',
+    color: '#555',
     fontFamily: 'Barlow',
     fontSize: 13,
   },
@@ -354,16 +362,16 @@ export const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '12px 0',
-    borderBottom: '1px solid #2f3336',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
   },
   adminActionBtn: {
     padding: '6px',
-    color: '#71767b',
+    color: '#555',
   },
   empty: {
     fontFamily: 'Barlow',
     fontSize: 14,
-    color: '#71767b',
+    color: '#444',
     textAlign: 'center',
     padding: 40,
   },
