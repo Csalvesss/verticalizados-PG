@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   collection, addDoc, doc, onSnapshot, updateDoc,
-  query, orderBy, serverTimestamp, setDoc, getDoc,
+  query, orderBy, serverTimestamp, setDoc, getDoc, deleteField, increment,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Avatar } from '../components/Avatar';
@@ -52,10 +52,6 @@ const STICKER_CATEGORIES = [
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function convIdFor(a: string, b: string) {
-  return [a, b].sort().join('_');
-}
-
 function fmtTime(ts: any): string {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -76,8 +72,7 @@ function sameDay(a: any, b: any): boolean {
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack }: Props) {
-  const convId = convIdProp || convIdFor(currentUser.uid, otherUser.uid);
+export function ChatScreen({ convId, otherUser, currentUser, goBack }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
   const [editingMsg, setEditingMsg] = useState<ChatMessage | null>(null);
@@ -91,16 +86,16 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesColRef = collection(db, 'conversations', convId, 'messages');
 
-  // ── Load messages ────────────────────────────────────────────────────────
+  // ── Load messages ─────────────────────────────────────────────────────────
   useEffect(() => {
     const q = query(messagesColRef, orderBy('createdAt', 'asc'));
     const uns = onSnapshot(q, snap => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage)));
     });
-    // Mark conversation as read
+    // Mark as read
     setDoc(doc(db, 'conversations', convId), {
       [`unread.${currentUser.uid}`]: 0,
-    }, { merge: true });
+    }, { merge: true }).catch(() => {});
     return () => uns();
   }, [convId, currentUser.uid]);
 
@@ -123,18 +118,27 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
           lastMessage: '',
           lastAt: serverTimestamp(),
           unread: { [currentUser.uid]: 0, [otherUser.uid]: 0 },
-          request: true,
         });
+      } else {
+        // Ensure participantInfo is up to date
+        const data = snap.data();
+        if (!data.participantInfo?.[currentUser.uid]?.name) {
+          setDoc(ref, {
+            participantInfo: {
+              [currentUser.uid]: { name: currentUser.name, photo: currentUser.photo },
+              [otherUser.uid]: { name: otherUser.name, photo: otherUser.photo },
+            },
+          }, { merge: true });
+        }
       }
     });
-  }, [convId]);
+  }, [convId, currentUser.uid, currentUser.name, currentUser.photo, otherUser.uid, otherUser.name, otherUser.photo]);
 
-  // ── Send message ─────────────────────────────────────────────────────────
+  // ── Send ─────────────────────────────────────────────────────────────────
   const send = useCallback(async (msgText?: string, sticker?: string) => {
     const content = msgText ?? text;
     if (!content.trim() && !sticker) return;
 
-    // If editing
     if (editingMsg) {
       await updateDoc(doc(messagesColRef, editingMsg.id), {
         text: content.trim(),
@@ -174,24 +178,29 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
     setText('');
 
     // Update conversation metadata
-    await setDoc(doc(db, 'conversations', convId), {
+    const convRef = doc(db, 'conversations', convId);
+    await setDoc(convRef, {
       participants: [currentUser.uid, otherUser.uid],
       participantInfo: {
         [currentUser.uid]: { name: currentUser.name, photo: currentUser.photo },
         [otherUser.uid]: { name: otherUser.name, photo: otherUser.photo },
       },
-      lastMessage: sticker ? `${sticker}` : (content.trim().slice(0, 60)),
+      lastMessage: sticker ? sticker : content.trim().slice(0, 60),
       lastMessageType: sticker ? 'sticker' : 'text',
       lastSenderId: currentUser.uid,
       lastAt: serverTimestamp(),
-      [`unread.${otherUser.uid}`]: (await getDoc(doc(db, 'conversations', convId))).data()?.unread?.[otherUser.uid] + 1 || 1,
       [`unread.${currentUser.uid}`]: 0,
     }, { merge: true });
+
+    // Increment other user's unread count separately
+    await updateDoc(convRef, {
+      [`unread.${otherUser.uid}`]: increment(1),
+    }).catch(() => {});
 
     if (showStickerPicker) setShowStickerPicker(false);
   }, [text, editingMsg, replyingTo, currentUser, otherUser, convId, showStickerPicker]);
 
-  // ── React to message ──────────────────────────────────────────────────────
+  // ── React to message ─────────────────────────────────────────────────────
   const reactToMessage = async (msg: ChatMessage, emoji: string) => {
     const current = msg.reactions?.[currentUser.uid];
     const newReactions = { ...msg.reactions };
@@ -204,24 +213,22 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
     setPressedMsg(null);
   };
 
-  // ── Delete/Unsend message ─────────────────────────────────────────────────
+  // ── Unsend message ───────────────────────────────────────────────────────
+  // No window.confirm — context menu is already the user's intention
   const unsendMessage = async (msg: ChatMessage) => {
+    setPressedMsg(null);
     await updateDoc(doc(messagesColRef, msg.id), {
       deleted: true,
-      text: '',
-      sticker: null,
+      text: deleteField(),
+      sticker: deleteField(),
     });
-    setPressedMsg(null);
   };
 
-  // ── Long press ────────────────────────────────────────────────────────────
-  const handleTouchStart = (msg: ChatMessage, e: React.TouchEvent) => {
-    e.preventDefault();
-    const isMine = msg.senderId === currentUser.uid;
-    void isMine;
+  // ── Long press (iOS-safe: no preventDefault in touchstart) ───────────────
+  const handleTouchStart = (msg: ChatMessage) => {
     pressTimer.current = setTimeout(() => {
       setPressedMsg(msg);
-    }, 450);
+    }, 500);
   };
 
   const handleTouchEnd = () => {
@@ -239,28 +246,24 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
     return Object.entries(counts).map(([emoji, count]) => `${emoji}${count > 1 ? count : ''}`).join(' ');
   };
 
-  // ── Edit start ────────────────────────────────────────────────────────────
   const startEdit = (msg: ChatMessage) => {
     setEditingMsg(msg);
     setText(msg.text || '');
     setPressedMsg(null);
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => inputRef.current?.focus(), 150);
   };
 
-  // ── Reply start ───────────────────────────────────────────────────────────
   const startReply = (msg: ChatMessage) => {
     setReplyingTo(msg);
     setPressedMsg(null);
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => inputRef.current?.focus(), 150);
   };
 
-  // ── Copy ──────────────────────────────────────────────────────────────────
   const copyMessage = (msg: ChatMessage) => {
-    navigator.clipboard?.writeText(msg.text || msg.sticker || '');
+    navigator.clipboard?.writeText(msg.text || msg.sticker || '').catch(() => {});
     setPressedMsg(null);
   };
 
-  // ── Keyboard send ─────────────────────────────────────────────────────────
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -279,7 +282,6 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
 
       return (
         <div key={msg.id}>
-          {/* Date separator */}
           {showDate && msg.createdAt && (
             <div style={{
               textAlign: 'center', padding: '16px 0 8px',
@@ -289,16 +291,14 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
             </div>
           )}
 
-          {/* Message row */}
           <div style={{
             display: 'flex',
             flexDirection: isMine ? 'row-reverse' : 'row',
             alignItems: 'flex-end',
             gap: 8,
-            padding: `2px 12px ${reactions ? '18px' : '2px'}`,
+            padding: `2px 12px ${reactions ? '20px' : '2px'}`,
             position: 'relative',
           }}>
-            {/* Other user avatar */}
             {!isMine && isLastInGroup && (
               <div style={{ width: 28, height: 28, flexShrink: 0 }}>
                 <Avatar src={otherUser.photo} name={otherUser.name} size={28} />
@@ -306,48 +306,39 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
             )}
             {!isMine && !isLastInGroup && <div style={{ width: 28, flexShrink: 0 }} />}
 
-            {/* Bubble */}
             <div
-              onTouchStart={(e) => handleTouchStart(msg, e)}
+              onTouchStart={() => handleTouchStart(msg)}
               onTouchEnd={handleTouchEnd}
               onTouchMove={handleTouchEnd}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setPressedMsg(msg);
-              }}
-              style={{ maxWidth: '70%', position: 'relative' }}
+              onContextMenu={(e) => { e.preventDefault(); setPressedMsg(msg); }}
+              style={{ maxWidth: '72%', position: 'relative', cursor: 'pointer' }}
             >
               {/* Reply preview */}
               {msg.replyTo && !msg.deleted && (
                 <div style={{
-                  background: isMine ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.06)',
-                  borderLeft: '2px solid rgba(255,255,255,0.4)',
+                  background: isMine ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.07)',
+                  borderLeft: '2px solid rgba(255,255,255,0.45)',
                   borderRadius: '8px 8px 0 0',
                   padding: '6px 10px',
-                  marginBottom: -6,
+                  marginBottom: -4,
                   fontSize: 12,
-                  color: 'rgba(255,255,255,0.6)',
+                  color: 'rgba(255,255,255,0.55)',
                   fontFamily: 'Barlow, sans-serif',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                   maxWidth: 220,
                 }}>
-                  <span style={{ fontWeight: 700, color: isMine ? 'rgba(255,255,255,0.8)' : '#F07830' }}>
-                    {msg.replyTo.senderName}
-                  </span>
-                  {' · '}
-                  {msg.replyTo.sticker || msg.replyTo.text}
+                  <span style={{ fontWeight: 700, color: '#F07830' }}>{msg.replyTo.senderName}</span>
+                  {' · '}{msg.replyTo.sticker || msg.replyTo.text}
                 </div>
               )}
 
-              {/* Bubble content */}
+              {/* Bubble */}
               <div style={{
                 background: msg.deleted
                   ? 'transparent'
-                  : isMine
-                    ? '#F07830'
-                    : '#1c1c1e',
+                  : isMine ? '#F07830' : '#1c1c1e',
                 color: msg.deleted ? '#555' : '#fff',
                 borderRadius: isMine
                   ? (isLastInGroup ? '18px 18px 4px 18px' : '18px')
@@ -357,39 +348,37 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
                 fontFamily: 'Barlow, sans-serif',
                 lineHeight: 1.4,
                 wordBreak: 'break-word',
-                border: msg.deleted ? '1px solid #333' : 'none',
+                border: msg.deleted ? '1px solid #2a2a2a' : 'none',
                 fontStyle: msg.deleted ? 'italic' : 'normal',
                 userSelect: 'none',
+                WebkitUserSelect: 'none',
               }}>
                 {msg.deleted
-                  ? (isMine ? 'Você cancelou o envio desta mensagem' : 'Esta mensagem foi apagada')
+                  ? (isMine ? 'Você cancelou o envio' : 'Mensagem apagada')
                   : (msg.sticker || msg.text)}
               </div>
 
-              {/* Time + edited */}
               {isLastInGroup && (
                 <div style={{
                   fontSize: 10, color: '#555', fontFamily: 'Barlow, sans-serif',
                   textAlign: isMine ? 'right' : 'left',
-                  marginTop: 2, paddingLeft: 4, paddingRight: 4,
+                  marginTop: 3, paddingLeft: 4, paddingRight: 4,
                 }}>
                   {msg.editedAt && <span style={{ marginRight: 4 }}>Editado ·</span>}
                   {fmtTime(msg.createdAt)}
                 </div>
               )}
 
-              {/* Reactions */}
               {reactions && (
                 <div style={{
                   position: 'absolute',
-                  bottom: -18,
+                  bottom: -20,
                   [isMine ? 'right' : 'left']: 4,
                   background: '#1c1c1e',
                   border: '1px solid #2a2a2a',
                   borderRadius: 20,
                   padding: '2px 8px',
                   fontSize: 13,
-                  fontFamily: 'system-ui',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 2,
@@ -405,7 +394,7 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
     });
   };
 
-  // ── Long press context menu ────────────────────────────────────────────────
+  // ── Context menu (long press overlay) ────────────────────────────────────
   const renderContextMenu = () => {
     if (!pressedMsg) return null;
     const isMine = pressedMsg.senderId === currentUser.uid;
@@ -415,7 +404,7 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
         onClick={() => setPressedMsg(null)}
         style={{
           position: 'fixed', inset: 0, zIndex: 500,
-          background: 'rgba(0,0,0,0.75)',
+          background: 'rgba(0,0,0,0.8)',
           display: 'flex', flexDirection: 'column',
           alignItems: isMine ? 'flex-end' : 'flex-start',
           justifyContent: 'center',
@@ -424,14 +413,14 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
       >
         {/* Quick emoji bar */}
         <div
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
           style={{
             background: '#1c1c1e', borderRadius: 40,
-            padding: '10px 16px',
-            display: 'flex', gap: 8, alignItems: 'center',
+            padding: '10px 14px',
+            display: 'flex', gap: 4, alignItems: 'center',
             border: '1px solid #2a2a2a',
             marginBottom: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
           }}
         >
           {QUICK_EMOJIS.map(emoji => {
@@ -442,10 +431,9 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
                 onClick={() => reactToMessage(pressedMsg, emoji)}
                 style={{
                   fontSize: 26, background: 'transparent', border: 'none',
-                  cursor: 'pointer', padding: 4, borderRadius: '50%',
+                  cursor: 'pointer', padding: '4px 6px', borderRadius: '50%',
                   transform: isActive ? 'scale(1.3)' : 'scale(1)',
                   transition: 'transform 0.15s',
-                  filter: isActive ? 'none' : 'opacity(0.85)',
                 }}
               >
                 {emoji}
@@ -455,9 +443,9 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
           <button
             onClick={() => { setPressedMsg(null); setShowStickerPicker(true); }}
             style={{
-              fontSize: 22, background: '#2a2a2a', border: 'none',
+              fontSize: 20, background: '#2a2a2a', border: 'none',
               cursor: 'pointer', padding: '4px 8px', borderRadius: '50%',
-              color: '#888', fontFamily: 'system-ui',
+              color: '#888',
             }}
           >
             +
@@ -466,16 +454,16 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
 
         {/* Message preview */}
         <div
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
           style={{
             background: isMine ? '#F07830' : '#1c1c1e',
             color: '#fff', borderRadius: 16,
             padding: pressedMsg.sticker ? '8px' : '10px 14px',
             fontSize: pressedMsg.sticker ? 36 : 15,
             fontFamily: 'Barlow, sans-serif',
-            maxWidth: '70%',
+            maxWidth: '72%',
             marginBottom: 12,
-            opacity: 0.9,
+            opacity: 0.85,
           }}
         >
           {pressedMsg.sticker || pressedMsg.text}
@@ -483,7 +471,7 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
 
         {/* Action list */}
         <div
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
           style={{
             background: '#1c1c1e', borderRadius: 16,
             overflow: 'hidden', width: 220,
@@ -491,35 +479,19 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
           }}
         >
-          {/* Reply */}
-          <ActionItem
-            label="Responder"
-            icon="↩"
-            onClick={() => startReply(pressedMsg)}
-          />
-          {/* Edit (only mine, not deleted, not sticker) */}
+          <ActionItem label="Responder" icon="↩" onClick={() => startReply(pressedMsg)} />
           {isMine && !pressedMsg.deleted && !pressedMsg.sticker && (
-            <ActionItem
-              label="Editar"
-              icon="✏️"
-              onClick={() => startEdit(pressedMsg)}
-            />
+            <ActionItem label="Editar" icon="✏️" onClick={() => startEdit(pressedMsg)} />
           )}
-          {/* Copy (not deleted, not sticker) */}
           {!pressedMsg.deleted && pressedMsg.text && (
-            <ActionItem
-              label="Copiar"
-              icon="📋"
-              onClick={() => copyMessage(pressedMsg)}
-            />
+            <ActionItem label="Copiar" icon="📋" onClick={() => copyMessage(pressedMsg)} />
           )}
-          {/* Unsend (only mine, not deleted) */}
           {isMine && !pressedMsg.deleted && (
             <ActionItem
               label="Cancelar envio"
               icon="🗑"
               danger
-              onClick={() => { if (window.confirm('Cancelar envio desta mensagem?')) unsendMessage(pressedMsg); }}
+              onClick={() => unsendMessage(pressedMsg)}
             />
           )}
         </div>
@@ -533,12 +505,12 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
       onClick={() => setShowStickerPicker(false)}
       style={{
         position: 'fixed', inset: 0, zIndex: 400,
-        background: 'rgba(0,0,0,0.6)',
+        background: 'rgba(0,0,0,0.5)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
       }}
     >
       <div
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         style={{
           background: '#111', width: '100%', maxWidth: 500,
           borderRadius: '20px 20px 0 0',
@@ -547,7 +519,6 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
           paddingBottom: 'env(safe-area-inset-bottom, 12px)',
         }}
       >
-        {/* Category tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid #1e1e1e', padding: '8px 12px 0' }}>
           {STICKER_CATEGORIES.map((cat, i) => (
             <button
@@ -564,8 +535,6 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
             </button>
           ))}
         </div>
-
-        {/* Emojis grid */}
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)',
           gap: 4, padding: '12px',
@@ -579,7 +548,6 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
                 fontSize: 30, background: 'transparent', border: 'none',
                 cursor: 'pointer', padding: '6px', borderRadius: 8,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.1s',
               }}
             >
               {emoji}
@@ -592,16 +560,17 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
 
   // ── Main render ───────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#000', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#000' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '10px 12px',
         background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderBottom: '1px solid #1e1e1e',
         flexShrink: 0,
       }}>
-        <button onClick={goBack} style={{ padding: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}>
+        <button onClick={goBack} style={{ padding: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', minWidth: 36 }}>
           {Ico.back()}
         </button>
         <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
@@ -609,26 +578,27 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff', lineHeight: 1.1 }}>
-            {otherUser.name}
+            {otherUser.name || 'Usuário'}
           </div>
         </div>
-        <button style={{ padding: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', opacity: 0.5 }}>
-          {Ico.camera('#fff')}
-        </button>
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingTop: 8, paddingBottom: 8 }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingTop: 8, paddingBottom: 8, WebkitOverflowScrolling: 'touch' } as any}>
+        {messages.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '60px 24px', color: '#444', fontFamily: 'Barlow, sans-serif', fontSize: 14 }}>
+            Diga olá para {otherUser.name || 'este usuário'} 👋
+          </div>
+        )}
         {renderMessages()}
-        <div ref={endRef} />
+        <div ref={endRef} style={{ height: 1 }} />
       </div>
 
-      {/* Reply preview bar */}
+      {/* Reply bar */}
       {replyingTo && (
         <div style={{
           background: '#111', borderTop: '1px solid #1e1e1e',
-          padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8,
-          flexShrink: 0,
+          padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
         }}>
           <div style={{ flex: 1, borderLeft: '2px solid #F07830', paddingLeft: 8 }}>
             <div style={{ fontSize: 11, color: '#F07830', fontFamily: 'Barlow, sans-serif', fontWeight: 700 }}>
@@ -638,9 +608,7 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
               {replyingTo.sticker || replyingTo.text}
             </div>
           </div>
-          <button onClick={() => setReplyingTo(null)} style={{ color: '#666', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 20, padding: 4 }}>
-            ×
-          </button>
+          <button onClick={() => setReplyingTo(null)} style={{ color: '#666', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 22, padding: 4, lineHeight: 1 }}>×</button>
         </div>
       )}
 
@@ -648,18 +616,15 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
       {editingMsg && !replyingTo && (
         <div style={{
           background: '#111', borderTop: '1px solid #1e1e1e',
-          padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8,
-          flexShrink: 0,
+          padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
         }}>
-          <div style={{ flex: 1, borderLeft: '2px solid #aaa', paddingLeft: 8 }}>
+          <div style={{ flex: 1, borderLeft: '2px solid #888', paddingLeft: 8 }}>
             <div style={{ fontSize: 11, color: '#aaa', fontFamily: 'Barlow, sans-serif', fontWeight: 700 }}>Editando mensagem</div>
             <div style={{ fontSize: 13, color: '#666', fontFamily: 'Barlow, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>
               {editingMsg.text}
             </div>
           </div>
-          <button onClick={() => { setEditingMsg(null); setText(''); }} style={{ color: '#666', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 20, padding: 4 }}>
-            ×
-          </button>
+          <button onClick={() => { setEditingMsg(null); setText(''); }} style={{ color: '#666', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 22, padding: 4, lineHeight: 1 }}>×</button>
         </div>
       )}
 
@@ -671,24 +636,25 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
         background: '#000', borderTop: '1px solid #1e1e1e',
         flexShrink: 0,
       }}>
-        {/* Sticker button */}
         <button
           onClick={() => { setShowStickerPicker(true); setEditingMsg(null); }}
           style={{
             width: 38, height: 38, borderRadius: '50%', background: '#1c1c1e',
             border: 'none', cursor: 'pointer', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            fontSize: 20,
+            alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20,
           }}
         >
           🙂
         </button>
 
-        {/* Text input */}
         <textarea
           ref={inputRef}
           value={text}
-          onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+          onChange={e => {
+            setText(e.target.value);
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+          }}
           onKeyDown={handleKeyDown}
           placeholder="Mensagem..."
           rows={1}
@@ -701,10 +667,8 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
           }}
         />
 
-        {/* Send button */}
         <button
           onClick={() => send()}
-          disabled={!text.trim() && !editingMsg}
           style={{
             width: 38, height: 38, borderRadius: '50%',
             background: text.trim() || editingMsg ? '#F07830' : '#1c1c1e',
@@ -720,14 +684,12 @@ export function ChatScreen({ convId: convIdProp, otherUser, currentUser, goBack 
         </button>
       </div>
 
-      {/* Overlays */}
       {renderContextMenu()}
       {showStickerPicker && renderStickerPicker()}
     </div>
   );
 }
 
-// ── Action item component ─────────────────────────────────────────────────────
 function ActionItem({ label, icon, onClick, danger }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {
   return (
     <button
@@ -738,8 +700,7 @@ function ActionItem({ label, icon, onClick, danger }: { label: string; icon: str
         background: 'transparent', border: 'none',
         borderBottom: '1px solid #222',
         cursor: 'pointer', color: danger ? '#ff4444' : '#e7e9ea',
-        fontFamily: 'Barlow, sans-serif', fontSize: 15,
-        textAlign: 'left',
+        fontFamily: 'Barlow, sans-serif', fontSize: 15, textAlign: 'left',
       }}
     >
       <span style={{ fontSize: 18 }}>{icon}</span>
