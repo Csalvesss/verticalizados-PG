@@ -4,7 +4,6 @@ import { doc, setDoc, deleteDoc, getDoc, getDocs, collection, query, where, upda
 import { db } from '../firebase';
 import { Ico } from '../icons';
 import { Avatar } from '../components/Avatar';
-import { useChurch } from '../contexts/ChurchContext';
 import type { CurrentUser, Screen, Post, UserProfile } from '../types';
 
 function toUsername(name: string): string {
@@ -52,7 +51,6 @@ export function PerfilScreen({
   const [tab, setTab] = useState<Tab>('posts');
   const [followingCount, setFollowingCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
-  const { selectedChurch, clearChurch } = useChurch();
   const [followListModal, setFollowListModal] = useState<'seguindo' | 'seguidores' | null>(null);
   const [followListUsers, setFollowListUsers] = useState<UserProfile[]>([]);
   const [followListLoading, setFollowListLoading] = useState(false);
@@ -208,12 +206,12 @@ export function PerfilScreen({
   }
 
   return (
-    <div style={{ background: '#000', minHeight: '100%' }}>
+    <div style={{ background: '#0f0f0f', minHeight: '100%' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', padding: '12px 16px',
         borderBottom: '1px solid #1a1a1a', position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(14px)',
+        background: 'rgba(15,15,15,0.95)', backdropFilter: 'blur(14px)',
       }}>
         <button onClick={() => goTo('home')} style={{
           padding: 6, borderRadius: '50%', background: 'transparent',
@@ -236,131 +234,94 @@ export function PerfilScreen({
         }}>{Ico.logout()}</button>
       </div>
 
+      {/* ── Cover photo ── */}
+      <div style={{
+        height: 120,
+        background: 'linear-gradient(135deg, #1a0a00 0%, #2d1500 50%, #1a0a00 100%)',
+        flexShrink: 0,
+      }} />
+
       {/* ── Profile Card ── */}
-      <div style={{ padding: '24px 20px 0' }}>
+      <div style={{ padding: '0 20px 0' }}>
 
-        {/* Row: info left + avatar right */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-
-          {/* Left: name, username, bio, link, badge */}
-          <div style={{ flex: 1, paddingRight: 20 }}>
-            {/* Name */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
-              <span style={{
-                fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
-                fontSize: 24, color: '#fff', letterSpacing: 0.2, lineHeight: 1.1,
-              }}>
-                {currentUser.fullName}
-              </span>
-              {isAdmin && (
-                <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: '#F07830', flexShrink: 0 }}>
-                  <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.71 4.2L6.8 12.46l1.41-1.42 2.26 2.26 4.8-5.23 1.47 1.35-6.2 6.78z" />
-                </svg>
-              )}
-            </div>
-
-            {/* Username */}
-            <div style={{
-              fontFamily: 'Barlow, sans-serif', fontSize: 14,
-              color: '#71767b', marginBottom: bio ? 12 : 12,
-            }}>
-              {displayUsername}
-            </div>
-
-            {/* Bio */}
-            {bio && (
-              <div style={{
-                fontFamily: 'Barlow, sans-serif', fontSize: 14.5, color: '#e7e9ea',
-                lineHeight: 1.55, marginBottom: 10,
-                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-              }}>
-                {bio}
-              </div>
-            )}
-
-            {/* Link */}
-            {link && (
-              <a
-                href={normalizeLink(link)}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  fontFamily: 'Barlow, sans-serif', fontSize: 13.5, color: '#F07830',
-                  textDecoration: 'none', marginBottom: 12,
-                }}
-              >
-                <IcoLink />
-                <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(240,120,48,0.5)' }}>
-                  {link.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
-                </span>
-              </a>
-            )}
-
-            {/* Group badge */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.18)',
-              borderRadius: 20, padding: '4px 10px',
-            }}>
-              <div style={{ width: 6, height: 6, background: '#BA7517', borderRadius: '50%', flexShrink: 0 }} />
-              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 10, letterSpacing: 1.2, color: '#BA7517' }}>
-                7TEEN · ASSOCIAÇÃO PAULISTA DO VALE
-              </span>
-            </div>
-
-            {/* Church section */}
-            {selectedChurch && (
-              <div style={{
-                marginTop: 12,
-                background: '#0d0d0d',
-                border: '1px solid #1e1e1e',
-                borderRadius: 12,
-                padding: '12px 14px',
-              }}>
-                <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 2, color: '#444', marginBottom: 8, textTransform: 'uppercase' }}>
-                  Minha Igreja
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 600, fontSize: 14, color: '#e7e9ea' }}>
-                      {selectedChurch.name}
-                    </div>
-                    <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 12, color: '#185FA5', marginTop: 2 }}>
-                      {selectedChurch.district}
-                    </div>
-                  </div>
-                  <button
-                    onClick={clearChurch}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid #2a2a2a',
-                      borderRadius: 20,
-                      padding: '6px 14px',
-                      cursor: 'pointer',
-                      fontFamily: 'Barlow Condensed, sans-serif',
-                      fontWeight: 700,
-                      fontSize: 11,
-                      color: '#555',
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    TROCAR
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Avatar */}
+        {/* Avatar — overlaps cover */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: -40, marginBottom: 14 }}>
           <div style={{
-            width: 84, height: 84, borderRadius: '50%', padding: 3, flexShrink: 0,
+            width: 90, height: 90, borderRadius: '50%', padding: 3, flexShrink: 0,
             background: 'linear-gradient(135deg, #F07830 0%, #D4621A 60%, #ff9a55 100%)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
           }}>
             <img src={currentUser.photo} alt="" style={{
               width: '100%', height: '100%', borderRadius: '50%',
-              objectFit: 'cover', border: '3px solid #000', display: 'block',
+              objectFit: 'cover', border: '3px solid #0f0f0f', display: 'block',
             }} />
+          </div>
+        </div>
+
+        {/* Name + admin badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+          <span style={{
+            fontFamily: 'Barlow, sans-serif', fontWeight: 700,
+            fontSize: 20, color: '#fff', letterSpacing: -0.3, lineHeight: 1.2,
+          }}>
+            {currentUser.fullName}
+          </span>
+          {isAdmin && (
+            <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: '#F07830', flexShrink: 0 }}>
+              <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.71 4.2L6.8 12.46l1.41-1.42 2.26 2.26 4.8-5.23 1.47 1.35-6.2 6.78z" />
+            </svg>
+          )}
+        </div>
+
+        {/* Username */}
+        <div style={{
+          fontFamily: 'Barlow, sans-serif', fontSize: 14,
+          color: 'rgba(255,255,255,0.45)', marginBottom: 12,
+        }}>
+          {displayUsername}
+        </div>
+
+        {/* Bio */}
+        {bio && (
+          <div style={{
+            fontFamily: 'Barlow, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.85)',
+            lineHeight: 1.4, marginBottom: 10,
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          }}>
+            {bio}
+          </div>
+        )}
+
+        {/* Link */}
+        {link && (
+          <a
+            href={normalizeLink(link)}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontFamily: 'Barlow, sans-serif', fontSize: 13.5, color: '#F07830',
+              textDecoration: 'none', marginBottom: 12,
+            }}
+          >
+            <IcoLink />
+            <span style={{ textDecoration: 'underline', textDecorationColor: 'rgba(240,120,48,0.5)' }}>
+              {link.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
+            </span>
+          </a>
+        )}
+
+        {/* Group badge */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.18)',
+            borderRadius: 20, padding: '4px 10px',
+          }}>
+            <div style={{ width: 6, height: 6, background: '#BA7517', borderRadius: '50%', flexShrink: 0 }} />
+            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 10, letterSpacing: 1.2, color: '#BA7517' }}>
+              7TEEN · ASSOCIAÇÃO PAULISTA DO VALE
+            </span>
           </div>
         </div>
 
@@ -373,7 +334,7 @@ export function PerfilScreen({
             <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff' }}>
               {followersCount}
             </span>
-            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#555' }}>
+            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.45)' }}>
               seguidores
             </span>
           </button>
@@ -387,7 +348,7 @@ export function PerfilScreen({
             <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 17, color: '#fff' }}>
               {followingCount}
             </span>
-            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#555' }}>
+            <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.45)' }}>
               seguindo
             </span>
           </button>
@@ -406,11 +367,11 @@ export function PerfilScreen({
               setShowEdit(true);
             }}
             style={{
-              flex: 1, padding: '10px 16px', borderRadius: 12,
-              border: '1px solid #2f2f2f', background: 'transparent',
-              color: '#e7e9ea', fontFamily: 'Barlow Condensed, sans-serif',
-              fontWeight: 700, fontSize: 14, letterSpacing: 0.5, cursor: 'pointer',
-              transition: 'background 0.15s',
+              flex: 1, padding: '9px 16px', borderRadius: 20,
+              border: '1.5px solid rgba(255,255,255,0.25)', background: 'transparent',
+              color: '#e7e9ea', fontFamily: 'Barlow, sans-serif',
+              fontWeight: 600, fontSize: 14, cursor: 'pointer',
+              transition: 'border-color 0.2s',
             }}
           >
             Editar perfil
@@ -436,7 +397,7 @@ export function PerfilScreen({
       <div style={{
         display: 'flex',
         borderBottom: '1px solid #1a1a1a',
-        position: 'sticky', top: 49, background: '#000', zIndex: 40,
+        position: 'sticky', top: 49, background: '#0f0f0f', zIndex: 40,
       }}>
         {([
           { id: 'posts' as Tab, label: 'Posts' },
@@ -495,7 +456,7 @@ export function PerfilScreen({
                   }}>
                     <img src={currentUser.photo} alt="" style={{
                       width: '100%', height: '100%', borderRadius: '50%',
-                      objectFit: 'cover', border: '2px solid #000', display: 'block',
+                      objectFit: 'cover', border: '2px solid #0f0f0f', display: 'block',
                     }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -797,10 +758,8 @@ export function PerfilScreen({
                       try {
                         const user = auth.currentUser;
                         if (user) {
-                          if (selectedChurch) {
-                            const postsSnap = await getDocs(query(collection(db, 'churches', selectedChurch.id, 'posts'), where('userId', '==', uid)));
-                            await Promise.all(postsSnap.docs.map(d => deleteDoc(d.ref)));
-                          }
+                          const postsSnap = await getDocs(query(collection(db, 'posts'), where('userId', '==', uid)));
+                          await Promise.all(postsSnap.docs.map(d => deleteDoc(d.ref)));
                           await deleteDoc(doc(db, 'follows', uid)).catch(() => {});
                           await deleteDoc(doc(db, 'users', uid));
                           localStorage.removeItem(`pg_setup_${uid}`);

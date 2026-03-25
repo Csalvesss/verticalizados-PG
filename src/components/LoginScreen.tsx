@@ -52,6 +52,7 @@ function ChurchPicker({
           value={search}
           onChange={e => handleInput(e.target.value)}
           onFocus={() => setOpen(true)}
+          className="login-input"
           style={{
             ...inputStyle,
             paddingLeft: 38,
@@ -69,9 +70,9 @@ function ChurchPicker({
       {open && filtered.length > 0 && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200,
-          background: '#1a1a1a', border: '1px solid #333', borderRadius: 12,
+          background: '#18191d', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14,
           overflow: 'hidden', maxHeight: 220, overflowY: 'auto',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
         }}>
           {filtered.map((c, i) => (
             <button
@@ -80,7 +81,7 @@ function ChurchPicker({
               style={{
                 display: 'block', width: '100%', padding: '11px 14px',
                 background: 'transparent', border: 'none',
-                borderBottom: i < filtered.length - 1 ? '1px solid #222' : 'none',
+                borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
                 color: '#e7e9ea', textAlign: 'left', cursor: 'pointer',
                 fontFamily: 'Barlow, sans-serif', fontSize: 14,
               }}
@@ -103,7 +104,7 @@ function ChurchPicker({
   );
 }
 
-const APP_URL = 'https://verticalizados-pg.netlify.app'; // manter URL do deploy
+const APP_URL = 'https://verticalizados-pg.netlify.app';
 
 function isIosStandalone() {
   return (navigator as any).standalone === true;
@@ -117,7 +118,9 @@ function AppLogo({ size = 80 }: { size?: number }) {
   const fontSize = size * 0.45;
   return (
     <div style={{
-      width: size, height: size, background: '#BA7517', borderRadius: size * 0.25,
+      width: size, height: size,
+      background: 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)',
+      borderRadius: size * 0.25,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       boxShadow: '0 12px 40px rgba(186,117,23,0.4)', flexShrink: 0,
     }}>
@@ -129,15 +132,13 @@ function AppLogo({ size = 80 }: { size?: number }) {
         letterSpacing: -2,
         color: '#fff',
       }}>
-        <span style={{ color: 'rgba(0,0,0,0.7)' }}>7</span>T
+        <span style={{ color: 'rgba(0,0,0,0.6)' }}>7</span>T
       </span>
     </div>
   );
 }
 
 // ── IOS STANDALONE: PRIMEIRO ACESSO ──────────────────────────────────────────
-// iOS isola storage do Safari e do app instalado. O usuário precisa fazer login
-// UMA VEZ dentro do app. Após isso, o app lembra automaticamente para sempre.
 function IosFirstAccessScreen() {
   const [mode, setMode] = useState<'choose' | 'email' | 'register'>('choose');
   const [email, setEmail] = useState('');
@@ -150,7 +151,7 @@ function IosFirstAccessScreen() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '15px 16px', borderRadius: 14,
-    border: '1.5px solid #2a2a2a', background: '#111',
+    border: '1.5px solid rgba(255,255,255,0.07)', background: 'rgba(0,0,0,0.4)',
     color: '#e7e9ea', fontSize: 16, fontFamily: 'Barlow, sans-serif',
     fontWeight: 500, outline: 'none',
   };
@@ -166,7 +167,7 @@ function IosFirstAccessScreen() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(church));
         await registerWithEmail(email.trim(), password, name.trim());
       } else {
-        await loginWithEmail(email.trim(), password);
+        await loginWithEmail(email.trim(), password, true);
       }
     } catch (e: any) {
       if (mode === 'register') localStorage.removeItem(STORAGE_KEY);
@@ -190,7 +191,8 @@ function IosFirstAccessScreen() {
 
   return (
     <div style={{
-      background: '#000', minHeight: '100vh',
+      background: 'radial-gradient(ellipse at 50% 0%, rgba(186,117,23,0.12) 0%, #000 55%)',
+      minHeight: '100vh',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       padding: '40px 24px 32px',
       overflowY: 'auto',
@@ -200,9 +202,9 @@ function IosFirstAccessScreen() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         button:active { transform: scale(0.97); opacity: 0.85; }
         input::placeholder { color: #444; }
+        .login-input:focus { border-color: #BA7517 !important; box-shadow: 0 0 0 3px rgba(186,117,23,0.1) !important; }
       `}</style>
 
-      {/* Logo + título */}
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <div style={{ margin: '0 auto 14px', width: 'fit-content' }}>
           <AppLogo size={72} />
@@ -211,42 +213,45 @@ function IosFirstAccessScreen() {
           <span style={{ color: '#BA7517' }}>7</span>
           <span style={{ color: '#fff' }}>Teen</span>
         </div>
-        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#555', marginTop: 2 }}>
+        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#666', marginTop: 2 }}>
           ASSOCIAÇÃO PAULISTA DO VALE
         </div>
       </div>
 
-      {/* Card principal */}
       <div style={{
         width: '100%', maxWidth: 360,
-        background: '#111', borderRadius: 24, padding: '28px 22px',
-        border: '1px solid #1e1e1e',
+        background: 'rgba(20,21,24,0.95)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: 28, padding: '28px 22px',
+        border: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
       }}>
 
         {mode === 'choose' && (
           <>
-            {/* Badge "primeira vez" */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              background: 'rgba(240,120,48,0.1)', borderRadius: 10,
+              background: 'rgba(240,120,48,0.08)', borderRadius: 12,
               padding: '10px 14px', marginBottom: 22,
+              border: '1px solid rgba(240,120,48,0.15)',
             }}>
               <div style={{
-                width: 8, height: 8, borderRadius: '50%', background: '#F07830', flexShrink: 0,
+                width: 7, height: 7, borderRadius: '50%', background: '#F07830', flexShrink: 0,
               }} />
               <span style={{ fontFamily: 'Barlow', fontSize: 12, color: '#aaa', lineHeight: 1.4 }}>
                 <strong style={{ color: '#F07830' }}>Só desta vez:</strong> entre uma vez aqui no app e ele vai lembrar você automaticamente.
               </span>
             </div>
 
-            {/* Opção email — destaque */}
             <button
               onClick={() => setMode('email')}
               style={{
-                width: '100%', padding: '16px', borderRadius: 14, marginBottom: 12,
-                background: '#F07830', border: 'none', color: '#fff',
+                width: '100%', padding: '16px', borderRadius: 14, marginBottom: 10,
+                background: 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)',
+                border: 'none', color: '#fff',
                 fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 17, letterSpacing: 0.5,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                boxShadow: '0 4px 20px rgba(240,120,48,0.3)',
               }}
             >
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
@@ -256,19 +261,17 @@ function IosFirstAccessScreen() {
               Entrar com E-mail
             </button>
 
-            {/* Criar conta */}
             <button
               onClick={() => setMode('register')}
               style={{
                 width: '100%', padding: '14px', borderRadius: 14, marginBottom: 16,
-                background: 'transparent', border: '1.5px solid #2a2a2a', color: '#ccc',
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', color: '#aaa',
                 fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 16, letterSpacing: 0.5,
                 cursor: 'pointer',
               }}
             >
               Criar conta nova
             </button>
-
           </>
         )}
 
@@ -299,15 +302,18 @@ function IosFirstAccessScreen() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {mode === 'register' && (
                 <input
+                  className="login-input"
                   type="text" placeholder="Seu nome" value={name}
                   onChange={(e) => setName(e.target.value)} style={inputStyle}
                 />
               )}
               <input
+                className="login-input"
                 type="email" placeholder="E-mail" value={email}
                 onChange={(e) => setEmail(e.target.value)} style={inputStyle}
               />
               <input
+                className="login-input"
                 type="password" placeholder="Senha" value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && mode === 'email') handleEmail(); }}
@@ -326,6 +332,7 @@ function IosFirstAccessScreen() {
               <div style={{
                 fontFamily: 'Barlow', fontSize: 13, color: '#f4212e',
                 textAlign: 'center', marginTop: 12, fontWeight: 500,
+                background: 'rgba(244,33,46,0.08)', borderRadius: 10, padding: '8px 12px',
               }}>
                 {erro}
               </div>
@@ -335,9 +342,12 @@ function IosFirstAccessScreen() {
               onClick={handleEmail} disabled={loading}
               style={{
                 width: '100%', padding: '15px', borderRadius: 14, marginTop: 20,
-                background: loading ? '#333' : '#F07830', color: '#fff',
+                background: loading ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)',
+                color: loading ? '#444' : '#fff',
                 fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 17, letterSpacing: 0.5,
-                border: 'none', cursor: loading ? 'default' : 'pointer',
+                border: loading ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                cursor: loading ? 'default' : 'pointer',
+                boxShadow: loading ? 'none' : '0 4px 20px rgba(240,120,48,0.3)',
               }}
             >
               {loading ? 'Aguarde...' : mode === 'register' ? 'Criar Conta' : 'Entrar'}
@@ -359,21 +369,20 @@ function IosFirstAccessScreen() {
         )}
       </div>
 
-      {/* Dica de copiar link para Safari */}
       <div style={{
-        marginTop: 24, width: '100%', maxWidth: 360,
-        background: '#0d0d0d', borderRadius: 14, padding: '14px 16px',
-        border: '1px solid #1a1a1a',
+        marginTop: 20, width: '100%', maxWidth: 360,
+        background: 'rgba(10,10,10,0.8)', borderRadius: 14, padding: '14px 16px',
+        border: '1px solid rgba(255,255,255,0.04)',
       }}>
-        <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#444', lineHeight: 1.5, marginBottom: 8 }}>
+        <div style={{ fontFamily: 'Barlow', fontSize: 12, color: '#3a3a3a', lineHeight: 1.5, marginBottom: 8 }}>
           Prefere entrar pelo Safari? Abra o link lá e faça login.
         </div>
         <button
           onClick={copyLink}
           style={{
             padding: '7px 14px', borderRadius: 20,
-            background: 'transparent', border: '1px solid #222',
-            color: copied ? '#4caf50' : '#444',
+            background: 'transparent', border: '1px solid #1e1e1e',
+            color: copied ? '#4caf50' : '#3a3a3a',
             fontFamily: 'Barlow', fontSize: 11, fontWeight: 600, cursor: 'pointer',
             transition: 'color 0.2s',
           }}
@@ -384,7 +393,7 @@ function IosFirstAccessScreen() {
 
       <div style={{
         fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700,
-        letterSpacing: 2, color: '#1e1e1e', marginTop: 28,
+        letterSpacing: 2, color: '#1a1a1a', marginTop: 24,
       }}>
         7TEEN APV v3.0
       </div>
@@ -404,6 +413,8 @@ function BrowserLoginScreen() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [resetSent, setResetSent] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showPass, setShowPass] = useState(false);
 
   const handleReset = async () => {
     if (!email.trim()) { setErro('Digite seu e-mail acima primeiro.'); return; }
@@ -425,12 +436,11 @@ function BrowserLoginScreen() {
     setLoading(true); setErro('');
     try {
       if (mode === 'register') {
-        // Save church to localStorage before auth state fires so ChurchProvider finds it
         const church = { id: toSlug(selectedChurchLocal!.name), name: selectedChurchLocal!.name, district: selectedChurchLocal!.district, directorUid: null };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(church));
         await registerWithEmail(email.trim(), password, name.trim());
       } else {
-        await loginWithEmail(email.trim(), password);
+        await loginWithEmail(email.trim(), password, rememberMe);
       }
     } catch (e: any) {
       if (mode === 'register') localStorage.removeItem(STORAGE_KEY);
@@ -448,68 +458,133 @@ function BrowserLoginScreen() {
   };
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '14px 16px', borderRadius: 12,
-    border: '1px solid #2f3336', background: '#0a0a0a',
+    width: '100%', padding: '14px 16px', borderRadius: 14,
+    border: '1.5px solid rgba(255,255,255,0.07)', background: 'rgba(0,0,0,0.35)',
     color: '#e7e9ea', fontSize: 16, fontFamily: 'Barlow, sans-serif',
-    fontWeight: 500, outline: 'none',
+    fontWeight: 500, outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
   };
 
   return (
     <div style={{
-      background: '#000', minHeight: '100vh',
+      background: 'radial-gradient(ellipse at 50% 0%, rgba(186,117,23,0.14) 0%, #000 60%)',
+      minHeight: '100vh',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', padding: 24,
+      justifyContent: 'center', padding: '24px 16px',
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@700&family=Barlow:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        button:active { transform: scale(0.98); opacity: 0.8; }
-        input::placeholder { color: #555; }
+        button:active { transform: scale(0.97); opacity: 0.85; }
+        input::placeholder { color: #3d3d3d; }
+        .login-input:focus {
+          border-color: #BA7517 !important;
+          box-shadow: 0 0 0 3px rgba(186,117,23,0.12) !important;
+        }
+        .tab-btn { transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
+        .remember-check { transition: background 0.2s, border-color 0.2s; }
       `}</style>
 
-      <div style={{ marginBottom: 40, textAlign: 'center' }}>
-        <div style={{ margin: '0 auto 16px', width: 'fit-content' }}>
-          <AppLogo size={80} />
+      {/* Logo */}
+      <div style={{ textAlign: 'center', marginBottom: 36 }}>
+        <div style={{ margin: '0 auto 14px', width: 'fit-content' }}>
+          <AppLogo size={76} />
         </div>
-        <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 42, lineHeight: 1, letterSpacing: -1 }}>
+        <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 42, lineHeight: 1, letterSpacing: -1.5 }}>
           <span style={{ color: '#BA7517' }}>7</span>
           <span style={{ color: '#fff' }}>Teen</span>
         </div>
-        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 11, fontWeight: 700, letterSpacing: 4, color: '#71767b', marginTop: 2 }}>
+        <div style={{ fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#666', marginTop: 4 }}>
           ASSOCIAÇÃO PAULISTA DO VALE
         </div>
       </div>
 
+      {/* Card */}
       <div style={{
-        background: '#16181c', borderRadius: 24, padding: '32px 24px',
-        width: '100%', maxWidth: 380, border: '1px solid #2f3336',
+        background: 'rgba(18,19,22,0.95)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderRadius: 28,
+        padding: '32px 28px',
+        width: '100%', maxWidth: 400,
+        border: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: '0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)',
       }}>
+
         {/* Tabs */}
-        <div style={{ display: 'flex', marginBottom: 24, borderRadius: 12, overflow: 'hidden', border: '1px solid #2f3336' }}>
+        <div style={{
+          display: 'flex', gap: 4, marginBottom: 28,
+          background: 'rgba(0,0,0,0.5)', borderRadius: 15, padding: 4,
+        }}>
           {(['login', 'register'] as Mode[]).map(m => (
-            <button key={m} onClick={() => { setMode(m); setErro(''); }} style={{
-              flex: 1, padding: '10px 0',
-              fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 14, letterSpacing: 1,
-              color: mode === m ? '#fff' : '#555',
-              background: mode === m ? '#F07830' : 'transparent',
-              border: 'none', cursor: 'pointer',
-            }}>
+            <button
+              key={m}
+              className="tab-btn"
+              onClick={() => { setMode(m); setErro(''); }}
+              style={{
+                flex: 1, padding: '10px 0',
+                fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: 13, letterSpacing: 1.5,
+                color: mode === m ? '#fff' : '#444',
+                background: mode === m
+                  ? 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)'
+                  : 'transparent',
+                border: 'none', cursor: 'pointer', borderRadius: 11,
+                boxShadow: mode === m ? '0 2px 16px rgba(240,120,48,0.25)' : 'none',
+              }}
+            >
               {m === 'login' ? 'ENTRAR' : 'CRIAR CONTA'}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Fields */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {mode === 'register' && (
-            <input type="text" placeholder="Seu nome" value={name}
-              onChange={(e) => setName(e.target.value)} style={inputStyle} />
+            <input
+              className="login-input"
+              type="text" placeholder="Seu nome completo" value={name}
+              onChange={(e) => setName(e.target.value)} style={inputStyle}
+            />
           )}
-          <input type="email" placeholder="E-mail" value={email}
-            onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-          <input type="password" placeholder="Senha" value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && mode === 'login') handleEmail(); }}
-            style={inputStyle} />
+          <input
+            className="login-input"
+            type="email" placeholder="E-mail" value={email}
+            onChange={(e) => setEmail(e.target.value)} style={inputStyle}
+          />
+
+          {/* Senha com botão mostrar/ocultar */}
+          <div style={{ position: 'relative' }}>
+            <input
+              className="login-input"
+              type={showPass ? 'text' : 'password'}
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && mode === 'login') handleEmail(); }}
+              style={{ ...inputStyle, paddingRight: 48 }}
+            />
+            <button
+              onClick={() => setShowPass(!showPass)}
+              style={{
+                position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                color: '#444', display: 'flex', alignItems: 'center', lineHeight: 1,
+              }}
+            >
+              {showPass ? (
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              )}
+            </button>
+          </div>
+
           {mode === 'register' && (
             <ChurchPicker
               value={selectedChurchLocal}
@@ -519,45 +594,102 @@ function BrowserLoginScreen() {
           )}
         </div>
 
+        {/* Manter conectado + Esqueci senha */}
+        {mode === 'login' && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginTop: 16,
+          }}>
+            <label
+              style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', userSelect: 'none' }}
+              onClick={() => setRememberMe(!rememberMe)}
+            >
+              <div
+                className="remember-check"
+                style={{
+                  width: 19, height: 19, borderRadius: 6,
+                  border: `1.5px solid ${rememberMe ? '#BA7517' : 'rgba(255,255,255,0.12)'}`,
+                  background: rememberMe ? 'linear-gradient(135deg, #F07830, #BA7517)' : 'rgba(0,0,0,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: rememberMe ? '0 2px 10px rgba(186,117,23,0.3)' : 'none',
+                }}
+              >
+                {rememberMe && (
+                  <svg viewBox="0 0 12 10" width="10" height="10" fill="none">
+                    <path d="M1 5l3.5 3.5L11 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              <span style={{
+                fontFamily: 'Barlow, sans-serif', fontSize: 13,
+                color: rememberMe ? '#ccc' : '#444',
+                transition: 'color 0.2s',
+              }}>
+                Manter conectado
+              </span>
+            </label>
+
+            <div style={{ textAlign: 'right' }}>
+              {resetSent ? (
+                <span style={{ fontFamily: 'Barlow', fontSize: 12, color: '#4caf50' }}>
+                  E-mail enviado!
+                </span>
+              ) : (
+                <button
+                  onClick={handleReset}
+                  disabled={loading}
+                  style={{
+                    background: 'none', border: 'none', color: '#444',
+                    fontFamily: 'Barlow', fontSize: 12, cursor: 'pointer', padding: 0,
+                  }}
+                >
+                  Esqueci a senha
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Erro */}
         {erro && (
-          <div style={{ fontFamily: 'Barlow', fontSize: 13, color: '#f4212e', textAlign: 'center', marginTop: 12, fontWeight: 500 }}>
+          <div style={{
+            fontFamily: 'Barlow', fontSize: 13, color: '#f4212e',
+            textAlign: 'center', marginTop: 14, fontWeight: 500,
+            background: 'rgba(244,33,46,0.07)', borderRadius: 10, padding: '9px 12px',
+            border: '1px solid rgba(244,33,46,0.12)',
+          }}>
             {erro}
           </div>
         )}
 
-        <button onClick={handleEmail} disabled={loading} style={{
-          width: '100%', padding: '14px', borderRadius: 999, marginTop: 20,
-          background: loading ? '#333' : '#F07830', color: '#fff',
-          fontFamily: 'Barlow', fontWeight: 700, fontSize: 15,
-          border: 'none', cursor: loading ? 'default' : 'pointer',
-        }}>
+        {/* Botão principal */}
+        <button
+          onClick={handleEmail}
+          disabled={loading}
+          style={{
+            width: '100%', padding: '15px', borderRadius: 14, marginTop: 20,
+            background: loading
+              ? 'rgba(255,255,255,0.04)'
+              : 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)',
+            color: loading ? '#444' : '#fff',
+            fontFamily: 'Barlow', fontWeight: 700, fontSize: 15,
+            border: loading ? '1px solid rgba(255,255,255,0.06)' : 'none',
+            cursor: loading ? 'default' : 'pointer',
+            boxShadow: loading ? 'none' : '0 4px 24px rgba(240,120,48,0.3)',
+            transition: 'all 0.2s',
+            letterSpacing: 0.3,
+          }}
+        >
           {loading ? 'Aguarde...' : mode === 'register' ? 'Criar Conta' : 'Entrar'}
         </button>
-
-        {mode === 'login' && (
-          <div style={{ textAlign: 'center', marginTop: 14 }}>
-            {resetSent ? (
-              <span style={{ fontFamily: 'Barlow', fontSize: 13, color: '#4caf50' }}>
-                E-mail de redefinição enviado! Verifique sua caixa de entrada.
-              </span>
-            ) : (
-              <button onClick={handleReset} disabled={loading} style={{
-                background: 'none', border: 'none', color: '#71767b',
-                fontFamily: 'Barlow', fontSize: 13, cursor: 'pointer',
-                textDecoration: 'underline', padding: 0,
-              }}>
-                Esqueci minha senha
-              </button>
-            )}
-          </div>
-        )}
 
       </div>
 
       <div style={{
-        position: 'fixed', bottom: 24,
+        marginTop: 28,
         fontFamily: 'Barlow Condensed', fontSize: 10, fontWeight: 700,
-        letterSpacing: 2, color: '#2f3336',
+        letterSpacing: 2, color: '#1e1e1e',
       }}>
         7TEEN APV v3.0
       </div>
@@ -567,12 +699,7 @@ function BrowserLoginScreen() {
 
 // ── ENTRY POINT ───────────────────────────────────────────────────────────────
 export function LoginScreen() {
-  // iOS standalone: mostrar tela de primeiro acesso dedicada
   if (isIosStandalone()) return <IosFirstAccessScreen />;
-
-  // Android standalone: o Chrome compartilha storage, mas pode precisar de login
-  // Usa a mesma tela dedicada (sem o banner de copiar link)
   if (isAndroidStandalone()) return <IosFirstAccessScreen />;
-
   return <BrowserLoginScreen />;
 }

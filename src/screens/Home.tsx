@@ -10,15 +10,12 @@ interface Props {
   goTo: (sc: Screen) => void;
   songsCount: number;
   postsCount: number;
+  newPostsCount: number;
   confirmacoesCount: number;
   proximoEvento: Evento | null;
+  onChangeChurch: () => void;
 }
 
-const ChevronRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 18 15 12 9 6" />
-  </svg>
-);
 
 export function HomeScreen({
   currentUser,
@@ -26,11 +23,13 @@ export function HomeScreen({
   goTo,
   songsCount,
   postsCount,
+  newPostsCount,
   confirmacoesCount,
   proximoEvento,
+  onChangeChurch,
 }: Props) {
   const { canInstallAndroid, isIOS, isStandalone, iosAdded, triggerInstall, openIOSModal } = usePWAInstallContext();
-  const { selectedChurch, clearChurch } = useChurch();
+  const { selectedChurch } = useChurch();
   const showInstallCard = !isStandalone && (canInstallAndroid || (isIOS && !iosAdded));
 
   const MENU_ITEMS = [
@@ -40,6 +39,7 @@ export function HomeScreen({
     { icon: Ico.feed, label: 'Feed', sub: `${postsCount} posts da APV`, sc: 'feed' },
     { icon: Ico.event, label: 'Eventos', sub: `${confirmacoesCount} confirmados`, sc: 'eventos' },
     { icon: Ico.cross, label: 'Jogando em Comunhão', sub: 'Quiz bíblico — ganhe pontos!', sc: 'jogandoEmComunhao' },
+    { icon: Ico.study, label: 'Estudo Fácil', sub: 'Cursos bíblicos guiados', sc: 'estudo' },
   ];
 
   return (
@@ -79,8 +79,8 @@ export function HomeScreen({
         <div style={{
           margin: '0 0 0',
           padding: '10px 16px',
-          background: 'rgba(186,117,23,0.06)',
-          borderBottom: '1px solid rgba(186,117,23,0.12)',
+          background: 'rgba(186,117,23,0.05)',
+          borderBottom: '1px solid rgba(186,117,23,0.1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -117,17 +117,17 @@ export function HomeScreen({
             </div>
           </div>
           <button
-            onClick={clearChurch}
+            onClick={onChangeChurch}
             title="Trocar de igreja"
             style={{
-              background: 'transparent',
-              border: '1px solid #2a2a2a',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 20,
               padding: '4px 10px',
               cursor: 'pointer',
               fontFamily: 'Barlow, sans-serif',
               fontSize: 11,
-              color: '#555',
+              color: '#666',
               display: 'flex',
               alignItems: 'center',
               gap: 4,
@@ -142,50 +142,90 @@ export function HomeScreen({
         </div>
       )}
 
-      {/* ── Menu list ──────────────────────────────────────── */}
-      <div style={{ paddingTop: 8 }}>
-        {MENU_ITEMS.map((item, i) => (
+      {/* ── Menu grid ──────────────────────────────────────── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 12,
+        padding: '12px 16px 4px',
+      }}>
+        {MENU_ITEMS.map((item) => (
           <button
             key={item.sc}
             onClick={() => goTo(item.sc as Screen)}
             style={{
+              background: '#111315',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 20,
+              padding: '20px 16px 16px',
               display: 'flex',
-              alignItems: 'center',
-              width: '100%',
-              padding: '14px 16px',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: i < MENU_ITEMS.length - 1 ? '1px solid #111' : 'none',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 0,
               cursor: 'pointer',
-              gap: 14,
               textAlign: 'left',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+              transition: 'transform 0.12s, opacity 0.12s',
+              position: 'relative',
+              overflow: 'hidden',
             }}
+            onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.96)'; e.currentTarget.style.opacity = '0.85'; }}
+            onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.opacity = '1'; }}
+            onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.opacity = '1'; }}
           >
-            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24 }}>
-              {item.icon('#BA7517')}
+            {/* Icon solto com glow */}
+            <div style={{
+              marginBottom: 20,
+              position: 'relative',
+              filter: 'drop-shadow(0 0 10px rgba(240,120,48,0.35))',
+              lineHeight: 0,
+            }}>
+              {item.icon('#F07830')}
+              {item.sc === 'feed' && newPostsCount > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: -6,
+                  right: -8,
+                  minWidth: 18,
+                  height: 18,
+                  borderRadius: 99,
+                  background: 'linear-gradient(135deg, #F07830, #BA7517)',
+                  color: '#fff',
+                  fontFamily: 'Barlow Condensed, sans-serif',
+                  fontWeight: 700,
+                  fontSize: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 4px',
+                  border: '2px solid #111315',
+                  lineHeight: 1,
+                  filter: 'drop-shadow(none)',
+                }}>
+                  {newPostsCount > 99 ? '99+' : newPostsCount}
+                </div>
+              )}
             </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontFamily: 'Barlow, sans-serif',
-                fontWeight: 700,
-                fontSize: 15,
-                color: '#e7e9ea',
-                lineHeight: 1.3,
-              }}>
-                {item.label}
-              </div>
-              <div style={{
-                fontFamily: 'Barlow, sans-serif',
-                fontSize: 12,
-                color: '#555',
-                marginTop: 1,
-              }}>
-                {item.sub}
-              </div>
+            <div style={{
+              fontFamily: 'Barlow Condensed, sans-serif',
+              fontWeight: 700,
+              fontSize: 15,
+              color: '#e7e9ea',
+              letterSpacing: 0.2,
+              lineHeight: 1.2,
+              marginBottom: 4,
+            }}>
+              {item.label}
             </div>
-
-            <ChevronRight />
+            <div style={{
+              fontFamily: 'Barlow, sans-serif',
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.28)',
+              lineHeight: 1.3,
+            }}>
+              {item.sub}
+            </div>
           </button>
         ))}
       </div>
@@ -198,9 +238,12 @@ export function HomeScreen({
             style={{
               display: 'flex', alignItems: 'center', gap: 14,
               width: '100%', padding: '14px 16px',
-              background: 'rgba(186,117,23,0.06)',
-              border: '1px solid rgba(186,117,23,0.2)',
-              borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+              background: 'rgba(186,117,23,0.07)',
+              border: '1px solid rgba(186,117,23,0.15)',
+              borderRadius: 16, cursor: 'pointer', textAlign: 'left',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
             }}
           >
             <div style={{
@@ -259,10 +302,13 @@ export function HomeScreen({
           style={{
             margin: '16px 16px 0',
             padding: '14px 16px',
-            background: 'rgba(186,117,23,0.06)',
-            border: '1px solid rgba(186,117,23,0.15)',
-            borderRadius: 12,
+            background: 'rgba(18,20,25,0.85)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(186,117,23,0.18)',
+            borderRadius: 16,
             cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
           }}
         >
           <div style={{
