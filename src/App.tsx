@@ -4,10 +4,11 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { db } from './firebase';
 import { auth } from './firebase';
 import { consumeInstallToken, hasInstallToken } from './hooks/useInstallTransfer';
+import { usePushNotifications } from './hooks/usePushNotifications';
 import { migrateGlobalDataToChurch } from './utils/migration';
 import { ADMIN_EMAIL, DEFAULT_SONGS, DEFAULT_CIFRAS, getWeekKey } from './constants';
 import { GLOBAL_CSS, s } from './styles';
-import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio } from './types';
+import type { Screen, CurrentUser, Song, Cifra, Evento, Post, Confirmacao, Sorteio, ChurchJoinRequest } from './types';
 
 import { LoginScreen } from './components/LoginScreen';
 import { SetupPerfil } from './components/SetupPerfil';
@@ -23,6 +24,8 @@ import { EventosScreen } from './screens/Eventos';
 import { PerfilScreen } from './screens/Perfil';
 import { ComunhaoScreen } from './screens/Comunhao';
 import { NotificacoesScreen } from './screens/Notificacoes';
+import { EstudoFacilScreen } from './screens/EstudoFacil';
+import { MensagensScreen } from './screens/Mensagens';
 import { BuscarScreen } from './screens/Buscar';
 import { JogandoEmComunhaoScreen } from './screens/JogandoEmComunhao';
 import { UserPerfilScreen } from './screens/UserPerfil';
@@ -72,23 +75,42 @@ export default function App() {
 
 // ── AUTHED APP — handles onboarding + main ────────────────────────────────────
 function AuthedApp({ user }: { user: User }) {
-  const { isChurchSelected } = useChurch();
+  const { isChurchSelected, loadChurchFromFirestore } = useChurch();
   const [showOnboarding, setShowOnboarding] = useState(!isChurchSelected);
+  // 'switch' mode: user is already in a church but wants to change
+  const [switchMode, setSwitchMode] = useState(false);
 
-  // If church gets deselected (e.g. from profile), show onboarding again
+  // On mount, try to sync church from Firestore (handles approved join requests)
+  useEffect(() => {
+    loadChurchFromFirestore(user.uid).then(() => {
+      // After sync, if we now have a church and were showing onboarding, close it
+      setShowOnboarding(prev => prev && !localStorage.getItem('sete_teen_church'));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.uid]);
+
+  // If church gets deselected, show onboarding again
   useEffect(() => {
     if (!isChurchSelected) setShowOnboarding(true);
   }, [isChurchSelected]);
 
-  if (showOnboarding) {
-    return <OnboardingScreen onDone={() => setShowOnboarding(false)} />;
+  if (showOnboarding || switchMode) {
+    return (
+      <OnboardingScreen
+        mode={switchMode ? 'switch' : 'first'}
+        uid={user.uid}
+        userName={user.displayName || 'Membro'}
+        userPhoto={user.photoURL || ''}
+        onDone={() => { setShowOnboarding(false); setSwitchMode(false); }}
+      />
+    );
   }
 
-  return <MainApp user={user} />;
+  return <MainApp user={user} onChangeChurch={() => setSwitchMode(true)} />;
 }
 
 // ── MAIN APP (dados globais + roteamento) ─────────────────────────────────────
-function MainApp({ user }: { user: User }) {
+function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => void }) {
   const { selectedChurch } = useChurch();
   const [adminEmails, setAdminEmails] = useState<string[]>([ADMIN_EMAIL]);
   const isAdmin = adminEmails.includes(user.email || '') || user.email === ADMIN_EMAIL;
@@ -141,6 +163,8 @@ function MainApp({ user }: { user: User }) {
     email: baseEmail,
   };
 
+  usePushNotifications(user.uid);
+
   const [screen, setScreen] = useState<Screen>(() => {
     const saved = window.localStorage.getItem('pg:screen') as Screen | null;
     return saved ?? 'home';
@@ -154,10 +178,24 @@ function MainApp({ user }: { user: User }) {
   const [confirmacoes, setConfirmacoes] = useState<Confirmacao[]>([]);
   const [membrosLista, setMembrosLista] = useState<string[]>([]);
   const [sorteioSemana, setSorteioSemana] = useState<Sorteio | null>(null);
+  const [solicitacoesPendentes, setSolicitacoesPendentes] = useState<ChurchJoinRequest[]>([]);
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+
+  // ── Feed "não lido" ──────────────────────────────────────────────────────
+  const FEED_SEEN_KEY = `pg:feedSeen_${user.uid}`;
+  const [lastSeenFeedCount, setLastSeenFeedCount] = useState(() =>
+    parseInt(localStorage.getItem(`pg:feedSeen_${user.uid}`) || '0')
+  );
+  const newPostsCount = Math.max(0, posts.length - lastSeenFeedCount);
 
   useEffect(() => {
     window.localStorage.setItem('pg:screen', screen);
-  }, [screen]);
+    if (screen === 'feed') {
+      localStorage.setItem(FEED_SEEN_KEY, posts.length.toString());
+      setLastSeenFeedCount(posts.length);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, posts.length]);
 
   // ── One-time migration from global collections to church-scoped ─────────
   useEffect(() => {
@@ -176,7 +214,18 @@ function MainApp({ user }: { user: User }) {
       setSorteioSemana(snap.exists() ? (snap.data() as Sorteio) : null);
     });
 
-    return () => { unsPosts(); unsSorteio(); };
+    // Unread messages badge — always-on listener
+    const unsMsgs = onSnapshot(
+      query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid)),
+      snap => {
+        let total = 0;
+        snap.docs.forEach(d => { total += (d.data().unread?.[user.uid] ?? 0); });
+        setUnreadMsgCount(total);
+      },
+      () => {}
+    );
+
+    return () => { unsPosts(); unsSorteio(); unsMsgs(); };
   }, [user.uid]);
 
   // ── Church-scoped data: songs, cifras, membros, eventos, confirmacoes ────
@@ -188,6 +237,9 @@ function MainApp({ user }: { user: User }) {
     }
     const cid = selectedChurch.id;
     const cRef = (col: string) => collection(db, 'churches', cid, col);
+
+    // Persist churchId to Firestore on every church load (handles first-time + migrations)
+    setDoc(doc(db, 'users', user.uid), { churchId: cid }, { merge: true }).catch(() => {});
 
     // Register member in this church
     if (baseName && baseName !== 'Membro') {
@@ -225,8 +277,26 @@ function MainApp({ user }: { user: User }) {
       snap => setEventos(snap.docs.map(d => ({ id: d.id, ...d.data() } as Evento)))
     );
 
-    return () => { uns1(); uns2(); uns5(); uns6(); uns8(); };
-  }, [selectedChurch?.id, baseName]);
+    // Listener persistente de solicitações — ativo em qualquer tela para admins
+    let unsSol = () => {};
+    if (isAdmin) {
+      unsSol = onSnapshot(
+        query(
+          collection(db, 'churchJoinRequests'),
+          where('toChurchId', '==', cid),
+          where('status', '==', 'pending')
+        ),
+        snap => {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ChurchJoinRequest));
+          list.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+          setSolicitacoesPendentes(list);
+        },
+        () => {}
+      );
+    }
+
+    return () => { uns1(); uns2(); uns5(); uns6(); uns8(); unsSol(); };
+  }, [selectedChurch?.id, baseName, isAdmin]);
 
   const goTo = (sc: Screen) => setScreen(sc);
 
@@ -251,8 +321,10 @@ function MainApp({ user }: { user: User }) {
             goTo={goTo}
             songsCount={songs.length}
             postsCount={posts.length}
+            newPostsCount={newPostsCount}
             confirmacoesCount={confirmacoesProximo.length}
             proximoEvento={eventos[0] || null}
+            onChangeChurch={onChangeChurch}
           />
         )}
 
@@ -283,6 +355,7 @@ function MainApp({ user }: { user: User }) {
             uid={user.uid}
             adminEmails={adminEmails}
             goTo={goTo}
+            unreadMsgCount={unreadMsgCount}
             onOpenProfile={(targetUid) => {
               setProfileTarget(targetUid);
               goTo('userPerfil');
@@ -337,6 +410,14 @@ function MainApp({ user }: { user: User }) {
           <JogandoEmComunhaoScreen currentUser={currentUser} goTo={goTo} />
         )}
 
+        {screen === 'estudo' && (
+          <EstudoFacilScreen goTo={goTo} />
+        )}
+
+        {screen === 'mensagens' && (
+          <MensagensScreen uid={user.uid} currentUser={currentUser} goTo={goTo} />
+        )}
+
         {screen === 'admin' && isAdmin && (
           <AdminPanel
             goHome={() => goTo('home')}
@@ -345,6 +426,9 @@ function MainApp({ user }: { user: User }) {
             eventos={eventos}
             membros={membrosLista}
             adminEmails={adminEmails}
+            currentUserUid={user.uid}
+            currentUserEmail={user.email || ''}
+            solicitacoesPendentes={solicitacoesPendentes}
           />
         )}
 

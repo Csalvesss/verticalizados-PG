@@ -25,7 +25,7 @@ export const GLOBAL_CSS = `
   body {
     display: flex;
     justify-content: center;
-    background: #000;
+    background: #0f0f0f;
     color: #e7e9ea;
     font-family: 'Barlow', sans-serif;
   }
@@ -39,17 +39,37 @@ export const GLOBAL_CSS = `
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #333;
+    background: rgba(240, 120, 48, 0.3);
     border-radius: 4px;
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   .fade {
-    animation: fadeUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation: fadeUp 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  @keyframes navBounce {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  .nav-icon-active {
+    animation: navBounce 200ms ease-out;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  .skeleton {
+    background: linear-gradient(90deg, #1a1a1a 25%, #242424 50%, #1a1a1a 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+    border-radius: 6px;
   }
 
   textarea, input {
@@ -75,23 +95,23 @@ export const GLOBAL_CSS = `
   }
 
   .glass {
-    background: rgba(22, 24, 28, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(18, 20, 25, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 
   @media (min-width: 560px) {
     #root {
       max-width: 500px;
-      border-left: 1px solid #2f3336;
-      border-right: 1px solid #2f3336;
+      border-left: 1px solid rgba(255,255,255,0.06);
+      border-right: 1px solid rgba(255,255,255,0.06);
     }
   }
 `;
 
 export const s: Record<string, CSSProperties> = {
   root: {
-    background: '#000',
+    background: '#0f0f0f',
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
@@ -106,16 +126,17 @@ export const s: Record<string, CSSProperties> = {
     paddingBottom: 'calc(70px + env(safe-area-inset-bottom, 0px))',
   },
   page: {
-    padding: '0 16px',
+    padding: '0 14px',
   },
   instaHeader: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '12px 16px',
-    background: 'rgba(0,0,0,0.85)',
-    backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid #2f3336',
+    background: 'rgba(0,0,0,0.82)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
     position: 'sticky',
     top: 0,
     zIndex: 50,
@@ -124,29 +145,36 @@ export const s: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 12,
-    padding: '12px 16px',
-    background: 'rgba(0,0,0,0.85)',
-    backdropFilter: 'blur(12px)',
+    padding: '0 16px',
+    minHeight: 54,
+    background: 'rgba(0,0,0,0.82)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
     position: 'sticky',
     top: 0,
     zIndex: 50,
-    borderBottom: '1px solid #2f3336',
-    marginBottom: 16,
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    marginBottom: 0,
   },
   pageTitle: {
-    fontFamily: 'Barlow Condensed',
+    fontFamily: 'Barlow Condensed, sans-serif',
     fontWeight: 700,
-    fontSize: 19,
+    fontSize: 15,
+    letterSpacing: 2,
     color: '#fff',
-    letterSpacing: 0.5,
+    textTransform: 'uppercase' as const,
+    flex: 1,
+    textAlign: 'center' as const,
   },
   backBtn: {
-    padding: '6px',
+    minWidth: 44,
+    minHeight: 44,
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     background: 'transparent',
+    color: '#F07830',
   },
   iconBtn: {
     padding: '8px',
@@ -162,9 +190,10 @@ export const s: Record<string, CSSProperties> = {
     transform: 'translateX(-50%)',
     width: '100%',
     maxWidth: 500,
-    background: 'rgba(0,0,0,0.85)',
-    backdropFilter: 'blur(14px)',
-    borderTop: '1px solid #2f3336',
+    background: 'rgba(0,0,0,0.88)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderTop: '1px solid rgba(255,255,255,0.06)',
     display: 'flex',
     justifyContent: 'space-around',
     padding: '6px 0 12px',
@@ -195,7 +224,7 @@ export const s: Record<string, CSSProperties> = {
   },
   welcomeBox: {
     padding: '20px 16px',
-    borderBottom: '1px solid #2f3336',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
   },
   grid: {
     display: 'grid',
@@ -204,34 +233,40 @@ export const s: Record<string, CSSProperties> = {
     padding: '16px',
   },
   gridCard: {
-    background: '#16181c',
-    borderRadius: 16,
-    padding: '20px 16px',
-    border: '1px solid #2f3336',
+    background: 'rgba(18,20,25,0.85)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: 18,
+    padding: '20px 16px 18px',
+    border: '1px solid rgba(255,255,255,0.07)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
   },
   nextEvent: {
-    background: 'rgba(240,120,48,0.1)',
-    border: '1px solid rgba(240,120,48,0.2)',
+    background: 'rgba(186,117,23,0.07)',
+    border: '1px solid rgba(186,117,23,0.18)',
     borderRadius: 16,
     padding: '16px',
     margin: '0 16px 16px',
   },
   card: {
-    background: '#16181c',
-    borderRadius: 16,
-    border: '1px solid #2f3336',
+    background: 'rgba(18,20,25,0.9)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: 18,
+    border: '1px solid rgba(255,255,255,0.07)',
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: 12,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
   },
   cardTop: {
     display: 'flex',
     alignItems: 'center',
   },
   cardNum: {
-    background: 'rgba(240,120,48,0.15)',
+    background: 'rgba(240,120,48,0.07)',
     width: 50,
     minHeight: 70,
     display: 'flex',
@@ -257,7 +292,7 @@ export const s: Record<string, CSSProperties> = {
   cardHint: {
     fontFamily: 'Barlow',
     fontSize: 12,
-    color: '#71767b',
+    color: '#4a4a4a',
     marginTop: 2,
   },
   btnOrange: {
@@ -266,11 +301,12 @@ export const s: Record<string, CSSProperties> = {
     gap: 8,
     padding: '12px 24px',
     borderRadius: 999,
-    background: '#F07830',
+    background: 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)',
     color: '#fff',
     fontFamily: 'Barlow',
     fontWeight: 700,
     fontSize: 14,
+    boxShadow: '0 4px 16px rgba(240,120,48,0.25)',
   },
   btnSpotify: {
     display: 'flex',
@@ -305,8 +341,8 @@ export const s: Record<string, CSSProperties> = {
     objectFit: 'cover',
   },
   textarea: {
-    background: 'transparent',
-    border: '1px solid #2f3336',
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 12,
     padding: '12px',
     color: '#fff',
@@ -317,7 +353,7 @@ export const s: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    color: '#71767b',
+    color: '#555',
     fontFamily: 'Barlow',
     fontSize: 13,
   },
@@ -326,16 +362,16 @@ export const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '12px 0',
-    borderBottom: '1px solid #2f3336',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
   },
   adminActionBtn: {
     padding: '6px',
-    color: '#71767b',
+    color: '#555',
   },
   empty: {
     fontFamily: 'Barlow',
     fontSize: 14,
-    color: '#71767b',
+    color: '#444',
     textAlign: 'center',
     padding: 40,
   },

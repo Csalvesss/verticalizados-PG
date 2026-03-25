@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, addDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useChurch, type Church } from '../contexts/ChurchContext';
 
@@ -470,9 +470,12 @@ interface SelectProps {
   onSearch: (v: string) => void;
   onPick: (church: Church) => void;
   loading: boolean;
+  isSwitch?: boolean;
+  currentChurchId?: string | null;
+  onCancel?: () => void;
 }
 
-function SelectChurchScreen({ groups, search, onSearch, onPick, loading }: SelectProps) {
+function SelectChurchScreen({ groups, search, onSearch, onPick, loading, isSwitch, onCancel }: SelectProps) {
   return (
     <div style={{ background: '#000', minHeight: '100vh' }}>
       <style>{`
@@ -487,14 +490,26 @@ function SelectChurchScreen({ groups, search, onSearch, onPick, loading }: Selec
         background: 'linear-gradient(180deg, rgba(186,117,23,0.12) 0%, transparent 100%)',
         borderBottom: '1px solid #1a1a1a',
       }}>
-        <div style={{ fontFamily: 'system-ui, sans-serif', fontWeight: 900, fontSize: 36, lineHeight: 1, color: '#fff', letterSpacing: -1, marginBottom: 6 }}>
-          <span style={{ color: '#BA7517' }}>7</span>Teen
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ fontFamily: 'system-ui, sans-serif', fontWeight: 900, fontSize: 36, lineHeight: 1, color: '#fff', letterSpacing: -1 }}>
+            <span style={{ color: '#BA7517' }}>7</span>Teen
+          </div>
+          {isSwitch && onCancel && (
+            <button
+              onClick={onCancel}
+              style={{ background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 20, padding: '6px 14px', color: '#71767b', fontFamily: 'Barlow, sans-serif', fontSize: 13, cursor: 'pointer' }}
+            >
+              Cancelar
+            </button>
+          )}
         </div>
         <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 20, color: '#fff', marginBottom: 4 }}>
-          Qual é a sua Igreja?
+          {isSwitch ? 'Trocar de Igreja' : 'Qual é a sua Igreja?'}
         </div>
         <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 13, color: '#666' }}>
-          Personalize sua experiência na APV
+          {isSwitch
+            ? 'Igrejas com diretor exigem aprovação. Sem diretor, a troca é imediata.'
+            : 'Personalize sua experiência na APV'}
         </div>
 
         {/* Search */}
@@ -603,10 +618,17 @@ function SelectChurchScreen({ groups, search, onSearch, onPick, loading }: Selec
                   </div>
                 </div>
 
-                {/* Chevron */}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
+                {/* Chevron / lock */}
+                {isSwitch ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                )}
               </button>
             ))}
           </div>
@@ -616,17 +638,55 @@ function SelectChurchScreen({ groups, search, onSearch, onPick, loading }: Selec
   );
 }
 
+// ── Pending request confirmation screen ───────────────────────────────────────
+function RequestSentScreen({ churchName, onBack }: { churchName: string; onBack: () => void }) {
+  return (
+    <div style={{ background: '#000', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&display=swap');
+      `}</style>
+      <div style={{ width: 64, height: 64, borderRadius: 999, background: 'rgba(186,117,23,0.15)', border: '2px solid rgba(186,117,23,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#BA7517" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
+        </svg>
+      </div>
+      <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 22, color: '#fff', textAlign: 'center', marginBottom: 10 }}>
+        Solicitação enviada!
+      </div>
+      <div style={{ fontFamily: 'Barlow, sans-serif', fontSize: 14, color: '#71767b', textAlign: 'center', lineHeight: 1.5, marginBottom: 32, maxWidth: 300 }}>
+        Seu pedido de entrada foi enviado para o diretor jovem da igreja <span style={{ color: '#e7e9ea', fontWeight: 600 }}>{churchName}</span>. Você será notificado quando for aprovado.
+      </div>
+      <button
+        onClick={onBack}
+        style={{
+          background: '#BA7517', border: 'none', borderRadius: 999,
+          padding: '14px 32px', color: '#fff',
+          fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
+          fontSize: 16, letterSpacing: 0.5, cursor: 'pointer',
+        }}
+      >
+        Voltar ao início
+      </button>
+    </div>
+  );
+}
+
 // ── Main Onboarding ───────────────────────────────────────────────────────────
 interface Props {
   onDone: () => void;
+  mode?: 'first' | 'switch';
+  uid?: string;
+  userName?: string;
+  userPhoto?: string;
 }
 
-export function OnboardingScreen({ onDone }: Props) {
-  const [phase, setPhase] = useState<'splash' | 'select'>('splash');
+export function OnboardingScreen({ onDone, mode = 'first', uid, userName, userPhoto }: Props) {
+  const [phase, setPhase] = useState<'splash' | 'select' | 'requested'>('splash');
+  const [requestedChurch, setRequestedChurch] = useState<string>('');
   const [search, setSearch] = useState('');
   const [churches, setChurches] = useState<Church[]>([]);
   const [loading, setLoading] = useState(true);
-  const { setSelectedChurch } = useChurch();
+  const { setSelectedChurch, selectedChurch } = useChurch();
 
   useEffect(() => {
     // Busca igrejas do Firestore; se vazio, popula automaticamente
@@ -652,9 +712,14 @@ export function OnboardingScreen({ onDone }: Props) {
         setLoading(false);
       });
 
-    const t = setTimeout(() => setPhase('select'), 2000);
-    return () => clearTimeout(t);
-  }, []);
+    // Skip splash in switch mode
+    if (mode === 'switch') {
+      setPhase('select');
+    } else {
+      const t = setTimeout(() => setPhase('select'), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [mode]);
 
   const filtered = churches.filter(c =>
     !search ||
@@ -669,12 +734,44 @@ export function OnboardingScreen({ onDone }: Props) {
     return acc;
   }, {});
 
-  const handlePick = (church: Church) => {
-    setSelectedChurch(church);
-    onDone();
+  const handlePick = async (church: Church) => {
+    if (mode === 'switch' && uid) {
+      // Always require approval when switching — send a join request
+      const existing = await getDocs(
+        query(
+          collection(db, 'churchJoinRequests'),
+          where('fromUid', '==', uid),
+          where('toChurchId', '==', church.id),
+          where('status', '==', 'pending')
+        )
+      );
+      if (existing.empty) {
+        await addDoc(collection(db, 'churchJoinRequests'), {
+          fromUid: uid,
+          fromName: userName || 'Membro',
+          fromPhoto: userPhoto || '',
+          fromChurchId: selectedChurch?.id || null,
+          fromChurchName: selectedChurch?.name || null,
+          toChurchId: church.id,
+          toChurchName: church.name,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        });
+      }
+      setRequestedChurch(church.name);
+      setPhase('requested');
+    } else {
+      // First-time selection → immediate join
+      setSelectedChurch(church, uid);
+      onDone();
+    }
   };
 
   if (phase === 'splash') return <SplashScreen />;
+
+  if (phase === 'requested') {
+    return <RequestSentScreen churchName={requestedChurch} onBack={onDone} />;
+  }
 
   return (
     <SelectChurchScreen
@@ -683,6 +780,9 @@ export function OnboardingScreen({ onDone }: Props) {
       onSearch={setSearch}
       onPick={handlePick}
       loading={loading}
+      isSwitch={mode === 'switch'}
+      currentChurchId={selectedChurch?.id || null}
+      onCancel={mode === 'switch' ? onDone : undefined}
     />
   );
 }
