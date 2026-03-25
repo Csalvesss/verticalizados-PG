@@ -10,6 +10,7 @@ interface Props {
   goTo: (sc: Screen) => void;
   songsCount: number;
   postsCount: number;
+  newPostsCount: number;
   confirmacoesCount: number;
   proximoEvento: Evento | null;
   onChangeChurch: () => void;
@@ -22,6 +23,7 @@ export function HomeScreen({
   goTo,
   songsCount,
   postsCount,
+  newPostsCount,
   confirmacoesCount,
   proximoEvento,
   onChangeChurch,
@@ -181,19 +183,44 @@ export function HomeScreen({
               e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)';
             }}
           >
-            {/* Icon container */}
-            <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: 14,
-              background: 'linear-gradient(135deg, rgba(240,120,48,0.18) 0%, rgba(186,117,23,0.12) 100%)',
-              border: '1px solid rgba(240,120,48,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              {item.icon('#F07830')}
+            {/* Icon container com badge estilo Instagram */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, rgba(240,120,48,0.18) 0%, rgba(186,117,23,0.12) 100%)',
+                border: '1px solid rgba(240,120,48,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                {item.icon('#F07830')}
+              </div>
+              {item.sc === 'feed' && newPostsCount > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: -7,
+                  right: -7,
+                  minWidth: 20,
+                  height: 20,
+                  borderRadius: 99,
+                  background: 'linear-gradient(135deg, #F07830 0%, #BA7517 100%)',
+                  color: '#fff',
+                  fontFamily: 'Barlow Condensed, sans-serif',
+                  fontWeight: 700,
+                  fontSize: 11,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 5px',
+                  border: '2px solid #0f0f0f',
+                  boxShadow: '0 2px 8px rgba(240,120,48,0.5)',
+                  lineHeight: 1,
+                }}>
+                  {newPostsCount > 99 ? '99+' : newPostsCount}
+                </div>
+              )}
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -208,22 +235,6 @@ export function HomeScreen({
                 }}>
                   {item.label}
                 </div>
-                {/* Feed badge */}
-                {item.sc === 'feed' && postsCount > 0 && (
-                  <span style={{
-                    background: '#F07830',
-                    color: '#fff',
-                    fontFamily: 'Barlow Condensed, sans-serif',
-                    fontWeight: 700,
-                    fontSize: 10,
-                    borderRadius: 99,
-                    padding: '1px 6px',
-                    lineHeight: 1.6,
-                    flexShrink: 0,
-                  }}>
-                    {postsCount > 99 ? '99+' : postsCount}
-                  </span>
-                )}
               </div>
               <div style={{
                 fontFamily: 'Barlow, sans-serif',

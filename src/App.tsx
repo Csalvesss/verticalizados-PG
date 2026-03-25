@@ -171,9 +171,21 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
   const [membrosLista, setMembrosLista] = useState<string[]>([]);
   const [sorteioSemana, setSorteioSemana] = useState<Sorteio | null>(null);
 
+  // ── Feed "não lido" ──────────────────────────────────────────────────────
+  const FEED_SEEN_KEY = `pg:feedSeen_${user.uid}`;
+  const [lastSeenFeedCount, setLastSeenFeedCount] = useState(() =>
+    parseInt(localStorage.getItem(`pg:feedSeen_${user.uid}`) || '0')
+  );
+  const newPostsCount = Math.max(0, posts.length - lastSeenFeedCount);
+
   useEffect(() => {
     window.localStorage.setItem('pg:screen', screen);
-  }, [screen]);
+    if (screen === 'feed') {
+      localStorage.setItem(FEED_SEEN_KEY, posts.length.toString());
+      setLastSeenFeedCount(posts.length);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, posts.length]);
 
   // ── One-time migration from global collections to church-scoped ─────────
   useEffect(() => {
@@ -270,6 +282,7 @@ function MainApp({ user, onChangeChurch }: { user: User; onChangeChurch: () => v
             goTo={goTo}
             songsCount={songs.length}
             postsCount={posts.length}
+            newPostsCount={newPostsCount}
             confirmacoesCount={confirmacoesProximo.length}
             proximoEvento={eventos[0] || null}
             onChangeChurch={onChangeChurch}
